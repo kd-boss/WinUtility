@@ -934,7 +934,7 @@ class BaseWindow {
     thefunc((UINT)wParam, Point(lParam)); \
     return (bhandled == true) ? 0 : 1;
 
-/// void OnLButtonDoulbeClick(UINT nFlags,const Point& pt)
+/// void OnLButtonDoubleClick(UINT nFlags,const Point& pt)
 #define MSG_WM_LBUTTONCLK(thefunc)        \
   case WM_LBUTTONDBLCLK:                  \
     if (!bhandled) SetHandled();          \
