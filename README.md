@@ -24,7 +24,7 @@ If you feel the need to do so, please fork!
 notes about the classes:
 
 the template classes covering windows BCrypt include some very handy typedef's,and in fact if you try to use anything 
-other than the typedef's the templates will fail to compile. this WAS by design.
+other than the types defined in that header for the implimentation classes the templates will fail to compile. this WAS by design.
 
 There is a BaseWindow template class that impliments a window using thunks, I included macro's for implimenting the huge
 switch statement for windows messages much like ATL or MFC just because it is actually less cumbersome to impliment a small
@@ -36,5 +36,7 @@ it's constructer to desginate what kind of socket you want to create, currently 
 it's interface (THIS IS THE ONE INTERFACE THAT FOLKS CAN EXTEND).
 There is a SslClientSocket class that impliments a Stream socket for ssl. Yes, it works, at least to pull say, google's 
 search page, it's quite unfinished, probably buggy as all get at, so if you use it, be awaire of this, and do so carefully. Known issues include the execption struct in it, FormatMessage isn't called correcly and frankly, the complexity of getting this class so much as working has taken up my enegery directed to this file.
+
+The socket classes use std::function for their callbacks (ie connect, recieve, and close).
 
 Check back periodically, I'll add new stuff as I get done with it. 
