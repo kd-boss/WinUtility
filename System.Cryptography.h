@@ -8,8 +8,10 @@
 #include "System.Utility.h"
 #endif
 
+#ifndef __GNUG__
 #pragma comment(lib,"bcrypt.lib")
 #pragma comment(lib,"Crypt32.lib")
+#endif
 
 #include <WinCrypt.h>
 #include <bcrypt.h>
@@ -42,11 +44,9 @@ namespace ___detail
 	struct RC2Type{};
 	struct RC4Type{};
 
-};
+}
 
 namespace System{
-        // why this is here, needs to be evaluated, possiably moved to another header
-        // as it would be a bit more logical.
 	namespace Debug{
 		inline void PrintError(NTSTATUS NTStatusMessage)
 		{
@@ -103,8 +103,7 @@ namespace System{
 		};
 	};
 	namespace Utility{
-        // traits structs for the BCRYPT_ALG_HANDLE,
-        // BCRYPT_KEY_HANDLE ,and BCRYPT_HASH_HANDLE objects.
+
 		struct bcrypt_provider_traits
 		{
 			typedef BCRYPT_ALG_HANDLE pointer;
@@ -117,7 +116,7 @@ namespace System{
 			{
 				if (value != invalid())
 				{
-					NTVERIFY(BCryptCloseAlgorithmProvider(value, NULL));
+                    NTVERIFY(BCryptCloseAlgorithmProvider(value, 0));
 				}
 			}
 		};
@@ -153,12 +152,18 @@ namespace System{
 	};
 
 	namespace Crypto{
+#ifndef CRYPT_STRING_NOCRLF
+#define CRYPT_STRING_NOCRLF 0x40000000
+#endif
+#ifndef CRYPT_STRING_HEXRAW
+#define CRYPT_STRING_HEXRAW 0x0000000c
+#endif
+#ifndef CRYPT_STRING_STRICT
+#define CRYPT_STRING_STRICT 0x20000000
+#endif
 
-        // Enum class for the CryptBinaryToString function
-        // currently mingw fails to define a few of these,
-        // in particular  CRYPT_STRING_HEX is one if I recall correctly.
-        // Need to remember which, and add approperate defines in this header.
-		static enum class CryptStringType : DWORD {
+        enum class CryptStringType : DWORD
+        {
 			Base64Header = CRYPT_STRING_BASE64HEADER,
 			Base64HeaderNoCr = CRYPT_STRING_BASE64HEADER | CRYPT_STRING_NOCR,
 			Base64HeaderNoCrLf = CRYPT_STRING_BASE64HEADER | CRYPT_STRING_NOCRLF,
@@ -229,7 +234,6 @@ namespace System{
 
 		namespace Hash{
 
-        // Hashing Algorithims implimenation class
 			template <typename T>
 			class HashImpl {
 				DWORD dwDataLen;
@@ -247,7 +251,7 @@ namespace System{
 					dwHashObjectLen(0)
 				{
 					T t;
-					___HashImplHlpr(t);
+                    ___HashImplHlpr(t);
 				}
 				HashImpl(HashImpl && other) throw() :
 					m_Provider{ other.m_Provider.release() },
@@ -272,70 +276,73 @@ namespace System{
 					}
 					return *this;
 				}
-			private:
-			    template <typename R,typename enable = void>
-				void ___HashImplHlpr(R)
-				{
-				    static_assert(false,"Invalid HashImpl Type");
-				}
+            private:
+
 				
-				template <typename R, typename std::enable_if<std::is_same<R,___detail::MD5Type>::type>::type>
-				void ___HashImplHlpr(R)
+                template <typename R>
+                typename std::enable_if<std::is_same<R,___detail::MD5Type>::value,void>::type
+                ___HashImplHlpr(R)
 				{
 					BCRYPT_ALG_HANDLE provider;
 					NTVERIFY(BCryptOpenAlgorithmProvider(&provider, BCRYPT_MD5_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0)); // Initialize the algorithm provider handle	
 					m_Provider.reset(provider); // Wrap the provider handle in a nice RAII class.
 					___Init();
 				}
-				template <typename R,typename std::enable_if<std::is_same<R,___detail::MD4Type>::type>::type>
-				void ___HashImplHlpr(R)
+                template <typename R>
+                typename std::enable_if<std::is_same<R,___detail::MD4Type>::value,void>::type
+                ___HashImplHlpr(R)
 				{
 					BCRYPT_ALG_HANDLE provider;
 					NTVERIFY(BCryptOpenAlgorithmProvider(&provider, BCRYPT_MD4_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0)); // Initialize the algorithm provider handle	
 					m_Provider.reset(provider); // Wrap the provider handle in a nice RAII class.
 					___Init();
 				}
-				template <tyepname R,typename std::enable_if<std::is_same<R,___detail::MD2Type>::type>::type>
-				void ___HashImplHlpr()
+                template <typename R>
+                typename std::enable_if<std::is_same<R,___detail::MD2Type>::value,void>::type
+                ___HashImplHlpr(R)
 				{
 					BCRYPT_ALG_HANDLE provider;
 					NTVERIFY(BCryptOpenAlgorithmProvider(&provider, BCRYPT_MD2_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0)); // Initialize the algorithm provider handle	
 					m_Provider.reset(provider); // Wrap the provider handle in a nice RAII class.
 					___Init();
 				}
-				template <tyepname R,typename std::enable_if<std::is_same<R,___detail::SHA1Type>::type>::type>
-				void ___HashImplHlpr(R)
+                template <typename R>
+                typename std::enable_if<std::is_same<R,___detail::SHA1Type>::value,void>::type
+                ___HashImplHlpr(R)
 				{
 					BCRYPT_ALG_HANDLE provider;
 					NTVERIFY(BCryptOpenAlgorithmProvider(&provider, BCRYPT_SHA1_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0)); // Initialize the algorithm provider handle	
 					m_Provider.reset(provider); // Wrap the provider handle in a nice RAII class.
 					___Init();
 				}
-				template <tyepname R,typename std::enable_if<std::is_same<R,___detail::SHA256Type>::type>::type>
-				void ___HashImplHlpr(R)
+                template <typename R>
+                typename std::enable_if<std::is_same<R,___detail::SHA256Type>::value,void>::type
+                ___HashImplHlpr(R)
 				{
 					BCRYPT_ALG_HANDLE provider;
 					NTVERIFY(BCryptOpenAlgorithmProvider(&provider, BCRYPT_SHA256_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0)); // Initialize the algorithm provider handle	
 					m_Provider.reset(provider); // Wrap the provider handle in a nice RAII class.
 					___Init();
 				}
-				template <tyepname R,typename std::enable_if<std::is_same<R,___detail::SHA386Type>::type>::type>
-				void ___HashImplHlpr(R)
+                template <typename R>
+                typename std::enable_if<std::is_same<R,___detail::SHA386Type>::value,void>::type
+                ___HashImplHlpr(R)
 				{
 					BCRYPT_ALG_HANDLE provider;
 					NTVERIFY(BCryptOpenAlgorithmProvider(&provider, BCRYPT_SHA384_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0)); // Initialize the algorithm provider handle	
 					m_Provider.reset(provider); // Wrap the provider handle in a nice RAII class.
 					___Init();
 				}
-				template <tyepname R,typename std::enable_if<std::is_same<R,___detail::SHA512Type>::type>::type>
-				void ___HashImplHlpr(R)
+                template <typename R>
+                typename std::enable_if<std::is_same<R,___detail::SHA512Type>::value,void>::type
+                ___HashImplHlpr(R)
 				{
 					BCRYPT_ALG_HANDLE provider;
 					NTVERIFY(BCryptOpenAlgorithmProvider(&provider, BCRYPT_SHA512_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0)); // Initialize the algorithm provider handle	
 					m_Provider.reset(provider); // Wrap the provider handle in a nice RAII class.
 					___Init();
 				}
-			private:
+
 				void ___Init(){
 					BCRYPT_HASH_HANDLE hash;
 					NTVERIFY(BCryptGetProperty(m_Provider.get(), BCRYPT_OBJECT_LENGTH, reinterpret_cast<PBYTE>(&dwHashObjectLen), sizeof(DWORD), &dwDataLen, 0)); // Calculate the hash object length so
@@ -364,7 +371,7 @@ namespace System{
 				{
 					if (!m_hash)
 						this->___Init();
-					 NTVERIFY(BCryptHashData(m_hash.get(), (PUCHAR) &data[0], unsigned long(data.size()), 0)); //Add data to our hash.
+                     NTVERIFY(BCryptHashData(m_hash.get(), (PUCHAR) &data[0], (unsigned long)data.size(), 0)); //Add data to our hash.
 				}
 
 				std::vector<byte> Finalise()
@@ -381,9 +388,7 @@ namespace System{
 				}
 
 			};
-            // usefull typedefs for the various BCrypt hashing algorthims provided
-            // by the stock microsoft provider. If anyone has created thier own
-            // provider feel to use this or extend it to your needs.
+
 			typedef HashImpl<___detail::MD2Type> CBCryptMD2;
 			typedef HashImpl<___detail::MD4Type> CBCryptMD4;
 			typedef HashImpl<___detail::MD5Type> CBCryptMD5;
@@ -395,7 +400,7 @@ namespace System{
 		};
 
 		namespace Symmetric{
-            // Symmetric hashing algorithim implimenation.
+
 			template<typename T>
 			class SymmetricImpl{
 				DWORD dwDataLen;
@@ -423,26 +428,24 @@ namespace System{
 						BCryptSetProperty(m_Provider.get(), BCRYPT_CHAINING_MODE, (PBYTE) BCRYPT_CHAIN_MODE_CBC, sizeof(BCRYPT_CHAIN_MODE_CBC), 0);
 
 				}
-				template<typename R, typename enable = void>
-				void __SymetricImpl(R)
-				{
-					static_assert(false, "Invalid SymmetricImpl Type");
-				}
-				template<tyepname R, std:::enable_if<std::is_same<R,___detail::AESType>::type>::type>
-				void __SymetricImpl(R)
+
+
+                template<typename R>
+                typename std::enable_if<std::is_same<R,___detail::AESType>::value,void>::type
+                __SymetricImpl(R)
 				{
 					BCRYPT_ALG_HANDLE handle;
 					if (BCryptOpenAlgorithmProvider(&handle, BCRYPT_AES_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0) >= 0){ m_Provider.reset(handle); __init(); }
 				}
 #if _WIN32_WINNT == _WIN32_WINNT_WIN8
-				template<tyepname R, std:::enable_if<std::is_same<R,___detail::AES_CMAC_Type>::type>::type>
-				void __SymetricImpl(R)
+                template<typename R>
+                typename std::enable_if<std::is_same<R,___detail::AES_CMAC_Type>::value,void>::type
+                __SymetricImpl(R)
 				{
 					BCRYPT_ALG_HANDLE handle;
 					if (BCryptOpenAlgorithmProvider(&handle, BCRYPT_AES_CMAC_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0) >= 0) { m_Provider.reset(handle); __init(); }
 				}
 #endif
-                //fix me.
 				/*template<>
 				void __SymetricImpl(AES_GMAC_Type)
 				{
@@ -452,26 +455,30 @@ namespace System{
 				}
 				}*/
 				
-				template<tyepname R, std:::enable_if<std::is_same<R,___detail::DESType>::type>::type>
-				void __SymetricImpl(R)
+                template<typename R>
+                typename std::enable_if<std::is_same<R,___detail::DESType>::value,void>::type
+                __SymetricImpl(R)
 				{
 					BCRYPT_ALG_HANDLE handle;
 					if (BCryptOpenAlgorithmProvider(&handle, BCRYPT_DES_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0) >= 0){ m_Provider.reset(handle); __init(); }
 				}
-				template<tyepname R, std:::enable_if<std::is_same<R,___detail::DES3Type>::type>::type>
-				void __SymetricImpl(R)
+                template<typename R>
+                typename std::enable_if<std::is_same<R,___detail::DES3Type>::value,void>::type
+                __SymetricImpl(R)
 				{
 					BCRYPT_ALG_HANDLE handle;
 					if (BCryptOpenAlgorithmProvider(&handle, BCRYPT_3DES_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0) >= 0){ m_Provider.reset(handle); __init(); }
 				}
-				template<tyepname R, std:::enable_if<std::is_same<R,___detail::RC2Type>::type>::type>
-				void __SymetricImpl(R)
+                template<typename R>
+                typename std::enable_if<std::is_same<R,___detail::RC2Type>::value,void>::type
+                __SymetricImpl(R)
 				{
 					BCRYPT_ALG_HANDLE handle;
 					if (BCryptOpenAlgorithmProvider(&handle, BCRYPT_RC2_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0) >= 0){ m_Provider.reset(handle); __init(); }
 				}
-				template<tyepname R, std:::enable_if<std::is_same<R,___detail::RC4Type>::type>::type>
-				void __SymetricImpl(R)
+                template<typename R>
+                typename std::enable_if<std::is_same<R,___detail::RC4Type>::value,void>::type
+                __SymetricImpl(R)
 				{
 					BCRYPT_ALG_HANDLE handle;
 					if (BCryptOpenAlgorithmProvider(&handle, BCRYPT_RC4_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0) >= 0) {
@@ -601,8 +608,7 @@ namespace System{
 				}
 			};
 
-// some usefull typedefs for the stock Bcrypt algorithims available with the
-// stock Microsoft provider.
+
 			typedef SymmetricImpl<___detail::AESType> CBCryptAES; //Standard: FIPS 197
 #if _WIN32_WINNT == _WIN32_WINNT_WIN8
 			typedef SymmetricImpl<___detail::AES_CMAC_Type> CBCryptAES_CMAC;

@@ -3,20 +3,52 @@
 #ifndef  __SYSTEM__
 #include "System.h"
 #endif
-#include <wrl.h>
+
+//#include <wrl.h>
 #include <ctype.h>
 #include <cwctype>
 #include <algorithm>
 #include <memory>
 #include <utility>
+#include <iterator>
+#include <type_traits>
+#include <cstddef>
+
+namespace std {
+    template<class T> struct _Unique_if {
+        typedef unique_ptr<T> _Single_object;
+    };
+
+    template<class T> struct _Unique_if<T[]> {
+        typedef unique_ptr<T[]> _Unknown_bound;
+    };
+
+    template<class T, size_t N> struct _Unique_if<T[N]> {
+        typedef void _Known_bound;
+    };
+
+    template<class T, class... Args>
+        typename _Unique_if<T>::_Single_object
+        make_unique(Args&&... args) {
+            return unique_ptr<T>(new T(std::forward<Args>(args)...));
+        }
+
+    template<class T>
+        typename _Unique_if<T>::_Unknown_bound
+        make_unique(size_t n) {
+            typedef typename remove_extent<T>::type U;
+            return unique_ptr<T>(new U[n]());
+        }
+
+    template<class T, class... Args>
+        typename _Unique_if<T>::_Known_bound
+        make_unique(Args&&...) = delete;
+}
 namespace System
 {
 	namespace Utility
 	{
-		using namespace Microsoft::WRL;
-        //unique_handle class from Kenny Kerr's
-        //dx.h project which can be found on CodePlex with a simple search for
-        //dx.h
+
 		template <typename Traits>
 		class unique_handle
 		{
@@ -185,18 +217,17 @@ namespace System
 		{
 			
 			auto front = std::find_if_not(std::begin(s), std::end(s), isspace);
-			auto back = std::find_if_not(std::rbegin(s), std::rend(s), isspace);
+            auto back = std::find_if_not(s.rbegin(), s.rend(), isspace);
 			return std::string{ front, back.base() };
 		}
 		
 		auto trim(std::wstring const & s)-> std::wstring
 		{
 			auto front = std::find_if_not(std::begin(s), std::end(s), iswspace);
-			auto back = std::find_if_not(std::rbegin(s), std::rend(s), iswspace);
+            auto back = std::find_if_not(s.rbegin(), s.rend(), iswspace);
 			return std::wstring{ front, back.base() };
 		}
 
-        //untested, possiably incomplete Memory Mapped File class.
 		struct MemMappedFile
 		{
 			
@@ -220,7 +251,7 @@ namespace System
 				m_last = std::move(other.m_last);
 				m_first = std::move(other.m_first);
 			}
-			MemMappedFile operator=(MemMappedFile&& other)
+            MemMappedFile* operator=(MemMappedFile&& other)
 			{
 				if (this != &other)
 				{
@@ -229,6 +260,7 @@ namespace System
 					m_first = std::move(other.m_first);
 					m_size = other.m_size;
 				}
+                return this;
 			}
 			auto swap(MemMappedFile& other) throw() -> void
 			{

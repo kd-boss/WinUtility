@@ -57,7 +57,7 @@ namespace System {
 	}
 #else
 #define _TRACE
-#define TRACE __noop
+#define TRACE
 #endif
 #endif
 }
@@ -70,26 +70,26 @@ namespace System {
 #endif
 #endif
 
-
-// system namespace, includes Information which is just typedef's to get around
-// the use of so many macro's, and extend the things that can be done with
-// template meta programming directly around the win32 api.
 namespace System 
 {
 	namespace Information{
 #ifdef UNICODE
 		typedef std::true_type isUnicode;
+#ifndef __GNUG__
 #ifdef DEBUG
 #pragma comment(lib,"comsuppwd.lib")
 #else
 #pragma comment(lib,"comsuppw.lib")
 #endif
+#endif
 #else
 		typedef std::false_type isUnicode;
+#ifndef __GNUG__
 #ifdef DEBUG
 #pragma comment(lib,"comsuppd.lib")
 #else
 #pragma comment(lib,"comsupp.lib")
+#endif
 #endif
 #endif
 
