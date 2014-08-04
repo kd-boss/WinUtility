@@ -1,8 +1,9 @@
 #ifndef __SYSTEM_UTILITY___
 #define __SYSTEM_UTILITY___
 #ifndef  __SYSTEM__
-#include "System.h"
+#error System.h must be included before System.Utility.h
 #endif
+
 
 //#include <wrl.h>
 #include <ctype.h>

@@ -14,6 +14,11 @@
 typedef BYTE byte;
 
 //usefull debugging macro's
+#if __cplusplus < 201103L
+#error This file requires compiler and library support for the \
+ISO C++ 2011 standard. This support is currently experimental, and must be \
+enabled with the -std=c++11 or -std=gnu++11 compiler options.
+#endif
 
 #ifndef ASSERT
 #define ASSERT(cond) _ASSERTE(cond)
@@ -93,13 +98,13 @@ namespace System
 #endif
 #endif
 
-#ifdef _M_X64
+#if defined(_M_X64) || defined(__x86_64__)
 		typedef std::true_type is64Bit;
 #endif
-#ifdef _M_IX86
+#if defined(_M_IX86) || defined(_X86_)
 		typedef std::false_type is64Bit;
 #endif
-#ifdef DEBUG
+#if defined(DEBUG) || defined(_DEBUG)
 		typedef std::true_type isDebug;
 #else
 		typedef std::false_type isDebug;
@@ -109,16 +114,20 @@ namespace System
 #else
 		typedef std::false_type hasExceptionHandeling;
 #endif
-#ifdef _CPPRTTI
+#if defined(_CPPRTTI) || defined(__GXX_RTTI)
 		typedef std::true_type hasRuntimeTypeInformation;
 #else
 		typedef std::false_type hasRuntimeTypeInformation;
 #endif
+#ifdef _MSC_VER
 #if(_HAS_ITERATOR_DEBUGGING == 1)
 		typedef std::true_type hasIteratorChecking;
 #else
 		typedef std::false_type hasIteratorChecking;
 #endif
+#endif
+
+#ifdef _MSC_VER
 #ifdef _CPPLIB_VER
 		typedef std::true_type hasStdLib;
 		typedef std::integral_constant<int, _CPPLIB_VER> StdVer;
@@ -126,12 +135,23 @@ namespace System
 		typedef std::false_type hasStdLib;
 		typedef std::integral_constant<int, 0> StdVer;
 #endif
+#else
+#ifdef __GLIBC__
+        typedef integral_constant<int,__GLIBC__> StdVer;
+#endif
+#ifdef __GNU_LIBRARY__
+        typedef integral_constant<int, __GNU_LIBRARY__> StdVer;
+#endif
+#endif
+#ifdef _MSC_VER
 #ifdef _DLL
 		typedef std::true_type hasMultiThreadedStd;
 #else
 		typedef std::false_type hasMutiThreadedStd;
 #endif
+
 		typedef std::integral_constant<int, _INTEGRAL_MAX_BITS> IntMaxBits;
+
 #if(_M_IX86_FP == 0)
 		typedef std::false_type hasSSE;
 		typedef std::false_type hasSSE2;
@@ -144,6 +164,27 @@ namespace System
 		typedef std::false_type hasSSE;
 		typedef std::true_type hasSSE2;
 #endif
+
+#else
+#ifdef __SSE__
+        typedef std::true_type hasSSE;
+#else
+        typedef std::false_type hasSEE;
+#endif
+#ifdef __SSE2__
+        typedef std::true_type hasSEE2;
+#else
+        typedef std::false_type hasSEE2;
+#endif
+
+#ifdef __SSE3__
+        typedef std::true_type hasSSE3;
+#else
+        typedef std::false_type hasSSE3;
+#endif
+
+#endif
+
 #ifdef NTDDI_VERSION
 		typedef std::integral_constant<long, NTDDI_VERSION>		WinVer;
 #else
