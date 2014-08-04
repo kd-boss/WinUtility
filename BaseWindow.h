@@ -10,22 +10,59 @@
 #include <windowsx.h>
 #include <olectl.h>
 #include <algorithm>
+#include <memory>
 
 #ifndef HINST_THISCOMPONENT
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
 #endif
 
+#ifndef __COM_EXCEPTION__
+#define __COM_EXCEPTION__
+struct COM_EXCEPTION {
+  const HRESULT res;
+  COM_EXCEPTION(HRESULT hr) : res(hr) {}
+  std::unique_ptr<PTSTR> what()
+  {
+      PTSTR errorText = NULL;
+
+      FormatMessage(
+         // use system message tables to retrieve error text
+         FORMAT_MESSAGE_FROM_SYSTEM
+         // allocate buffer on local heap for error text
+         |FORMAT_MESSAGE_ALLOCATE_BUFFER
+         // Important! will fail otherwise, since we're not
+         // (and CANNOT) pass insertion parameters
+         |FORMAT_MESSAGE_IGNORE_INSERTS,
+         NULL,    // unused with FORMAT_MESSAGE_FROM_SYSTEM
+         res,
+         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+         (LPTSTR)&errorText,  // output
+         0, // minimum size for output buffer
+         NULL);   // arguments - see note
+      std::unique_ptr<PTSTR> buff;
+      buff.reset(&errorText);
+      return buff;
+  }
+};
+#endif
+#ifndef __HR__
+#define __HR__
+void HR(HRESULT hr) {
+  if (hr != S_OK) throw COM_EXCEPTION(hr);
+}
+#endif
+
+
 namespace std{
+typedef std::basic_string<TCHAR> tstring;
 #ifdef UNICODE
-typedef wstring  tstring;
 template<typename T>
 tstring to_tstring(T t)
 {
     return to_wstring(t);
 }
 #else
-typedef  string tstring;
 template<typename T>
 tstring to_tstring(T t)
 {
@@ -53,6 +90,33 @@ struct Point {
   Point(LONG xx, LONG yy) : x(xx), y(yy) {}
   Point(LPARAM lParam) : x(GET_X_LPARAM(lParam)), y(GET_Y_LPARAM(lParam)) {}
 };
+
+struct Rect {
+    LONG left;
+    LONG top;
+    LONG right;
+    LONG bottom;
+    Rect(RECT r) : left(r.left),top(r.top),right(r.right),bottom(r.bottom) {}
+    Rect(RECT& r) : left(r.left),top(r.top),right(r.right),bottom(r.bottom) {}
+    LONG Width() { return right - left; }
+    LONG Height() { return bottom - top; }
+    Point Center() { return Point{left + (right - left) / 2,
+                                    top + (bottom - top) /  2}; }
+    operator RECT*() { return reinterpret_cast<RECT*>(this); } //for GetClientRect
+};
+
+Rect FixRect(const Rect rc){
+    return RECT{std::min(rc.left,rc.right),
+                std::min(rc.top,rc.bottom),
+                std::max(rc.left,rc.right),
+                std::max(rc.top,rc.bottom) };
+}
+
+bool HitTest(Rect r, Point pt)
+{
+    return (r.left <= pt.x) && (r.right >= pt.x) &&
+           (r.top  <= pt.y) && (r.bottom >= pt.y);
+}
 
 enum class AnimateType : DWORD {
   Activate = AW_ACTIVATE,
@@ -136,9 +200,9 @@ std::vector<CreateWndData> _wndData;
 #pragma pack(push, 1)
 struct _WndProcThunk {
   DWORD m_mov;  // mov dword ptr [esp+0x4], pThis (esp+0x4 is hWnd)
-  DWORD m_this;
-  BYTE m_jmp;       // jmp WndProc
-  DWORD m_relproc;  // relative jmp
+  DWORD m_this; // replaces hWnd pointer with the 'this' pointer on the parameter stack
+  BYTE m_jmp;       // jmp commmand
+  DWORD m_relproc;  // relative jmp (address of EndProc)
 };
 #pragma pack(pop)
 #endif
@@ -146,9 +210,9 @@ struct _WndProcThunk {
 #pragma pack(push, 2)
 struct _WndProcThunk {
   USHORT m_raxMov;  // mov rcx,[pthis]
-  ULONG64 m_raxImm;
+  ULONG64 m_raxImm; // [pthis]
   USHORT m_rcxMov;  // mov rax ,[proc]
-  ULONG64 m_rcxImm;
+  ULONG64 m_rcxImm; // [proc]
   USHORT m_raxJmp;  // jmp rax
 };
 #pragma pack(pop)
@@ -160,7 +224,7 @@ class WndProcThunk {
   _WndProcThunk *thunk;  // for x86_64 we need to VirtualAlloc the thunk code,
                          // and make the page executable
 #else
-  _WndProcThunk thunk;         // for x86 we need only to stack allocate it.
+  _WndProcThunk thunk;         // for x86 we need only to stack allocate it, which fails at runtime with msvc.
 #endif
   void Init(WNDPROC proc, void *pThis) {
 #ifdef __x86_64__
@@ -244,24 +308,23 @@ class BaseWindow {
   static LRESULT CALLBACK
       WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     // This function is only called ONCE, on the FIRST message a window recieves
-    // during creation.
-    // which is WM_GETMINMAXINFO. So the use of a the standard library container
-    // to store the this pointer
-    // and then search for it is extremely negligable in the performance of this
-    // library, as it only occurs
-    // during window creation. This may slow down initalization of your
-    // application, but if it does it will not
-    // be a measurable amount until you start adding more than one thread in
-    // which windows are created.
+    // during creation which is WM_GETMINMAXINFO. So the use of a the standard
+    // library container to store the class pointer and then search for it is
+    // extremely negligable in the performance of this library, as it only occurs
+    // during window creation. This may slow down initalization of your application,
+    // but if it does it will not be a measurable amount until you start adding more
+    // than one thread in which tremendious amounts of windows are created. And in
+    // that case performance degridation is to be expected because of the necessity
+    // of allocating system resources. Most likely the critical section will be the
+    // dominating factor if performance degridation is observed, as the search is
+    // performed from the reverse end of the container (ie, last inserted).
     // The thunk applied to the window procedure completely replaces the window
-    // procedure with EndProc. After the thunk
-    // is inserted into the windows memory, subsequent calls to the
-    // windowprocedure by windows will invoke
-    // the EndProc function with the HWND paramater replaced the 'this' pointer,
-    // as the 'this' pointer is stored
-    // in the thunk. This is a form of dynamic code execution, currently only
-    // supported on x86 and x86_64
-    // archtecures for MinGW/MinGW64.
+    // procedure with EndProc. After the thunk is inserted into the windows memory,
+    // subsequent calls to the windowprocedure by windows will invoke the EndProc
+    // function with the HWND paramater replaced with the class pointer. This is
+    // dynamic code execution, currently only supported on x86 and x86_64
+    // archtecures for MinGW/MinGW64 with this library.
+
     CriticalSectionLock lock(_wndCS);
     auto ret =
         find_if(_wndData.rbegin(), _wndData.rend(), [&](CreateWndData &dat) {
@@ -831,7 +894,7 @@ class BaseWindow {
 /// void OnCompacting(float CpuUsage)
 /// Remarks: When an application receives this message, it should free as
 /// much memory as possible, taking into account the current level of activity
-/// of the application andthe total number of applications running on the
+/// of the application and the total number of applications running on the
 /// system.
 #define MSG_WM_COMPACTING(thefunc)            \
   case WM_COMPACTING:                         \
