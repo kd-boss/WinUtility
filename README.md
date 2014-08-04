@@ -4,7 +4,7 @@ Utility
 First a few points.
 
 1) this folder and read me is my way of communicating to you what this project is about, and to help me keep track of all
-   the things still neeeded to be done, obviously.
+   the things still needed to be done, obviously.
 2) Please read all of it, as the code is not well organized (I did it in a very big hurry), so your educated about 
 the project before really digging into the not so pretty code.
 
