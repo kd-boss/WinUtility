@@ -74,7 +74,7 @@ namespace System{
 		}
 		struct nt_error
 		{
-			std::wstring error_text;
+			std::basic_string<LPTSTR> error_text;
 			NTSTATUS error;
 			nt_error(NTSTATUS stat)
 			{

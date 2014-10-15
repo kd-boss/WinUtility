@@ -10,7 +10,7 @@
 struct sLocalFree
 {
     void
-    operator()(WCHAR** buff)
+    operator()(TCHAR** buff)
     {
         ::LocalFree((HLOCAL)*buff);
     }

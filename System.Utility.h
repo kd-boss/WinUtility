@@ -14,7 +14,7 @@
 #include <iterator>
 #include <type_traits>
 #include <cstddef>
-
+/* 
 namespace std {
     template<class T> struct _Unique_if {
         typedef unique_ptr<T> _Single_object;
@@ -44,7 +44,7 @@ namespace std {
     template<class T, class... Args>
         typename _Unique_if<T>::_Known_bound
         make_unique(Args&&...) = delete;
-}
+} */
 namespace System
 {
 	namespace Utility
@@ -229,7 +229,7 @@ namespace System
 			return std::wstring{ front, back.base() };
 		}
 
-		struct MemMappedFile
+		/* struct MemMappedFile
 		{
 			
 			null_handle m_map;
@@ -347,7 +347,7 @@ namespace System
 			{
 				return m_size.QuadPart;
 			}
-		};
+		}; */
 
 	};
 

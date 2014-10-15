@@ -66,7 +66,7 @@ tstring to_tstring(T t)
 template<typename T>
 tstring to_tstring(T t)
 {
-    return to_wstring(t);
+    return to_string(t);
 }
 #endif
 }
@@ -98,6 +98,7 @@ struct Rect {
     LONG bottom;
     Rect(RECT r) : left(r.left),top(r.top),right(r.right),bottom(r.bottom) {}
     Rect(RECT& r) : left(r.left),top(r.top),right(r.right),bottom(r.bottom) {}
+    Rect() : left(0),top(0),right(0),bottom(0) {}
     LONG Width() { return right - left; }
     LONG Height() { return bottom - top; }
     Point Center() { return Point{left + (right - left) / 2,
@@ -280,11 +281,11 @@ class BaseWindow {
       LRESULT lres = ((TBase *)hwnd)->HandleMessage(msg, wParam, lParam);
 #ifdef __x86_64__
       // unsubclass if necessairy
-      if (((TBase *)hwnd)->oldproc != ((TBase *)hwnd)->m_thunk.thunk &&
-          ::GetWindowLongPtr(((TBase *)hwnd)->m_hwnd, GWLP_WNDPROC) ==
-              ((TBase *)hwnd)->m_thunk.thunk) {
+      if ( (WNDPROC)((TBase *)hwnd)->oldProc != (WNDPROC)((TBase *)hwnd)->m_thunk.thunk &&
+          ((WNDPROC)::GetWindowLongPtr(((TBase *)hwnd)->m_hwnd, GWLP_WNDPROC)) ==
+           ((WNDPROC)((TBase *)hwnd)->m_thunk.thunk) ){
         ::SetWindowLongPtr(((TBase *)hwnd)->m_hwnd, GWLP_WNDPROC,
-                           (LONG_PTR)((TBase *)hwnd)->oldproc);
+                           (LONG_PTR)((TBase *)hwnd)->oldProc);
         return lres;
       }
 #else
@@ -336,7 +337,7 @@ class BaseWindow {
       pThis->m_thunk.Init(EndProc, pThis);
 #ifdef __x86_64__
       WNDPROC pProc = (WNDPROC)(pThis->m_thunk.thunk);
-      pThis->oldproc =
+      pThis->oldProc =
           (WNDPROC)::SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)pProc);
 #else
       WNDPROC pProc = (WNDPROC) & (pThis->m_thunk.thunk);
@@ -471,7 +472,7 @@ class BaseWindow {
  public:
   BaseWindow() : m_hwnd(nullptr) {}
 
-  HRESULT Create(PCWSTR lpWindowName, HWND hWndParent = 0, DWORD dwStyle = 0,
+  HRESULT Create(PCTSTR lpWindowName, HWND hWndParent = 0, DWORD dwStyle = 0,
                  DWORD dwExStyle = 0, int x = CW_USEDEFAULT,
                  int y = CW_USEDEFAULT, int nWidth = CW_USEDEFAULT,
                  int nHeight = CW_USEDEFAULT, HMENU hMenu = 0,
@@ -861,7 +862,7 @@ class BaseWindow {
 #define MSG_WM_ACTIVATEAPP(thefunc) \
   case WM_ACTIVATEAPP:              \
     if (!bhandled) SetHandled();    \
-    thefunc((bool)wParam, (UINT)lParam) return (bhandled == true) ? 0 : 1;
+    thefunc((bool)wParam, (UINT)lParam); return (bhandled == true) ? 0 : 1;
 
 /// void OnCreate(LPCREATESTRUCT lpCreate)
 #define MSG_WM_CREATE(thefunc)       \
@@ -910,8 +911,8 @@ class BaseWindow {
     return (bhandled == true) ? 0 : 1;
 
 /// void OnEnable(bool EnabledState)
-/// EnabledState determins if the winodow has been enabled or disabled
-/// the paramater is TRUE if it's been enabled, FALSE otherwise
+/// EnabledState determines if the window has been enabled or disabled
+/// the parameter is TRUE if it's been enabled, FALSE otherwise
 #define MSG_WM_ENABLED(thefunc)  \
   case WM_ENABLED:               \
     if (!bhandled) SetHandled(); \
@@ -937,8 +938,9 @@ class BaseWindow {
   case WM_GETMINMAXINFO:              \
     if (!bhandled) SetHandled();      \
     thefunc((LPMINMAXINFO)lParam);    \
-    \ return (bhandled == true) ? 0 : 1;
+    return (bhandled == true) ? 0 : 1;
 
+// void OnInputLanguageChange(    
 /// void OnMove(const Point& pt)
 #define MSG_WM_MOVE(thefunc)     \
   case WM_MOVE:                  \
