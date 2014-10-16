@@ -1,9 +1,9 @@
 /*
     WinTest, Small Demo application that creates a user interface window.
     release build - compile with :
-        g++ wintest.cpp -std=c++1y -municode -mwindows -static -s -O3 -ld2d1 -o wintest.exe
+        g++ wintest.cpp -std=c++11 -municode -mwindows -static -s -O3 -ld2d1 -o wintest.exe
     debug build - compile with :
-        g++ wintest.cpp -std=c++1y -municode -mwindows -g -ld2d1 -o wintest.exe
+        g++ wintest.cpp -std=c++11 -municode -mwindows -g -ld2d1 -o wintest.exe
 */
 
 

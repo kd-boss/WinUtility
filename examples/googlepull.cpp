@@ -3,9 +3,9 @@
     Downloads , displays, and saves the html from google's homepage as out.html.
     
     release build - compile with :
-        g++ googlepull.cpp -std=c++1y -s -O3 -municode -luser32 -lSecur32 -lcrypt32 -lws2_32 -o googlepull.exe
+        g++ googlepull.cpp -std=c++11 -s -O3 -municode -luser32 -lSecur32 -lcrypt32 -lws2_32 -o googlepull.exe
     debug build - compile with :
-        g++ googlepull.cpp -std=c++1y -g -municode -luser32 -lSecur32 -lcrypt32 -lws2_32 -o googlepull.exe
+        g++ googlepull.cpp -std=c++11 -g -municode -luser32 -lSecur32 -lcrypt32 -lws2_32 -o googlepull.exe
 */
 
 #define SECURITY_WIN32

@@ -1,10 +1,10 @@
 /*
-De-duplicator, compile with a c++ 14 standards compliant compiler, currently only supported entirely by 
+De-duplicator, compile with a c++ 11 standards compliant compiler, currently only supported entirely by 
 g++ from the mingw64 project using specificity the mingw-builds 64 bit structured exception handling(seh) win32 threads tool-chain. 
 http://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/4.9.1/threads-win32/seh/x86_64-4.9.1-release-win32-seh-rt_v3-rev1.7z
 
 Libraries used:
-Boost file system(boost.org) (use until c++ 14 (boost file system will be included in c++ 14's std library)
+Boost file system(boost.org) (use until c++ 11 (boost file system will be included in c++ 14's std library)
 Utility ( https://github.com/kd-boss/Utility )  while there's other libraries for SHA256, this is just a very thin wrapper over the
                                                 windows api, and as such introduces almost NO overhead at runtime. Even more importantly,
                                                 it's header only, so no compiling required, just include it in code and link to the appropriate
@@ -21,7 +21,7 @@ release build - libboost_whatever-mt-49-1_56.lib to libboost_whatever.lib
 
 5) make sure Utility headers are installed in %mingwfolder%/x86_64-w64-mingw32/include/utility
 6) compile with the following:
-g++ deduplicate.cpp -static -std=c++1y -O3 -llibboost_filesystem -llibboost_system -lcrypt32 -lbcrypt -o deduplicate.exe
+g++ deduplicate.cpp -static -std=c++11 -O3 -llibboost_filesystem -llibboost_system -lcrypt32 -lbcrypt -o deduplicate.exe
 
 This utility works very well with non system folders (ie music, movie, pictures , general file folders), but do not run the
 output of this utility on any system folders or installed program locations. 
