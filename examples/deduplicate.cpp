@@ -4,7 +4,7 @@ g++ from the mingw64 project using specificity the mingw-builds 64 bit structure
 http://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/4.9.1/threads-win32/seh/x86_64-4.9.1-release-win32-seh-rt_v3-rev1.7z
 
 Libraries used:
-Boost file system(boost.org) (use until c++ 11 (boost file system will be included in c++ 14's std library)
+Boost file system(boost.org)                   (boost file system will be included in c++ 14's std library)
 Utility ( https://github.com/kd-boss/Utility )  while there's other libraries for SHA256, this is just a very thin wrapper over the
                                                 windows api, and as such introduces almost NO overhead at runtime. Even more importantly,
                                                 it's header only, so no compiling required, just include it in code and link to the appropriate
