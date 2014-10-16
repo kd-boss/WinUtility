@@ -14,7 +14,9 @@
 #include <iterator>
 #include <type_traits>
 #include <cstddef>
-/* 
+
+#ifdef __GNUC__ 
+#if __cplusplus <= 201103L 
 namespace std {
     template<class T> struct _Unique_if {
         typedef unique_ptr<T> _Single_object;
@@ -44,7 +46,10 @@ namespace std {
     template<class T, class... Args>
         typename _Unique_if<T>::_Known_bound
         make_unique(Args&&...) = delete;
-} */
+} 
+#endif
+#endif
+
 namespace System
 {
 	namespace Utility
