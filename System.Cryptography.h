@@ -518,7 +518,9 @@ namespace System{
 						}
 					}
 					else{
-						m_pbIV[0] = IvData[0];
+                            m_pbIV.resize(IvData.size());
+							std::copy(begin(IvData), end(IvData), &m_pbIV[0]);
+							dwIvLen = static_cast<DWORD>(IvData.size());
 					}
 
 				}
