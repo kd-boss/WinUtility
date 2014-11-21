@@ -252,7 +252,7 @@ class WndProcThunk {
                                                           // structure.
     ::FlushInstructionCache(::GetCurrentProcess(), &thunk,
                             sizeof(_WndProcThunk));
-// actuall assembly generation is as follows due to __stdcall calling
+// actual assembly generation is as follows due to __stdcall calling
 // conventions on x86:
 // mov eax,this
 // call BaseWindow::WindowProc (who's address is replaced as the beginning of
@@ -742,7 +742,7 @@ class BaseWindow {
     }
     m_largeIcon = icon;
 
-    // Ignore the return value which is the handle to the prev. icon
+    // Ignore the return value which is the handle to the previous icon
     ::SendMessage(m_hwnd, WM_SETICON, ICON_BIG, MAKELPARAM(icon, 0));
     return S_OK;
   }
@@ -756,7 +756,7 @@ class BaseWindow {
     }
     m_smallIcon = icon;
 
-    // Ignore the return value which is the handle to the prev. icon
+    // Ignore the return value which is the handle to the previous icon
     ::SendMessage(m_hwnd, WM_SETICON, ICON_SMALL, MAKELPARAM(icon, 0));
     return S_OK;
   }
