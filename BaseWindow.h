@@ -242,7 +242,7 @@ class WndProcThunk {
 #else
     thunk.m_mov = 0x042444C7;  // x86 op code : mov eax, DWORD_PTR this
     thunk.m_this = (ULONG_PTR)(ULONG) pThis;  // this
-    thunk.m_jmp = 0xe9;  // x86 op code  : jmp relproc  (relproc is calulated to
+    thunk.m_jmp = 0xe9;  // x86 op code  : jmp relproc  (relproc is calculated to
                          // be the address at the end of this structure)
     thunk.m_relproc =
         DWORD((INT_PTR)proc -
@@ -257,7 +257,7 @@ class WndProcThunk {
 // mov eax,this
 // call BaseWindow::WindowProc (who's address is replaced as the beginning of
 // the jmp instruction in this struct)
-// sub eax,al (from the arugment stack) (replacing HWND with the this ptr)
+// sub eax,al (from the argument stack) (replacing HWND with the this ptr)
 // jmp  BaseWindow::EndProc
 #endif
   }
@@ -280,7 +280,7 @@ class BaseWindow {
     if (msg == WM_NCDESTROY) {
       LRESULT lres = ((TBase *)hwnd)->HandleMessage(msg, wParam, lParam);
 #ifdef __x86_64__
-      // unsubclass if necessairy
+      // unsubclass if necessary
       if ( (WNDPROC)((TBase *)hwnd)->oldProc != (WNDPROC)((TBase *)hwnd)->m_thunk.thunk &&
           ((WNDPROC)::GetWindowLongPtr(((TBase *)hwnd)->m_hwnd, GWLP_WNDPROC)) ==
            ((WNDPROC)((TBase *)hwnd)->m_thunk.thunk) ){
@@ -308,23 +308,23 @@ class BaseWindow {
 
   static LRESULT CALLBACK
       WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    // This function is only called ONCE, on the FIRST message a window recieves
+    // This function is only called ONCE, on the FIRST message a window receives
     // during creation which is WM_GETMINMAXINFO. So the use of a the standard
     // library container to store the class pointer and then search for it is
-    // extremely negligable in the performance of this library, as it only occurs
-    // during window creation. This may slow down initalization of your application,
+    // extremely negligible in the performance of this library, as it only occurs
+    // during window creation. This may slow down initialization of your application,
     // but if it does it will not be a measurable amount until you start adding more
-    // than one thread in which tremendious amounts of windows are created. And in
-    // that case performance degridation is to be expected because of the necessity
+    // than one thread in which tremendous amounts of windows are created. And in
+    // that case performance degradation is to be expected because of the necessity
     // of allocating system resources. Most likely the critical section will be the
-    // dominating factor if performance degridation is observed, as the search is
+    // dominating factor if performance degradation is observed, as the search is
     // performed from the reverse end of the container (ie, last inserted).
     // The thunk applied to the window procedure completely replaces the window
     // procedure with EndProc. After the thunk is inserted into the windows memory,
     // subsequent calls to the windowprocedure by windows will invoke the EndProc
-    // function with the HWND paramater replaced with the class pointer. This is
+    // function with the HWND parameter replaced with the class pointer. This is
     // dynamic code execution, currently only supported on x86 and x86_64
-    // archtecures for MinGW/MinGW64 with this library.
+    // architectures for MinGW/MinGW64 with this library.
 
     CriticalSectionLock lock(_wndCS);
     auto ret =
@@ -402,19 +402,19 @@ class BaseWindow {
         }
         break;
       case WM_DRAWITEM:
-        if (wParam)  // not froma  menu
+        if (wParam)  // not from a menu
           hchild = reinterpret_cast<LPDRAWITEMSTRUCT>(lParam)->hwndItem;
         break;
       case WM_MEASUREITEM:
-        if (wParam)  // not froma  menu
+        if (wParam)  // not from a menu
           hchild = GetDlgItem(m_hwnd, ((LPMEASUREITEMSTRUCT)wParam)->CtlID);
         break;
       case WM_COMPAREITEM:
-        if (wParam)  // not froma  menu
+        if (wParam)  // not from a menu
           hchild = reinterpret_cast<LPCOMPAREITEMSTRUCT>(wParam)->hwndItem;
         break;
       case WM_DELETEITEM:
-        if (wParam)  // not froma  menu
+        if (wParam)  // not from a menu
           hchild = reinterpret_cast<DELETEITEMSTRUCT *>(lParam)->hwndItem;
         break;
       case WM_VKEYTOITEM:
