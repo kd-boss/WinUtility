@@ -15,14 +15,15 @@
 #include <olectl.h>
 
 
-//Drag in the standard library. All of it.
+//Drag in the standard library.
+#include <type_traits>
 #include <vector>
 #include <string>
 #include <sstream>
 #include <algorithm>
 #include <exception>
+#include <stdlib.h>
 #include <comdef.h>
-
 #ifndef __HRESULT_FROM_WIN32
 #define __HRESULT_FROM_WIN32(x) ((HRESULT)(x) <= 0 ? ((HRESULT)(x)) : ((HRESULT) (((x) & 0x0000FFFF) | (FACILITY_WIN32 << 16) | 0x80000000)))
 #endif
@@ -40,8 +41,15 @@ void HR(HRESULT hr) {
 }
 #endif
 
-class URECT
-{
+#ifndef _tcslen(x)
+#if UNICODE
+#define _tcslen(x) wcslen(x)
+#else
+#define _tcslen(x) strlen(x)
+#endif
+#endif
+		
+class URECT{
 	LPRECT m_lpRect;
 public:
 	URECT() : m_lpRect(nullptr) {}
@@ -56,8 +64,7 @@ public:
 	LPRECT Get() { return m_lpRect; }
 };
 
-class UMenuOrID
-{
+class UMenuOrID{
 	HMENU m_hMenu;
 public:
 	UMenuOrID() : m_hMenu(nullptr) {}
@@ -72,8 +79,7 @@ public:
 	HMENU Get() { return m_hMenu; }
 };
 
-class UStringOrId
-{
+class UStringOrId{
 	LPCTSTR m_lpstr;
 public:
 	UStringOrId() : m_lpstr(nullptr) {}
@@ -88,14 +94,12 @@ public:
 	LPCTSTR Get() { return m_lpstr; }
 };
 
-
 #ifdef SetWindowLongPtrA
 #undef SetWindowLongPtrA
 inline LONG_PTR SetWindowLongPtrA(
 	_In_ HWND hWnd,
 	_In_ int nIndex,
-	_In_ LONG_PTR dwNewLong)
-{
+	_In_ LONG_PTR dwNewLong){
 	return( ::SetWindowLongA( hWnd, nIndex, LONG( dwNewLong ) ) );
 }
 #endif
@@ -105,8 +109,7 @@ inline LONG_PTR SetWindowLongPtrA(
 inline LONG_PTR SetWindowLongPtrW(
 	_In_ HWND hWnd,
 	_In_ int nIndex,
-	_In_ LONG_PTR dwNewLong)
-{
+	_In_ LONG_PTR dwNewLong){
 	return( ::SetWindowLongW( hWnd, nIndex, LONG( dwNewLong ) ) );
 }
 #endif
@@ -115,8 +118,7 @@ inline LONG_PTR SetWindowLongPtrW(
 #undef GetWindowLongPtrA
 inline LONG_PTR GetWindowLongPtrA(
 	_In_ HWND hWnd,
-	_In_ int nIndex)
-{
+	_In_ int nIndex){
 	return( ::GetWindowLongA( hWnd, nIndex ) );
 }
 #endif
@@ -125,8 +127,7 @@ inline LONG_PTR GetWindowLongPtrA(
 #undef GetWindowLongPtrW
 inline LONG_PTR GetWindowLongPtrW(
 	_In_ HWND hWnd,
-	_In_ int nIndex)
-{
+	_In_ int nIndex){
 	return( ::GetWindowLongW( hWnd, nIndex ) );
 }
 #endif
@@ -173,8 +174,6 @@ public:
   Rect operator-(const RECT* other) const;
   void SetSize(int CX, int CY);
 };
-
-
 
 class Point : public tagPOINT {
 public:
@@ -224,7 +223,7 @@ public:
   operator LPRECT();
   operator LPCRECT();
   BOOL IsRectEmpty() const;
-  BOOL IsRectNull() const;
+  BOOL IsRectnullptr() const;
   BOOL PtInRect(POINT point) const;
   void SetRect(int x1, int y1, int x2, int y2);
   void SetRect(POINT topLeft, POINT bottomRight);
@@ -309,12 +308,9 @@ inline Rect Point::operator+(const RECT* pother) const { return Rect{pother} + *
 inline Rect Point::operator-(const RECT* pother) const { return Rect{pother} + *this; }
 
 inline Rect::Rect() { left = 0; top =0 ; right = 0; bottom = 0; }
-
 inline Rect::Rect(int l, int t, int r, int b) 
 { left = l; top = t; right = r; bottom = b; }
-
 inline Rect::Rect(const RECT &rc) { ::CopyRect(this,&rc); }
-
 inline Rect::Rect(LPCRECT lpr) { ::CopyRect(this,lpr); }
 
 inline Rect::Rect(POINT p, SIZE s) {
@@ -383,7 +379,7 @@ inline BOOL Rect::IsRectEmpty() const{
 	return ::IsRectEmpty(this);
 }
 
-inline BOOL Rect::IsRectNull() const{
+inline BOOL Rect::IsRectnullptr() const{
 	return (left ==0 && right == 0 && top == 0 && bottom == 0);
 }
 
@@ -612,11 +608,8 @@ inline Rect Rect::MulDiv(int Multiplier, int Divisor) const{
 			 ::MulDiv(bottom, Multiplier, Divisor)};
 }
 
-
-inline void WINCHECK(HWND hWnd)
-{
-	if(!::IsWindow(hWnd))
-	{
+inline void WINCHECK(HWND hWnd){
+	if(!::IsWindow(hWnd)){
 		MessageBox(nullptr,
 		TEXT("Function Called on an Improperly Created Window Class. Ensure that Window::Create is called, and succeeds to prevent this assertion."),
 		TEXT("Runtime Assertion! Invalid Window Handle (HWND)"),MB_OK | MB_ICONERROR);
@@ -624,10 +617,8 @@ inline void WINCHECK(HWND hWnd)
 	}
 }
 
-inline void WINASSERT(bool val)
-{
-	if(!val)
-	{
+inline void WINASSERT(bool val){
+	if(!val){
 		MessageBox(nullptr,
 		TEXT("Debugging Assertion FAILED!"),
 		TEXT("Runtime Assertion!"),MB_OK | MB_ICONERROR);
@@ -635,10 +626,8 @@ inline void WINASSERT(bool val)
 	}
 }
 
-inline void WINTRACE(bool val,LPTSTR text)
-{
-	if(!val)
-	{
+inline void WINTRACE(bool val,LPTSTR text){
+	if(!val){
 		MessageBox(nullptr,
 		text,
 		TEXT("Runtime Trace: "),MB_OK | MB_ICONINFORMATION);
@@ -689,20 +678,29 @@ static WNDCLASSEX GetWinClassInfo() \
 }\
 static LPTSTR GetWinClassName() { return WndClassName; }
 
-class Window
-{
+enum class AnimateType : DWORD {
+  Activate = AW_ACTIVATE,
+  ActivateBlend = AW_ACTIVATE | AW_BLEND,
+  ActivateCenter = AW_ACTIVATE | AW_CENTER,
+  Blend = AW_BLEND,
+  Center = AW_CENTER,
+  Hide = AW_HIDE,
+  HideCenter = AW_HIDE | AW_CENTER,
+  HideBlend = AW_HIDE | AW_BLEND,
+  SlideRight = AW_SLIDE | AW_HOR_POSITIVE,
+  SlideLeft = AW_SLIDE | AW_HOR_NEGATIVE,
+  SlideUp = AW_SLIDE | AW_VER_POSITIVE,
+  SlideDown = AW_SLIDE | AW_VER_NEGATIVE
+};
 
-
+class Window{
 public:
 	static RECT rcDefault;
 	HWND m_hwnd;
 	Window(HWND hWnd = nullptr) : m_hwnd(hWnd){}
-	
 	Window(Window& other) = default;
 	Window(Window&& other) = default;
-	
-	Window& operator=(HWND hWnd)
-	{
+	Window& operator=(HWND hWnd){
 		m_hwnd = hWnd;
 		return *this;
 	}
@@ -710,18 +708,15 @@ public:
 	Window& operator=(Window&) = default;
 	Window& operator=(Window&&) = default;
 	
-	static LPCTSTR GetWndClassName()
-	{
+	static LPCTSTR GetWndClassName(){
 		return nullptr;
 	}
 	
-	void Attach(HWND hWndNew = nullptr)
-	{
+	void Attach(HWND hWndNew = nullptr){
 		m_hwnd = hWndNew;
 	}
 	
-	HWND Detach()
-	{
+	HWND Detach(){
 		HWND hWnd = m_hwnd;
 		m_hwnd = nullptr;
 		return hWnd;
@@ -735,59 +730,50 @@ public:
 	DWORD dwStyle = 0,
 	DWORD dwExStyle = 0,
 	HMENU menu = nullptr,
-	LPVOID lpCreateParam = nullptr)
-	{
-		
+	LPVOID lpCreateParam = nullptr){
 		m_hwnd = ::CreateWindowEx(dwExStyle,lpstrWndClass,szWindowName,
 		dwStyle,rect.left,rect.top,rect.right - rect.left, rect.bottom - rect.top,
 		hWndParant,menu,HINST_THISCOMPONENT,lpCreateParam);
 		return m_hwnd;
 	}
 	
-	BOOL DestroyWindow()
-	{	
+	BOOL DestroyWindow(){	
 		WINCHECK(m_hwnd);
 		if(!::DestroyWindow(m_hwnd))
 			return FALSE;
 			
 		m_hwnd = nullptr;
-		return S_OK;
+		return TRUE;
 	}
 	
 	operator HWND() const{ return m_hwnd; }
 	
-	DWORD GetStyle() const
-	{
+	DWORD GetStyle() const{
 		WINCHECK(m_hwnd);
 		return (DWORD) ::GetWindowLong(m_hwnd,GWL_STYLE);
 	}
 	
-	DWORD GetExStyle() const
-	{
+	DWORD GetExStyle() const{
 		WINCHECK(m_hwnd);
 		return (DWORD) ::GetWindowLong(m_hwnd, GWL_EXSTYLE);
 	}
 	
-	LONG GetWindowLong(int nIndex) const
-	{
+	LONG GetWindowLong(int nIndex) const{
 		WINCHECK(m_hwnd);
 		return ::GetWindowLong(m_hwnd, nIndex);
 	}
 	
-	LONG_PTR GetWindowLongPtr(int nIndex) const
-	{
+	LONG_PTR GetWindowLongPtr(int nIndex) const{
 		WINCHECK(m_hwnd);
 		return ::GetWindowLongPtr(m_hwnd,nIndex);
 	}
 
-	LONG SetWindowLong(int nIndex, LONG dwNewLong)
-	{
+	LONG SetWindowLong(int nIndex, LONG dwNewLong){
 		WINCHECK(m_hwnd);
 		return ::SetWindowLong(m_hwnd,nIndex,dwNewLong);
 	}
 		
-	HRESULT SetWindowLong(int nIndex, LONG dwNewLong, LONG& oldLong)
-	{
+	HRESULT SetWindowLong(int nIndex, LONG dwNewLong, LONG& oldLong){
 		WINCHECK(m_hwnd);
 		oldLong = ::SetWindowLong(m_hwnd,nIndex,dwNewLong);
 		if(oldLong == 0){
@@ -797,66 +783,52 @@ public:
 		}
 	}
 
-	LONG_PTR SetWindowLongPtr(int nIndex, LONG_PTR dwNewLong)
-	{
+	LONG_PTR SetWindowLongPtr(int nIndex, LONG_PTR dwNewLong){
 		WINCHECK(m_hwnd);
 		return ::SetWindowLongPtr(m_hwnd,nIndex,dwNewLong);
 	}
 	
-	LRESULT SendMessage(UINT msg, WPARAM wParam = 0, LPARAM lParam = 0)
-	{		
+	LRESULT SendMessage(UINT msg, WPARAM wParam = 0, LPARAM lParam = 0){		
 		WINCHECK(m_hwnd);
 		return ::SendMessage(m_hwnd,msg,wParam,lParam);
 	}
 	
-	BOOL PostMessage(UINT msg, WPARAM wParam = 0, LPARAM lParam = 0)
-	{
+	BOOL PostMessage(UINT msg, WPARAM wParam = 0, LPARAM lParam = 0){
 		WINCHECK(m_hwnd);
 		return ::PostMessage(m_hwnd,msg, wParam,lParam);
 	}
 	
-	BOOL SendNotifyMessage(UINT msg, WPARAM wParam, LPARAM lParam)
-	{
+	BOOL SendNotifyMessage(UINT msg, WPARAM wParam, LPARAM lParam){
 		 WINCHECK(m_hwnd);
 		 return ::SendNotifyMessage(m_hwnd,msg,wParam,lParam);
 	}
 	
-	BOOL SetWindowText(LPCTSTR lpszString)
-	{	
+	BOOL SetWindowText(LPCTSTR lpszString){	
 		WINCHECK(m_hwnd);
 		return ::SetWindowText(m_hwnd,lpszString);
 	}
 	
-	int GetWindowTextLength() const
-	{
+	int GetWindowTextLength() const{
 		WINCHECK(m_hwnd);
 		return ::GetWindowTextLength(m_hwnd);
 	}
 	
-	int GetWindowText(LPTSTR lpszString, int BuffLen)
-	{
+	int GetWindowText(LPTSTR lpszString, int BuffLen){
 		WINCHECK(m_hwnd);
 		return ::GetWindowText(m_hwnd,lpszString,BuffLen);
 	}
 	
-	HRESULT GetWindowText(std::tstring& str)
-	{
+	HRESULT GetWindowText(std::tstring& str){
 		HRESULT hr = S_OK;
 		int txtlen = GetWindowTextLength();
-			try
-			{
-				if(txtlen + 1 <= str.max_size())
-				{
+			try{
+				if(txtlen + 1 <= str.max_size()){
 					str.resize(txtlen + 1);
-				}
-				else
-				{
+				}else{
 					str.resize(str.max_size());
 				}
-				
 				int got = ::GetWindowText(m_hwnd,&str[0],str.length());
-				if(got == 0)
-				{
+				if(got == 0){
 					int errval = GetLastError();
 					if(errval == 0)
 						return S_OK;
@@ -865,64 +837,54 @@ public:
 				}
 				return S_OK;
 			}
-			catch(std::bad_alloc e)
-			{
+			catch(std::bad_alloc e){
 				return __HRESULT_FROM_WIN32(ERROR_OUTOFMEMORY);
 			}
 			return S_OK;
 	}
 	
-	void SetFont(HFONT hFont, BOOL bRedraw = TRUE)
-	{
+	void SetFont(HFONT hFont, BOOL bRedraw = TRUE){
 		WINCHECK(m_hwnd);
 		::SendMessage(m_hwnd,WM_SETFONT,reinterpret_cast<WPARAM>(hFont),
 		MAKELPARAM(bRedraw,0)); 
 	}
 	
-	HFONT GetFont() const
-	{
+	HFONT GetFont() const{
 		WINCHECK(m_hwnd);
 		return reinterpret_cast<HFONT>(::SendMessage(m_hwnd,WM_GETFONT,0,0));
 	}
 	
-	HMENU GetMenu() const
-	{
+	HMENU GetMenu() const{
 		WINCHECK(m_hwnd);
 		return reinterpret_cast<HMENU>(::GetMenu(m_hwnd));
 	}
 	
-	BOOL SetMenu(HMENU hMenu)
-	{
+	BOOL SetMenu(HMENU hMenu){
 		WINCHECK(m_hwnd);
 		return ::SetMenu(m_hwnd, hMenu);
 	}
 	
-	BOOL DrawMenuBar()
-	{
+	BOOL DrawMenuBar(){
 		WINCHECK(m_hwnd);
 		return ::DrawMenuBar(m_hwnd);
 	}
 	
-	HMENU GetSystemMenu(BOOL bRevert) const
-	{
+	HMENU GetSystemMenu(BOOL bRevert) const{
 		WINCHECK(m_hwnd);
 		return reinterpret_cast<HMENU>(::GetSystemMenu(m_hwnd,bRevert));
 	}
 	
-	BOOL HiliteMenuItem(HMENU hMenu,UINT uItemHilite,UINT uHilite)
-	{
+	BOOL HiliteMenuItem(HMENU hMenu,UINT uItemHilite,UINT uHilite){
 		WINCHECK(m_hwnd);
 		return ::HiliteMenuItem(m_hwnd,hMenu,uItemHilite,uHilite);
 	}
 	
-	BOOL IsIconic() const
-	{
+	BOOL IsIconic() const{
 		WINCHECK(m_hwnd);
 		return ::IsIconic(m_hwnd);
 	}
 	
-	BOOL IsZoomed() const
-	{
+	BOOL IsZoomed() const{
 		WINCHECK(m_hwnd);
 		return ::IsZoomed(m_hwnd);
 	}
@@ -932,8 +894,7 @@ public:
 	int y,
 	int nWidth,
 	int nHeight,
-	BOOL bRepaint = TRUE)
-	{
+	BOOL bRepaint = TRUE){
 		WINCHECK(m_hwnd);
 		return ::MoveWindow(m_hwnd,x,y,nWidth,nHeight,bRepaint);
 	}
@@ -944,8 +905,7 @@ public:
 	int y,
 	int cx,
 	int cy,
-	UINT nFlags)
-	{
+	UINT nFlags){
 		WINCHECK(m_hwnd);
 		return ::SetWindowPos(m_hwnd,hWndInsertAfter,x,y,cx,cy,nFlags);
 	}
@@ -953,71 +913,60 @@ public:
 	BOOL SetWindowPos(
 	HWND hWndInsertAfter,
 	LPCRECT lpRect,
-	UINT nFlags)
-	{
+	UINT nFlags){
 		WINCHECK(m_hwnd);
 		return ::SetWindowPos(m_hwnd,hWndInsertAfter,lpRect->left,lpRect->top,
 		lpRect->right - lpRect->left, lpRect->bottom - lpRect->top,nFlags);
 	}
 	
-	UINT ArrangeIconicWindows()
-	{
+	UINT ArrangeIconicWindows(){
 		WINCHECK(m_hwnd);
 		return ::ArrangeIconicWindows(m_hwnd);
 	}
 	
-	BOOL BringWindowToTop()
-	{
+	BOOL BringWindowToTop(){
 		WINCHECK(m_hwnd);
 		return ::BringWindowToTop(m_hwnd);
 	}
 	
-	BOOL GetWindowRect(LPRECT lpRect) const
-	{
+	BOOL GetWindowRect(LPRECT lpRect) const{
 		WINCHECK(m_hwnd);
 		return ::GetWindowRect(m_hwnd, lpRect);
 	}
 	
-	BOOL GetClientRect(LPRECT lpRect) const
-	{
+	BOOL GetClientRect(LPRECT lpRect) const{
 		WINCHECK(m_hwnd);
 		return ::GetClientRect(m_hwnd, lpRect);
 	}
 	
-	BOOL GetWindowPlacement(WINDOWPLACEMENT *lpwndpl)
-	{
+	BOOL GetWindowPlacement(WINDOWPLACEMENT *lpwndpl){
 		WINCHECK(m_hwnd);
 		return ::GetWindowPlacement(m_hwnd,lpwndpl);
 	}
 	
-	BOOL SetWindowPlacement(WINDOWPLACEMENT *lpwndpl)
-	{
+	BOOL SetWindowPlacement(WINDOWPLACEMENT *lpwndpl){
 		WINCHECK(m_hwnd);
 		return ::SetWindowPlacement(m_hwnd,lpwndpl);
 	}
 	
-	BOOL ClientToScreen(LPPOINT lpPoint) const
-	{
+	BOOL ClientToScreen(LPPOINT lpPoint) const{
 		WINCHECK(m_hwnd);
 		return ::ClientToScreen(m_hwnd,lpPoint);
 	}
 	
-	BOOL ClientToScreen(LPRECT lpRect) const
-	{
+	BOOL ClientToScreen(LPRECT lpRect) const{
 		WINCHECK(m_hwnd);
 		if(!::ClientToScreen(m_hwnd,(LPPOINT)lpRect))
 			return FALSE;
 		return ::ClientToScreen(m_hwnd,((LPPOINT)lpRect) + 1);
 	}
 	
-	BOOL ScreenToClient(LPPOINT lpPoint) const
-	{
+	BOOL ScreenToClient(LPPOINT lpPoint) const{
 		WINCHECK(m_hwnd);
 		return ::ScreenToClient(m_hwnd, lpPoint);
 	}
 	
-	BOOL ScreenToClient(LPRECT lpRect) const
-	{
+	BOOL ScreenToClient(LPRECT lpRect) const{
 		WINCHECK(m_hwnd);
 		if(!::ScreenToClient(m_hwnd,(LPPOINT)lpRect))
 			return FALSE;
@@ -1025,148 +974,124 @@ public:
 		return ::ScreenToClient(m_hwnd,((LPPOINT)lpRect) + 1);
 	}
 	
-	int MapWindowPoints( HWND hWndTo, LPPOINT lpPoint, UINT nCount) const
-	{
+	int MapWindowPoints( HWND hWndTo, LPPOINT lpPoint, UINT nCount) const{
 		WINCHECK(m_hwnd);
 		return ::MapWindowPoints(m_hwnd,hWndTo,lpPoint,nCount);
 	}
 	
-	int MapWindowPoints( HWND hWndTo, LPRECT lpRect)
-	{
+	int MapWindowPoints( HWND hWndTo, LPRECT lpRect){
 		WINCHECK(m_hwnd);
 		return ::MapWindowPoints(m_hwnd,hWndTo,(LPPOINT)lpRect,2);
 	}
 	
-	HDC BeginPaint(LPPAINTSTRUCT lpPaint)
-	{
+	HDC BeginPaint(LPPAINTSTRUCT lpPaint){
 		WINCHECK(m_hwnd);
 		return ::BeginPaint(m_hwnd,lpPaint);
 	}
 	
-	void EndPaint(LPPAINTSTRUCT lpPaint)
-	{
+	void EndPaint(LPPAINTSTRUCT lpPaint){
 		WINCHECK(m_hwnd);
 		::EndPaint(m_hwnd, lpPaint);
 	}
 	
-	HDC GetDC()
-	{
+	HDC GetDC(){
 		WINCHECK(m_hwnd);
 		return ::GetDC(m_hwnd);
 	}
 	
-	HDC GetWindowDC()
-	{
+	HDC GetWindowDC(){
 		WINCHECK(m_hwnd);
 		return ::GetWindowDC(m_hwnd);
 	}
 	
-	int ReleaseDC(HDC hDC)
-	{
+	int ReleaseDC(HDC hDC){
 		WINCHECK(m_hwnd);
 		return ::ReleaseDC(m_hwnd,hDC);
 	}
 	
-	void Print(HDC hDC, DWORD dwFlags) const
-	{
+	void Print(HDC hDC, DWORD dwFlags) const{
 		WINCHECK(m_hwnd);
 		::SendMessage(m_hwnd, WM_PRINT, (WPARAM)hDC, dwFlags);
 	}
 	
-	void PrintClient(HDC hDC, DWORD dwFlags)
-	{
+	void PrintClient(HDC hDC, DWORD dwFlags){
 		WINCHECK(m_hwnd);
 		::SendMessage(m_hwnd, WM_PRINTCLIENT, (WPARAM)hDC, dwFlags);
 	}
 	
-	BOOL UpdateWindow()
-	{
+	BOOL UpdateWindow(){
 		WINCHECK(m_hwnd);
 		return ::UpdateWindow(m_hwnd);
 	}
 	
-	void SetRedraw(BOOL bRedraw = TRUE)
-	{
+	void SetRedraw(BOOL bRedraw = TRUE){
 		WINCHECK(m_hwnd);
 		::SendMessage(m_hwnd, WM_SETREDRAW, (WPARAM)bRedraw, 0);
 	}
 	
-	BOOL GetUpdateRect(LPRECT lpRect, BOOL bErase = FALSE)
-	{
+	BOOL GetUpdateRect(LPRECT lpRect, BOOL bErase = FALSE){
 		WINCHECK(m_hwnd);
 		return ::GetUpdateRect(m_hwnd, lpRect, bErase);
 	}
 	
-	int GetUpdateRgn(HRGN hRgn, BOOL bErase = FALSE)
-	{
+	int GetUpdateRgn(HRGN hRgn, BOOL bErase = FALSE){
 		WINCHECK(m_hwnd);
 		return ::GetUpdateRgn(m_hwnd, hRgn, bErase);
 	}
 	
-	BOOL Invalidate(BOOL bErase = TRUE)
-	{
+	BOOL Invalidate(BOOL bErase = TRUE){
 		WINCHECK(m_hwnd);
 		return ::InvalidateRect(m_hwnd, nullptr, bErase);
 	}
 	
-	BOOL InvalidateRect(LPCRECT lpRect, BOOL bErase = TRUE)
-	{
+	BOOL InvalidateRect(LPCRECT lpRect, BOOL bErase = TRUE){
 		WINCHECK(m_hwnd);
 		return ::InvalidateRect(m_hwnd, lpRect, bErase);
 	}
 	
-	BOOL ValidateRect(LPCRECT lpRect = nullptr)
-	{
+	BOOL ValidateRect(LPCRECT lpRect = nullptr){
 		WINCHECK(m_hwnd);
 		return ::ValidateRect(m_hwnd, lpRect);
 	}
 	
-	void InvalidateRgn(HRGN hRgn, BOOL bErase = TRUE)
-	{
+	void InvalidateRgn(HRGN hRgn, BOOL bErase = TRUE){
 		WINCHECK(m_hwnd);
 		::InvalidateRgn(m_hwnd, hRgn, bErase);
 	}
 	
-	BOOL ValidateRgn(HRGN hRgn = nullptr)
-	{
+	BOOL ValidateRgn(HRGN hRgn = nullptr){
 		WINCHECK(m_hwnd);
 		return ::ValidateRgn(m_hwnd, hRgn);
 	}
 	
-	BOOL ShowWindow(int nCmdShow)
-	{
+	BOOL ShowWindow(int nCmdShow){
 		WINCHECK(m_hwnd);
 		return ::ShowWindow(m_hwnd, nCmdShow);
 	}
 	
-	BOOL IsWindowVisible() const
-	{
+	BOOL IsWindowVisible() const{
 		WINCHECK(m_hwnd);
 		return ::IsWindowVisible(m_hwnd);
 	}
 	
-	BOOL ShowOwnedPopups(BOOL bShow = TRUE)
-	{
+	BOOL ShowOwnedPopups(BOOL bShow = TRUE){
 		WINCHECK(m_hwnd);
 		return ::ShowOwnedPopups(m_hwnd, bShow);
 	}
 	
-	HDC GetDCEx(HRGN hRgnClip, DWORD flags)
-	{
+	HDC GetDCEx(HRGN hRgnClip, DWORD flags){
 		WINCHECK(m_hwnd);
 		return ::GetDCEx(m_hwnd, hRgnClip, flags);
 	}
 	
-	BOOL LockWindowUpdate(BOOL bLock = TRUE)
-	{
+	BOOL LockWindowUpdate(BOOL bLock = TRUE){
 		WINCHECK(m_hwnd);
 		return ::LockWindowUpdate(bLock ? m_hwnd : nullptr);
 	}
 	
 	BOOL RedrawWindow(LPCRECT lpRectUpdate = nullptr, 
 		HRGN hRgnUpdate = nullptr, 
-		UINT flags = RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE)
-		{
+		UINT flags = RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE){
 			WINCHECK(m_hwnd);
 			return ::RedrawWindow(m_hwnd, lpRectUpdate, hRgnUpdate, flags);
 		}
@@ -1174,50 +1099,42 @@ public:
 	UINT_PTR SetTimer(
 	UINT_PTR nIDEvent,
 	UINT nElapse,
-	void (CALLBACK* lpfnTimer)(HWND, UINT, UINT_PTR,DWORD) = nullptr)
-	{
+	void (CALLBACK* lpfnTimer)(HWND, UINT, UINT_PTR,DWORD) = nullptr){
 		WINCHECK(m_hwnd);
 		return ::SetTimer(m_hwnd, nIDEvent, nElapse, (TIMERPROC)lpfnTimer);
 	}
 	
-	BOOL KillTimer(UINT_PTR nIDEvent)
-	{
+	BOOL KillTimer(UINT_PTR nIDEvent){
 		WINCHECK(m_hwnd);
 		return ::KillTimer(m_hwnd, nIDEvent);
 	}
 	
-	BOOL IsWindowEnabled() const
-	{
+	BOOL IsWindowEnabled() const{
 		WINCHECK(m_hwnd);
 		return ::IsWindowEnabled(m_hwnd);
 	}
 	
-	BOOL EnableWindow(BOOL Enable = TRUE)
-	{
+	BOOL EnableWindow(BOOL Enable = TRUE){
 		WINCHECK(m_hwnd);
 		return ::EnableWindow(m_hwnd, Enable);
 	}
 	
-	HWND SetActiveWindow()
-	{
+	HWND SetActiveWindow(){
 		WINCHECK(m_hwnd);
 		return ::SetActiveWindow(m_hwnd);
 	}
 	
-	HWND SetCapture()
-	{
+	HWND SetCapture(){
 		WINCHECK(m_hwnd);
 		return ::SetCapture(m_hwnd);
 	}
 	
-	HWND SetFocus()
-	{
+	HWND SetFocus(){
 		WINCHECK(m_hwnd);
 		return ::SetFocus(m_hwnd);
 	}
 	
-	BOOL CheckDlgButton(int nIDButton, UINT nCheck)
-	{
+	BOOL CheckDlgButton(int nIDButton, UINT nCheck){
 		WINCHECK(m_hwnd);
 		return ::CheckDlgButton(m_hwnd, nIDButton, nCheck);
 	}
@@ -1225,8 +1142,7 @@ public:
 	BOOL CheckRadioButton(
 	int nIDFirstButton, 
 	int nIDLastButton,
-	int nIDCheckButton)
-	{
+	int nIDCheckButton){
 		WINCHECK(m_hwnd);
 		return ::CheckRadioButton(m_hwnd, nIDFirstButton, nIDLastButton, 
 		nIDCheckButton);
@@ -1236,8 +1152,7 @@ public:
 	LPTSTR lpPathSpec,
 	int nIDListBox,
 	int nIDStaticPath,
-	UINT nFileType)
-	{
+	UINT nFileType){
 		WINCHECK(m_hwnd);
 		return ::DlgDirList(m_hwnd,lpPathSpec, nIDListBox, nIDStaticPath, nFileType);
 	}
@@ -1246,8 +1161,7 @@ public:
 	LPTSTR lpPathSpec,
 	int nIDComboBox,
 	int nIDStaticPath,
-	UINT nFileType)
-	{
+	UINT nFileType){
 		WINCHECK(m_hwnd);
 		return ::DlgDirListComboBox(m_hwnd,lpPathSpec,nIDComboBox, nIDStaticPath, nFileType);
 	}
@@ -1255,8 +1169,7 @@ public:
 	UINT GetDlgItemInt(
 	int nID,
 	BOOL* lpTrans = nullptr,
-	BOOL bSigned = TRUE) const
-	{
+	BOOL bSigned = TRUE) const{
 		WINCHECK(m_hwnd);
 		return ::GetDlgItemInt(m_hwnd, nID, lpTrans, bSigned);
 	}
@@ -1264,44 +1177,36 @@ public:
 	UINT GetDlgItemText(
 	int nID,
 	LPTSTR lpStr,
-	int MaxCount) const throw()
-	{
+	int MaxCount) const throw(){
 		WINCHECK(m_hwnd);
 		return ::GetDlgItemText(m_hwnd, nID, lpStr, MaxCount) + 1;
 	}
 	
-	UINT GetDlgItemText( int nID, std::tstring& str)
-	{
+	UINT GetDlgItemText( int nID, std::tstring& str){
 		HWND hItem = GetDlgItem(nID);
-		if(hItem != nullptr)
-		{
+		if(hItem != nullptr){
 			str.resize(::GetWindowTextLength(hItem) + 1);
 			::GetWindowText(hItem, &str[0], str.length());
 			return str.length();
-		}
-		else
-		{
+		}else{
 			str = TEXT("");
 			return 0;
 		}
 	}
 	
-	Window GetNextDlgGroupItem( HWND hWndCtl, BOOL bPrevious = FALSE) const
-	{
+	Window GetNextDlgGroupItem( HWND hWndCtl, BOOL bPrevious = FALSE) const{
 		WINCHECK(m_hwnd);
 		return Window(::GetNextDlgGroupItem(m_hwnd, hWndCtl, bPrevious));
 	}
 	
 	Window GetNextDlgTabItem(
 	HWND hWndCtrl,
-	BOOL bPrevious = FALSE) const
-	{
+	BOOL bPrevious = FALSE) const{
 		WINCHECK(m_hwnd);
 		return Window(::GetNextDlgTabItem(m_hwnd, hWndCtrl, bPrevious));
 	}
 	
-	UINT IsDlgButtonChecked(int nIDButton) const
-	{
+	UINT IsDlgButtonChecked(int nIDButton) const{
 		WINCHECK(m_hwnd);
 		return ::IsDlgButtonChecked(m_hwnd, nIDButton);
 	}
@@ -1310,27 +1215,23 @@ public:
 	int nID,
 	UINT msg, 
 	WPARAM wParam = 0,
-	LPARAM lParam = 0)
-	{
+	LPARAM lParam = 0){
 		WINCHECK(m_hwnd);
 		return ::SendDlgItemMessage(m_hwnd, nID, msg, wParam, lParam);
 	}
 	
-	int GetScrollPos(int nBar) const
-	{
+	int GetScrollPos(int nBar) const{
 		WINCHECK(m_hwnd);
 		return ::GetScrollPos(m_hwnd,nBar);
 	}
 	
-	BOOL GetScrollRange( int nBar, LPINT lpMinPos, LPINT lpMaxPos)
-	{
+	BOOL GetScrollRange( int nBar, LPINT lpMinPos, LPINT lpMaxPos){
 		WINCHECK(m_hwnd);
 		return ::GetScrollRange(m_hwnd, nBar, lpMinPos, lpMaxPos);
 	}
 	
 	BOOL ScrollWindow( int xAmount, int yAmount, LPCRECT lpRect = nullptr,
-	LPCRECT lpClipRect = nullptr)
-	{
+	LPCRECT lpClipRect = nullptr){
 		WINCHECK(m_hwnd);
 		return ::ScrollWindow(m_hwnd, xAmount, yAmount, lpRect, lpClipRect);
 	}
@@ -1342,8 +1243,7 @@ public:
 	LPCRECT lpRectClip = nullptr,
 	HRGN hRgnUpdate = nullptr,
 	LPRECT lpRectUpdate = nullptr,
-	UINT uFlags = 0)
-	{
+	UINT uFlags = 0){
 		WINCHECK(m_hwnd);
 		return ::ScrollWindowEx(m_hwnd,dx,dy,lpRectScroll,lpRectClip,hRgnUpdate, lpRectUpdate, uFlags);
 	}
@@ -1355,246 +1255,206 @@ public:
 	LPCRECT lpRectScroll = nullptr,
 	LPCRECT lpRectClip = nullptr,
 	HRGN hRgnUpdate = nullptr,
-	LPRECT lpRectUpdate = nullptr)
-	{	
+	LPRECT lpRectUpdate = nullptr){	
 		WINCHECK(m_hwnd);
 		return ::ScrollWindowEx(m_hwnd, dx, dy, lpRectScroll, lpRectClip, hRgnUpdate, lpRectUpdate, uFlags);
 	}
 	
-	int SetScrollPos(int nBar, int nPos, BOOL bRedraw = TRUE)
-	{
+	int SetScrollPos(int nBar, int nPos, BOOL bRedraw = TRUE){
 		WINCHECK(m_hwnd);
 		return ::SetScrollPos(m_hwnd, nBar, nPos, bRedraw);
 	}
 	
-	BOOL SetScrollRange( int nBar, int nMinPos, int nMaxPos, BOOL bRedraw = TRUE)
-	{
+	BOOL SetScrollRange( int nBar, int nMinPos, int nMaxPos, BOOL bRedraw = TRUE){
 		WINCHECK(m_hwnd);
 		return ::SetScrollRange(m_hwnd, nBar, nMinPos, nMaxPos,bRedraw );
 	}
 	
-	BOOL ShowScrollBar(UINT nBar, BOOL bShow = TRUE)
-	{
+	BOOL ShowScrollBar(UINT nBar, BOOL bShow = TRUE){
 		WINCHECK(m_hwnd);
 		return ::ShowScrollBar(m_hwnd, nBar, bShow);
 	}
 	
 	BOOL EnableScrollBar(
 	UINT uSBFlags, 
-	UINT uArrowFlags = ESB_ENABLE_BOTH)
-	{
+	UINT uArrowFlags = ESB_ENABLE_BOTH){
 		WINCHECK(m_hwnd);
 		return ::EnableScrollBar(m_hwnd, uSBFlags, uArrowFlags);
 	}
 	
-	Window ChildWindowFromPoint(POINT point)
-	{
+	Window ChildWindowFromPoint(POINT point){
 		WINCHECK(m_hwnd);
 		return Window(::ChildWindowFromPoint(m_hwnd,point));
 	}
 	
-	Window ChildWindowFromPointEx(POINT point, UINT uFlags) const
-	{
+	Window ChildWindowFromPointEx(POINT point, UINT uFlags) const{
 		WINCHECK(m_hwnd);
 		return Window(::ChildWindowFromPointEx(m_hwnd, point,uFlags));
 	}
 	
-	Window GetTopWindow() const
-	{
+	Window GetTopWindow() const{
 		WINCHECK(m_hwnd);
 		return Window(::GetTopWindow(m_hwnd));
 	}
 	
-	Window GetWindow(UINT nCmd) const
-	{
+	Window GetWindow(UINT nCmd) const{
 		WINCHECK(m_hwnd);
 		return Window(::GetWindow(m_hwnd,nCmd));
 	}
 	
-	Window GetLastActivePopup() const
-	{
+	Window GetLastActivePopup() const{
 		WINCHECK(m_hwnd);
 		return Window(::GetLastActivePopup(m_hwnd));
 	}
 	
-	BOOL IsChild(HWND hWnd) const
-	{
+	BOOL IsChild(HWND hWnd) const{
 		WINCHECK(m_hwnd);
 		return ::IsChild(m_hwnd, hWnd);
 	}
 	
-	Window GetParent() const
-	{
+	Window GetParent() const{
 		WINCHECK(m_hwnd);
 		return Window(::GetParent(m_hwnd));
 	}
 	
-	Window SetParent(HWND hWndNewParent)
-	{
+	Window SetParent(HWND hWndNewParent){
 		WINCHECK(m_hwnd);
 		return Window(::SetParent(m_hwnd, hWndNewParent));
 	}
 	
-	int GetDlgCtrlID() const
-	{
+	int GetDlgCtrlID() const{
 		WINCHECK(m_hwnd);
 		return ::GetDlgCtrlID(m_hwnd);
 	}
 	
-	int SetDlgCtrlID(int nID)
-	{
+	int SetDlgCtrlID(int nID){
 		WINCHECK(m_hwnd);
 		return (int)::SetWindowLong(m_hwnd,GWL_ID,nID);
 	}
 	
-	Window GetDlgItem(int nID) const
-	{
+	Window GetDlgItem(int nID) const{
 		WINCHECK(m_hwnd);
 		return Window(::GetDlgItem(m_hwnd, nID));
 	}
 	
-	BOOL FlashWindow(BOOL bInvert)
-	{
+	BOOL FlashWindow(BOOL bInvert){
 		WINCHECK(m_hwnd);
 		return ::FlashWindow(m_hwnd, bInvert);
 	}
 	
 	int MessageBox(LPCTSTR lpszText, LPCTSTR lpszCaption = TEXT(""),
-	UINT nType = MB_OK)
-	{
+	UINT nType = MB_OK){
 		WINCHECK(m_hwnd);
 		return ::MessageBox(m_hwnd, lpszText, lpszCaption, nType);
 	}
 	
-	BOOL ChangeClipboardChain(HWND hwndNext)
-	{
+	BOOL ChangeClipboardChain(HWND hwndNext){
 		WINCHECK(m_hwnd);
 		return ::ChangeClipboardChain(m_hwnd, hwndNext);
 	}
 	
-	HWND SetClipboardViewer()
-	{
+	HWND SetClipboardViewer(){
 		WINCHECK(m_hwnd);
 		return ::SetClipboardViewer(m_hwnd);
 	}
 	
-	BOOL OpenClipboard()
-	{
+	BOOL OpenClipboard(){
 		WINCHECK(m_hwnd);
 		return ::OpenClipboard(m_hwnd);
 	}
 	
-	BOOL CreateCaret(HBITMAP hBitmap)
-	{
+	BOOL CreateCaret(HBITMAP hBitmap){
 		WINCHECK(m_hwnd);
 		return ::CreateCaret(m_hwnd, hBitmap, 0,0);
 	}
 	
-	BOOL CreateSolidCaret(int nWidth , int nHeight)
-	{
+	BOOL CreateSolidCaret(int nWidth , int nHeight){
 		WINCHECK(m_hwnd);
 		return ::CreateCaret(m_hwnd, (HBITMAP)0, nWidth, nHeight);
 	}
 	
-	BOOL CreateGrayCaret(int nWidth, int nHeight)
-	{
+	BOOL CreateGrayCaret(int nWidth, int nHeight){
 		WINCHECK(m_hwnd);
 		return ::CreateCaret(m_hwnd, (HBITMAP)1, nWidth,nHeight);
 	}
 	
-	BOOL HideCaret()
-	{
+	BOOL HideCaret(){
 		WINCHECK(m_hwnd);
 		return ::HideCaret(m_hwnd);
 	}
 	
-	BOOL ShowCaret()
-	{
+	BOOL ShowCaret(){
 		WINCHECK(m_hwnd);
 		return ::ShowCaret(m_hwnd);
 	}
 	
-	HICON SetIcon( HICON hIcon, BOOL bBigIcon = TRUE)
-	{
+	HICON SetIcon( HICON hIcon, BOOL bBigIcon = TRUE){
 		WINCHECK(m_hwnd);
 		return reinterpret_cast<HICON>(::SendMessage(m_hwnd, WM_SETICON,
 		bBigIcon, (LPARAM)hIcon));
 	}
 	
-	HICON GetIcon(BOOL bBigIcon = TRUE) const
-	{
+	HICON GetIcon(BOOL bBigIcon = TRUE) const{
 		WINCHECK(m_hwnd);
 		return reinterpret_cast<HICON>(::SendMessage(m_hwnd, WM_GETICON,bBigIcon, 0 ));
 	}
 	
-	BOOL WinHelp(LPCTSTR lpzHelp, UINT cmd = HELP_CONTEXT, DWORD dwData = 0)
-	{
+	BOOL WinHelp(LPCTSTR lpzHelp, UINT cmd = HELP_CONTEXT, DWORD dwData = 0){
 		WINCHECK(m_hwnd);
 		return ::WinHelp(m_hwnd, lpzHelp, cmd, dwData);
 	}
 	
-	BOOL SetWindowContextHelpId(DWORD dwContextId)
-	{
+	BOOL SetWindowContextHelpId(DWORD dwContextId){
 		WINCHECK(m_hwnd);
 		return ::SetWindowContextHelpId(m_hwnd, dwContextId);
 	}
 	
-	DWORD GetWindowContextHelpId()
-	{
+	DWORD GetWindowContextHelpId(){
 		WINCHECK(m_hwnd);
 		return ::GetWindowContextHelpId(m_hwnd);
 	}
 	
-	int SetHotKey(WORD wVirtualKeyCode, WORD wModifiers)
-	{
+	int SetHotKey(WORD wVirtualKeyCode, WORD wModifiers){
 		WINCHECK(m_hwnd);
 		return (int)::SendMessage(m_hwnd, WM_SETHOTKEY,MAKEWORD(wVirtualKeyCode,wModifiers), 0);
 	}
 	
-	DWORD GetHotKey() const
-	{
+	DWORD GetHotKey() const{
 		WINCHECK(m_hwnd);
 		return (DWORD)::SendMessage(m_hwnd, WM_GETHOTKEY, 0, 0);
 	}
 	
-	BOOL GetScrollInfo(int nBar,LPSCROLLINFO lpScrollInfo)
-	{
+	BOOL GetScrollInfo(int nBar,LPSCROLLINFO lpScrollInfo){
 		WINCHECK(m_hwnd);
 		return ::GetScrollInfo(m_hwnd, nBar, lpScrollInfo);
 	}
 	
-	int SetScrollInfo(int nBar,LPSCROLLINFO lpScrollInfo,BOOL bRedraw = TRUE)
-	{
+	int SetScrollInfo(int nBar,LPSCROLLINFO lpScrollInfo,BOOL bRedraw = TRUE){
 		WINCHECK(m_hwnd);
 		return ::SetScrollInfo(m_hwnd, nBar, lpScrollInfo, bRedraw);
 	}
 	
-	BOOL IsDialogMessage(LPMSG lpMsg)
-	{
+	BOOL IsDialogMessage(LPMSG lpMsg){
 		WINCHECK(m_hwnd);
 		return ::IsDialogMessage(m_hwnd, lpMsg);
 	}
 	
-	void NextDlgCtrl() const
-	{
+	void NextDlgCtrl() const{
 		WINCHECK(m_hwnd);
 		::SendMessage(m_hwnd, WM_NEXTDLGCTL, 0, 0L);
 	}
 	
-	void PrevDlgCtrl() const
-	{
+	void PrevDlgCtrl() const{
 		WINCHECK(m_hwnd);
 		::SendMessage(m_hwnd, WM_NEXTDLGCTL, 1, 0L);
 	}
 	
-	void GotoDlgCtrl(HWND hWndCtrl) const
-	{
+	void GotoDlgCtrl(HWND hWndCtrl) const{
 		WINCHECK(m_hwnd);
 		::SendMessage(m_hwnd, WM_NEXTDLGCTL, (WPARAM)hWndCtrl, 1L );
 	}
 	
-	BOOL ResizeClient( int Width, int Height, BOOL redraw = TRUE)
-	{
+	BOOL ResizeClient( int Width, int Height, BOOL redraw = TRUE){
 		WINCHECK(m_hwnd);
 		RECT rcWnd;
 		if(!GetClientRect(&rcWnd))
@@ -1605,7 +1465,7 @@ public:
 		if(Height != -1);
 			rcWnd.bottom = Height;
 			
-		if(!::AdjustWindowRectEx(&rcWnd, GetStyle(), (!(GetStyle() & WS_CHILD) && (GetMenu() != NULL)), GetExStyle()))
+		if(!::AdjustWindowRectEx(&rcWnd, GetStyle(), (!(GetStyle() & WS_CHILD) && (GetMenu() != nullptr)), GetExStyle()))
 			return FALSE;
 		
 		UINT uFlags = SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE;
@@ -1615,14 +1475,12 @@ public:
 		return SetWindowPos(nullptr, 0, 0, rcWnd.right - rcWnd.left, rcWnd.bottom - rcWnd.top, uFlags);
 	}
 	
-	int GetWindowRgn(HRGN hRgn)
-	{
+	int GetWindowRgn(HRGN hRgn){
 		WINCHECK(m_hwnd);
 		return ::GetWindowRgn(m_hwnd, hRgn);
 	}
 	
-	int SetWindowRgn( HRGN hRgn = nullptr, BOOL redraw = FALSE)
-	{
+	int SetWindowRgn( HRGN hRgn = nullptr, BOOL redraw = FALSE){
 		WINCHECK(m_hwnd);
 		return ::SetWindowRgn(m_hwnd, hRgn, redraw);
 	}
@@ -1634,39 +1492,33 @@ public:
 		int y, 
 		int cx, 
 		int cy, 
-		UINT uFlags)
-	{
+		UINT uFlags){
 		WINCHECK(m_hwnd);
 		return ::DeferWindowPos(hWinPosInfo, m_hwnd, hWndInsertAfter, x, y, cx, cy, uFlags);
 	}
 	
-	DWORD GetWindowThreadID()
-	{
+	DWORD GetWindowThreadID(){
 		WINCHECK(m_hwnd);
 		return ::GetWindowThreadProcessId(m_hwnd, nullptr);
 	}
 	
-	DWORD GetWindowProcessID()
-	{
+	DWORD GetWindowProcessID(){
 		WINCHECK(m_hwnd);
 		DWORD dwProcessID;
 		::GetWindowThreadProcessId(m_hwnd, &dwProcessID);
 		return dwProcessID;
 	}
 	
-	BOOL IsWindow() const
-	{
+	BOOL IsWindow() const{
 		return ::IsWindow(m_hwnd);
 	}
 	
-	BOOL IsWindowUnicode() const
-	{
+	BOOL IsWindowUnicode() const{
 		WINCHECK(m_hwnd);
 		return ::IsWindowUnicode(m_hwnd);
 	}
 	
-	BOOL IsParentDialog()
-	{
+	BOOL IsParentDialog(){
 		WINCHECK(m_hwnd);
 		TCHAR szBuff[8];
 		if(GetClassName(GetParent(), szBuff, sizeof(szBuff)/sizeof(szBuff[0])) == 0)
@@ -1675,14 +1527,12 @@ public:
 		return lstrcmp(szBuff, TEXT("#32770")) == 0;
 	}
 	
-	BOOL ShowWindowAsync(int nCmdShow)
-	{
+	BOOL ShowWindowAsync(int nCmdShow){
 		WINCHECK(m_hwnd);
 		return ::ShowWindowAsync(m_hwnd, nCmdShow);
 	}
 	
-	Window GetDecendantWindow(int nID) const
-	{
+	Window GetDecendantWindow(int nID) const{
 		WINCHECK(m_hwnd);
 		// GetDlgItem recursive (return first found)
 		// breadth-first for 1 level, then depth-first for successive levels
@@ -1691,7 +1541,7 @@ public:
 		HWND hWndChild, hWndTmp;
 		if((hWndChild = ::GetDlgItem(m_hwnd,nID)) != nullptr)
 		{
-			if(::GetTopWindow(hWndChild) != NULL)
+			if(::GetTopWindow(hWndChild) != nullptr)
 			{
 			
 				Window wnd(hWndChild);
@@ -1719,8 +1569,7 @@ public:
 			UINT message, 
 			WPARAM wParam  = 0,
 			LPARAM lParam = 0,
-			BOOL bDeep = TRUE)
-	{
+			BOOL bDeep = TRUE){
 		WINCHECK(m_hwnd);
 		for(HWND hWndChild = ::GetTopWindow(m_hwnd); hWndChild != nullptr;
 			hWndChild = ::GetNextWindow(hWndChild,  GW_HWNDNEXT))
@@ -1735,8 +1584,7 @@ public:
 			}
 	}
 	
-	BOOL CenterWindow(HWND hWndCenter = nullptr)
-	{
+	BOOL CenterWindow(HWND hWndCenter = nullptr){
 		WINCHECK(m_hwnd);
 		DWORD dwStyle = GetStyle();
 		if(hWndCenter == nullptr)
@@ -1779,7 +1627,7 @@ public:
 			
 			rcArea = minfo.rcWork;
 			
-			if(hWndCenter == NULL)
+			if(hWndCenter == nullptr)
 				rcCenter = rcArea;
 			else
 				::GetWindowRect(hWndCenter, &rcCenter);
@@ -1810,7 +1658,7 @@ public:
 		if(yTop < rcArea.top)
 			yTop = rcArea.top;
 				
-		return ::SetWindowPos(m_hwnd, NULL, xLeft, yTop, -1, -1,
+		return ::SetWindowPos(m_hwnd, nullptr, xLeft, yTop, -1, -1,
 			SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);		
 		
 	}
@@ -1818,21 +1666,6 @@ public:
 };
 
 RECT Window::rcDefault = { CW_USEDEFAULT, CW_USEDEFAULT, 0, 0 };
-
-enum class AnimateType : DWORD {
-  Activate = AW_ACTIVATE,
-  ActivateBlend = AW_ACTIVATE | AW_BLEND,
-  ActivateCenter = AW_ACTIVATE | AW_CENTER,
-  Blend = AW_BLEND,
-  Center = AW_CENTER,
-  Hide = AW_HIDE,
-  HideCenter = AW_HIDE | AW_CENTER,
-  HideBlend = AW_HIDE | AW_BLEND,
-  SlideRight = AW_SLIDE | AW_HOR_POSITIVE,
-  SlideLeft = AW_SLIDE | AW_HOR_NEGATIVE,
-  SlideUp = AW_SLIDE | AW_VER_POSITIVE,
-  SlideDown = AW_SLIDE | AW_VER_NEGATIVE
-};
 
 template <DWORD m_dwStyle = 0, DWORD m_dwExStyle = 0> class WinTraits {
 public:
@@ -1851,7 +1684,7 @@ typedef WinTraits<WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
 typedef WinTraits<WS_OVERLAPPEDWINDOW | WS_CHILD | WS_VISIBLE |
                       WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
                   WS_EX_MDICHILD> MDIChildTriats;
-typedef WinTraits<0, 0> NullTraits;
+typedef WinTraits<0, 0> nullptrTraits;
 
 template <DWORD m_dwStyle = 0, DWORD m_dwExStyle = 0,
           class TWinTraits = ControlTraits>
@@ -1987,102 +1820,29 @@ public:
   }
 };
 
-class MessageMap
-{
+class MessageMap{
 public:
   virtual BOOL HandleMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,LRESULT& lResult, DWORD dwMsgMapId) = 0;
-};
-
-struct WNDMSG :
-	 public MSG
-{
-public:
-	int Size;
-	BOOL bHandled;
-	
-	WNDMSG() : Size(sizeof(WNDMSG)), bHandled(true)
-	{
-		hwnd = nullptr;
-		message = 0;
-		wParam = 0;
-		lParam = 0;
-		time = 0;
-		pt.x = pt.y = 0;
-	}
-
-	WNDMSG(HWND hWndIn, UINT uMsg,WPARAM wParamIn, LPARAM lParamIn,
-		   DWORD dwTime, POINT ptIn, BOOL bHandledIn = TRUE ) : Size(sizeof(WNDMSG)),
-		   bHandled(bHandledIn)
-	{
-		hwnd = hWndIn;
-		message = uMsg;
-		wParam = wParamIn;
-		lParam = lParamIn;
-		time = dwTime;
-		pt = ptIn;
-	}
-	
-	WNDMSG(MSG& msg, BOOL bHandledIn = TRUE) :
-		Size(sizeof(WNDMSG)),bHandled(bHandledIn)
-	{
-		hwnd = msg.hwnd;
-		message = msg.message;
-		wParam = msg.wParam;
-		lParam = msg.lParam;
-		time = msg.time;
-		pt = msg.pt;
-	}
-	WNDMSG(HWND hWndIn, UINT uMsg, WPARAM wParamIn, LPARAM lParamIn, BOOL bHandledIn = TRUE)
-	{
-		hwnd = hWndIn;
-		message = uMsg;
-		wParam = wParamIn;
-		lParam = lParamIn;
-		time = 0;
-		pt.x = pt.y = 0;
-	}
 };
 
 template <typename TBase = Window>
 class WindowImplRoot:
 	  public TBase,
-	  public MessageMap
-{
+	  public MessageMap{
 public:
 	WndProcThunk m_thunk;
-	const WNDMSG* m_currMsg;
 	DWORD m_state;
 	enum { WINSTATE_DESTROYED = 0x00000001 };
 	
-	WindowImplRoot() : m_currMsg(nullptr),m_state(0) {}
-	
-	virtual ~WindowImplRoot()
-	{
+	WindowImplRoot() : m_state(0) {}
+
+	virtual ~WindowImplRoot(){
 	 
-	}
-	
-	WNDMSG* GetCurrentMessage() const { return m_currMsg; }
-	
-	BOOL IsMsgHandled() const
-	{
-		const WNDMSG* pMsg = GetCurrentMessage();
-		WINASSERT(pMsg != nullptr);
-		WINASSERT(pMsg->Size >= sizeof(WNDMSG));
-		return pMsg->bHandled;
-	}
-	
-	void SetMsgHandled(BOOL bHandled)
-	{
-		WNDMSG* pMsg = GetCurrentMessage();
-		WINASSERT(pMsg != nullptr);
-		WINASSERT(pMsg->Size >= sizeof(WNDMSG));
-		pMsg->bHandled = bHandled;
 	}
 	
 LRESULT ForwardNotifications(HWND hWnd,UINT msg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 LRESULT ReflectNotifications(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 BOOL DefaultReflectNotificationHandler(HWND hWnd, UINT msg, WPARAM wParam,LPARAM lParam, BOOL& bHandled);
-
 };
 
 template<typename TBase>
@@ -2151,8 +1911,7 @@ LRESULT WindowImplRoot<TBase>::ForwardNotifications(
 	 UINT uMsg,
 	 WPARAM wParam,
 	 LPARAM lParam,
-	 BOOL& bHandled)
-{
+	 BOOL& bHandled){
 	LRESULT lResult = 0;
 	switch(uMsg)
 	{
@@ -2217,28 +1976,23 @@ BOOL WindowImplRoot<TBase>::DefaultReflectNotificationHandler(HWND hWnd, UINT ms
 
 
 template <typename TBase, class TWinTraits = ControlTraits>
-class BaseWindowImplT : public WindowImplRoot<TBase>
-{
+class BaseWindowImplT : public WindowImplRoot<TBase>{
 public:
 	WNDPROC m_pSuperWindowProc;
 	WndProcThunk m_thunk;
 	WNDPROC oldProc;
 	
-	BaseWindowImplT() : m_pSuperWindowProc(::DefWindowProc)
-	{}
+	BaseWindowImplT() : m_pSuperWindowProc(::DefWindowProc){}
 	
-	static DWORD GetWndStyle(DWORD dwStyle)
-	{
+	static DWORD GetWndStyle(DWORD dwStyle){
 		return TWinTraits::GetWndStyle(dwStyle);
 	}
 	
-	static DWORD GetWndExStyle(DWORD dwExStyle)
-	{
+	static DWORD GetWndExStyle(DWORD dwExStyle){
 		return TWinTraits::GetWndExStyle(dwExStyle);
 	}
 	
-	virtual WNDPROC GetWindowProc()
-	{
+	virtual WNDPROC GetWindowProc(){
 		return EndProc;
 	}
 	
@@ -2249,8 +2003,6 @@ EndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
 	LRESULT lRes = 0;
 	BOOL bRet = pThis->HandleMessage(hwnd,uMsg,wParam,lParam,lRes,0);
-	
-	WINASSERT(pThis->m_currMsg == &msg);
 
 	if(!bRet)
 	{
@@ -2297,7 +2049,7 @@ EndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
 static LRESULT CALLBACK
 WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    // This function is only called ONCE, on the FIRST message a window receives
+    /* This function is only called ONCE, on the FIRST message a window receives
     // during creation which is WM_GETMINMAXINFO. So the use of a the standard
     // library container to store the class pointer and then search for it is
     // extremely negligible in the performance of this library, as it only
@@ -2322,7 +2074,7 @@ WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     // EndProc
     // function with the HWND parameter replaced with the class pointer. This is
     // dynamic code execution, currently only supported on x86 and x86_64
-    // architectures for MinGW/MinGW64 with this library.
+    // architectures for MinGW/MinGW64 with this library. */
 
     CriticalSectionLock lock(_wndCS);
     auto ret =
@@ -2350,7 +2102,6 @@ WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
       return 0;
   }
 	
-
 	HWND Create(
 		HWND hWndParent,
 		LPRECT rect,
@@ -2359,8 +2110,7 @@ WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		DWORD dwExStyle,
 		HMENU MenuOrID,
 		ATOM atom,
-		LPVOID lpCreateParam)
-{
+		LPVOID lpCreateParam){
 			if(atom == 0) return nullptr;
 			
 			_wndCS.Lock();
@@ -2420,28 +2170,23 @@ WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     return hWnd;
   }
   
-  BOOL DestroyWindow()
-  {
+  BOOL DestroyWindow() {
 	HWND hWnd = ((BaseWindowImplT<TBase,TWinTraits>*)this)->m_hwnd;
 	WINASSERT(::IsWindow(hWnd));
 	return ::DestroyWindow(hWnd);
   }
   
-  
-  LRESULT DefWindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
-  {
+  LRESULT DefWindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		return ::CallWindowProc(m_pSuperWindowProc,((BaseWindowImplT<TBase,TWinTraits>*)this)->m_hwnd,uMsg, wParam, lParam);
   }
   
   virtual ATOM RegisterClass() = 0;
   virtual void OnFinalMessage(HWND) {}
-  
 };
 
 template <typename T, typename TBaseWindow, typename TWindowTraits> 
 class BaseWindow : 
-	public BaseWindowImplT<TBaseWindow,TWindowTraits>
-{
+	public BaseWindowImplT<TBaseWindow,TWindowTraits>{
 public:
   	HWND Create(
 		HWND hWndParent = nullptr,
@@ -2450,8 +2195,7 @@ public:
 		DWORD dwStyle = 0,
 		DWORD dwExStyle = 0,
 		HMENU MenuOrID = 0U,
-		LPVOID lpCreateParam = nullptr)
-	{
+		LPVOID lpCreateParam = nullptr){
 		if(rect == nullptr) *rect = Window::rcDefault;
 		
 		ATOM atom = this->RegisterClass();
@@ -2473,7 +2217,7 @@ public:
     return hwnd;
   }
   
-  HWND Create(HWND hWndParent = nullptr, LPCTSTR lpWindowName = nullptr, DWORD dwStyle = 0,
+    HWND Create(HWND hWndParent = nullptr, LPCTSTR lpWindowName = nullptr, DWORD dwStyle = 0,
                  DWORD dwExStyle = 0, int x = CW_USEDEFAULT,
                  int y = CW_USEDEFAULT, int nWidth = CW_USEDEFAULT,
                  int nHeight = CW_USEDEFAULT, HMENU hMenu = 0,
@@ -2485,14 +2229,12 @@ public:
 	
     return hwnd;
   }
-  virtual ATOM  RegisterClass() override
-  {
+  
+    virtual ATOM  RegisterClass() override{
 	WNDCLASSEX wcx = T::GetWinClassInfo();
 	return ::RegisterClassEx(&wcx);
-  }
-  
+    }
 };
-
 
 #define BEGIN_MSG_MAP()  																						 \
   BOOL bHandled = FALSE; 																						 \
@@ -2870,7 +2612,7 @@ public:
 			return bHandled; \
 	}
 
-// void OnPaint(CDCHandle dc)
+// void OnPaint(DCT<true> dc)
 #define MSG_WM_PAINT(func) \
 	if (uMsg == WM_PAINT) \
 	{ \
@@ -2908,7 +2650,7 @@ public:
 			return bHandled; \
 	}
 
-// BOOL OnEraseBkgnd(CDCHandle dc)
+// BOOL OnEraseBkgnd(DCT<true> dc)
 #define MSG_WM_ERASEBKGND(func) \
 	if (uMsg == WM_ERASEBKGND) \
 	{ \
@@ -2947,7 +2689,7 @@ public:
 			return bHandled; \
 	}
 
-// HBRUSH OnCtlColorEdit(CDCHandle dc, CEdit edit)
+// HBRUSH OnCtlColorEdit(DCT<true> dc, CEdit edit)
 #define MSG_WM_CTLCOLOREDIT(func) \
 	if (uMsg == WM_CTLCOLOREDIT) \
 	{ \
@@ -2956,7 +2698,7 @@ public:
 			return bHandled; \
 	}
 
-// HBRUSH OnCtlColorListBox(CDCHandle dc, CListBox listBox)
+// HBRUSH OnCtlColorListBox(DCT<true> dc, CListBox listBox)
 #define MSG_WM_CTLCOLORLISTBOX(func) \
 	if (uMsg == WM_CTLCOLORLISTBOX) \
 	{ \
@@ -2965,7 +2707,7 @@ public:
 			return bHandled; \
 	}
 
-// HBRUSH OnCtlColorBtn(CDCHandle dc, CButton button)
+// HBRUSH OnCtlColorBtn(DCT<true> dc, CButton button)
 #define MSG_WM_CTLCOLORBTN(func) \
 	if (uMsg == WM_CTLCOLORBTN) \
 	{ \
@@ -2974,7 +2716,7 @@ public:
 			return bHandled; \
 	}
 
-// HBRUSH OnCtlColorDlg(CDCHandle dc, Window wnd)
+// HBRUSH OnCtlColorDlg(DCT<true> dc, Window wnd)
 #define MSG_WM_CTLCOLORDLG(func) \
 	if (uMsg == WM_CTLCOLORDLG) \
 	{ \
@@ -2983,7 +2725,7 @@ public:
 			return bHandled; \
 	}
 
-// HBRUSH OnCtlColorScrollBar(CDCHandle dc, CScrollBar scrollBar)
+// HBRUSH OnCtlColorScrollBar(DCT<true> dc, CScrollBar scrollBar)
 #define MSG_WM_CTLCOLORSCROLLBAR(func) \
 	if (uMsg == WM_CTLCOLORSCROLLBAR) \
 	{ \
@@ -2992,7 +2734,7 @@ public:
 			return bHandled; \
 	}
 
-// HBRUSH OnCtlColorStatic(CDCHandle dc, CStatic wndStatic)
+// HBRUSH OnCtlColorStatic(DCT<true> dc, CStatic wndStatic)
 #define MSG_WM_CTLCOLORSTATIC(func) \
 	if (uMsg == WM_CTLCOLORSTATIC) \
 	{ \
@@ -3099,7 +2841,7 @@ public:
 			return bHandled; \
 	}
 
-// void OnIconEraseBkgnd(CDCHandle dc)
+// void OnIconEraseBkgnd(DCT<true> dc)
 #define MSG_WM_ICONERASEBKGND(func) \
 	if (uMsg == WM_ICONERASEBKGND) \
 	{ \
@@ -3967,7 +3709,7 @@ public:
 			return bHandled; \
 	}
 
-// HFONT OnGetFont()
+// HERSULT OnGetFont()
 #define MSG_WM_GETFONT(func) \
 	if (uMsg == WM_GETFONT) \
 	{ \
@@ -4090,7 +3832,7 @@ public:
 			return bHandled; \
 	}
 
-// void OnPrint(CDCHandle dc, UINT uFlags)
+// void OnPrint(DCT<true> dc, UINT uFlags)
 #define MSG_WM_PRINT(func) \
 	if (uMsg == WM_PRINT) \
 	{ \
@@ -4100,7 +3842,7 @@ public:
 			return bHandled; \
 	}
 
-// void OnPrintClient(CDCHandle dc, UINT uFlags)
+// void OnPrintClient(DCT<true> dc, UINT uFlags)
 #define MSG_WM_PRINTCLIENT(func) \
 	if (uMsg == WM_PRINTCLIENT) \
 	{ \
@@ -4120,7 +3862,7 @@ public:
 			return bHandled; \
 	}
 
-// void OnSetFont(CFontHandle font, BOOL bRedraw)
+// void OnSetFont(GDIFontHandle font, BOOL bRedraw)
 #define MSG_WM_SETFONT(func) \
 	if (uMsg == WM_SETFONT) \
 	{ \
@@ -4413,4 +4155,2800 @@ public:
 
 #endif 
 
+#ifndef GDISTUFF
+#define GDISTUFF
+
+#ifdef SelectPen
+#undef SelectPen
+#endif
+#ifdef CopyRgn
+#undef CopyRgn
+#endif
+#ifdef SelectBrush
+#undef SelectBrush
+#endif
+#ifdef SelectFont
+#undef SelectFont
+#endif
+#ifdef SelectBitmap
+#undef SelectBitmap
+#endif
+
+inline LPBITMAPINFOHEADER GetBitmapResourceInfo(HMODULE hModule, UStringOrId image){
+
+	HRSRC hResource = ::FindResource(hModule, image.Get(), RT_BITMAP);
+	WINASSERT(hResource != nullptr);
+	HGLOBAL hGlobal = ::LoadResource(hModule, hResource);
+	WINASSERT(hGlobal != nullptr);
+	LPBITMAPINFOHEADER lpBitmapInfoHeader = (LPBITMAPINFOHEADER)::LockResource(hGlobal);
+	WINASSERT(lpBitmapInfoHeader != nullptr);
+	return lpBitmapInfoHeader;
+}
+
+inline WORD GetBitmapResourceBitsPerPixel(HMODULE hModule, UStringOrId image){
+	LPBITMAPINFOHEADER lpBitmapInfoHeader = GetBitmapResourceInfo(hModule, image);
+	return lpBitmapInfoHeader->biBitCount;
+}
+
+template <bool Managed>
+class PenT{
+	HPEN m_hpen;
+	PenT(HPEN hPen = nullptr) : m_hpen(hPen){
+	}
+	
+	~PenT(){
+		if(Managed && m_hpen != nullptr)
+			DeleteObject();
+	}
+	
+	PenT<Managed>& operator =(HPEN hPen){
+		Attach(hPen);
+		return *this;
+	}
+	
+	void Attach(HPEN hPen){
+		if(Managed && m_hpen != nullptr && m_hpen != hPen)
+			::DeleteObject(m_hpen);
+		m_hpen = hPen;
+	}
+	
+	HPEN Detach(){
+		HPEN hPen = m_hpen;
+		m_hpen = nullptr;
+		return hPen;
+	}
+	
+	HPEN CreatePen(int iPenStyle, int iWidth, COLORREF crColor){
+		WINASSERT(m_hpen == nullptr);
+		m_hpen = ::CreatePen(iPenStyle,iWidth,crColor);
+		return m_hpen;
+	}
+	
+	HPEN CreatePen(int iPenStyle, const LOGBRUSH* pLogBrush, int iWidth, int iStyleCount , const DWORD* lpStyle = nullptr){
+		WINASSERT(m_hpen == nullptr);
+		m_hpen = ::ExtCreatePen(iPenStyle, iWidth, pLogBrush, iStyleCount, lpStyle);
+		return m_hpen;
+	}
+	
+	HPEN CreatePenIndirect(LPLOGPEN lpLogPen){
+		WINASSERT(m_hpen == nullptr);
+		m_hpen = ::CreatePenIndirect(lpLogPen);
+		return m_hpen;
+	}
+	
+	BOOL DeleteObject(){
+		WINASSERT(m_hpen != nullptr);
+		BOOL bRet = ::DeleteObject(m_hpen);
+		if(bRet) m_hpen = nullptr;
+		return bRet;
+	}
+	
+	int GetLogPen(LOGPEN* pLogPen) const{
+		WINASSERT(m_hpen != nullptr);
+		return ::GetObject(m_hpen, sizeof(LOGPEN), pLogPen);
+	}
+	
+	bool GetLogPen(LOGPEN& LogPen) const{
+		WINASSERT(m_hpen != nullptr);
+		return (::GetObject(m_hpen, sizeof(LOGPEN),&LogPen) == sizeof(LOGPEN));
+	}	
+};
+
+typedef PenT<false> PenHandle;
+typedef PenT<true>  Pen;
+
+template <bool Managed>
+class BrushT{
+public:
+// Data members
+	HBRUSH m_brush;
+
+// Constructor/destructor/operators
+	BrushT(HBRUSH hBrush = nullptr) : m_brush(hBrush)
+	{ }
+
+	~BrushT()
+	{
+		if(Managed && m_brush != nullptr)
+			DeleteObject();
+	}
+
+	BrushT<Managed>& operator =(HBRUSH hBrush)
+	{
+		Attach(hBrush);
+		return *this;
+	}
+
+	void Attach(HBRUSH hBrush)
+	{
+		if(Managed && m_brush != nullptr && m_brush != hBrush)
+			::DeleteObject(m_brush);
+		m_brush = hBrush;
+	}
+
+	HBRUSH Detach()
+	{
+		HBRUSH hBrush = m_brush;
+		m_brush = nullptr;
+		return hBrush;
+	}
+
+	operator HBRUSH() const { return m_brush; }
+
+	bool IsNull() const { return (m_brush == nullptr); }
+
+// Create methods
+	HBRUSH CreateSolidBrush(COLORREF crColor)
+	{
+		WINASSERT(m_brush == nullptr);
+		m_brush = ::CreateSolidBrush(crColor);
+		return m_brush;
+	}
+
+#ifndef _WIN32_WCE
+	HBRUSH CreateHatchBrush(int nIndex, COLORREF crColor)
+	{
+		WINASSERT(m_brush == nullptr);
+		m_brush = ::CreateHatchBrush(nIndex, crColor);
+		return m_brush;
+	}
+#endif // !_WIN32_WCE
+
+#if !defined(_WIN32_WCE) || (_ATL_VER >= 0x0800)
+	HBRUSH CreateBrushIndirect(const LOGBRUSH* lpLogBrush)
+	{
+		WINASSERT(m_brush == nullptr);
+#ifndef _WIN32_WCE
+		m_brush = ::CreateBrushIndirect(lpLogBrush);
+#else // CE specific
+		m_brush = ATL::CreateBrushIndirect(lpLogBrush);
+#endif // _WIN32_WCE
+		return m_brush;
+	}
+#endif // !defined(_WIN32_WCE) || (_ATL_VER >= 0x0800)
+
+	HBRUSH CreatePatternBrush(HBITMAP hBitmap)
+	{
+		WINASSERT(m_brush == nullptr);
+		m_brush = ::CreatePatternBrush(hBitmap);
+		return m_brush;
+	}
+
+	HBRUSH CreateDIBPatternBrush(HGLOBAL hPackedDIB, UINT nUsage)
+	{
+		WINASSERT(hPackedDIB != nullptr);
+		const void* lpPackedDIB = GlobalLock(hPackedDIB);
+		WINASSERT(lpPackedDIB != nullptr);
+		m_brush = ::CreateDIBPatternBrushPt(lpPackedDIB, nUsage);
+		GlobalUnlock(hPackedDIB);
+		return m_brush;
+	}
+
+	HBRUSH CreateDIBPatternBrush(const void* lpPackedDIB, UINT nUsage)
+	{
+		WINASSERT(m_brush == nullptr);
+		m_brush = ::CreateDIBPatternBrushPt(lpPackedDIB, nUsage);
+		return m_brush;
+	}
+
+	HBRUSH CreateSysColorBrush(int nIndex)
+	{
+		WINASSERT(m_brush == nullptr);
+		m_brush = ::GetSysColorBrush(nIndex);
+		return m_brush;
+	}
+
+	BOOL DeleteObject()
+	{
+		WINASSERT(m_brush != nullptr);
+		BOOL bRet = ::DeleteObject(m_brush);
+		if(bRet)
+			m_brush = nullptr;
+		return bRet;
+	}
+
+// Attributes
+	int GetLogBrush(LOGBRUSH* pLogBrush) const
+	{
+		WINASSERT(m_brush != nullptr);
+		return ::GetObject(m_brush, sizeof(LOGBRUSH), pLogBrush);
+	}
+
+	bool GetLogBrush(LOGBRUSH& LogBrush) const
+	{
+		WINASSERT(m_brush != nullptr);
+		return (::GetObject(m_brush, sizeof(LOGBRUSH), &LogBrush) == sizeof(LOGBRUSH));
+	}
+};
+
+typedef BrushT<false>   BrushHandle;
+typedef BrushT<true>    Brush;
+
+class GDILogFont: public LOGFONT{
+public:
+	GDILogFont(){
+		memset(this, 0, sizeof(GDILogFont));
+	}
+
+	GDILogFont(const GDILogFont& lf){
+		Copy(&lf);
+	}
+
+	GDILogFont(HFONT hFont){
+		WINASSERT(::GetObjectType(hFont) == OBJ_FONT);
+		::GetObject(hFont, sizeof(GDILogFont), (GDILogFont*)this);
+	}
+
+	HFONT CreateFontIndirect(){
+		return ::CreateFontIndirect(this);
+	}
+
+	void SetBold(){
+		lfWeight = FW_BOLD;
+	}
+
+	bool IsBold() const{
+		return (lfWeight >= FW_BOLD);
+	}
+
+	void MakeBolder(int iScale = 1){
+		lfWeight += FW_BOLD * iScale;
+	}
+
+	void MakeLarger(int iScale){
+		if(lfHeight > 0)
+			lfHeight += iScale;
+		else
+			lfHeight -= iScale;
+	}
+
+	void SetHeight(LONG nPointSize, HDC hDC = nullptr)	{
+		HDC hDC1 = (hDC != nullptr) ? hDC : ::GetDC(nullptr);
+		// For MM_TEXT mapping mode
+		lfHeight = -::MulDiv(nPointSize, ::GetDeviceCaps(hDC1, LOGPIXELSY), 72);
+		if(hDC == nullptr)
+			::ReleaseDC(nullptr, hDC1);
+	}
+
+	LONG GetHeight(HDC hDC = nullptr) const{
+		HDC hDC1 = (hDC != nullptr) ? hDC : ::GetDC(nullptr);
+		// For MM_TEXT mapping mode
+		LONG nPointSize = ::MulDiv(-lfHeight, 72, ::GetDeviceCaps(hDC1, LOGPIXELSY));
+		if(hDC == nullptr)
+			::ReleaseDC(nullptr, hDC1);
+
+		return nPointSize;
+	}
+
+	LONG GetDeciPointHeight(HDC hDC = nullptr) const{
+		HDC hDC1 = (hDC != nullptr) ? hDC : ::GetDC(nullptr);
+#ifndef _WIN32_WCE
+		POINT ptOrg = { 0, 0 };
+		::DPtoLP(hDC1, &ptOrg, 1);
+		POINT pt = { 0, 0 };
+		pt.y = abs(lfHeight) + ptOrg.y;
+		::LPtoDP(hDC1, &pt,1);
+		LONG nDeciPoint = ::MulDiv(pt.y, 720, ::GetDeviceCaps(hDC1, LOGPIXELSY));   // 72 points/inch, 10 decipoints/point
+#else // CE specific
+		// DP and LP are always the same on CE
+		LONG nDeciPoint = ::MulDiv(abs(lfHeight), 720, ::GetDeviceCaps(hDC1, LOGPIXELSY));   // 72 points/inch, 10 decipoints/point
+#endif // _WIN32_WCE
+		if(hDC == nullptr)
+			::ReleaseDC(nullptr, hDC1);
+
+		return nDeciPoint;
+	}
+
+	void SetHeightFromDeciPoint(LONG nDeciPtHeight, HDC hDC = nullptr)	{
+		HDC hDC1 = (hDC != nullptr) ? hDC : ::GetDC(nullptr);
+#ifndef _WIN32_WCE
+		POINT pt = { 0, 0 };
+		pt.y = ::MulDiv(::GetDeviceCaps(hDC1, LOGPIXELSY), nDeciPtHeight, 720);   // 72 points/inch, 10 decipoints/point
+		::DPtoLP(hDC1, &pt, 1);
+		POINT ptOrg = { 0, 0 };
+		::DPtoLP(hDC1, &ptOrg, 1);
+		lfHeight = -abs(pt.y - ptOrg.y);
+#else // CE specific
+		// DP and LP are always the same on CE
+		lfHeight = -abs(::MulDiv(::GetDeviceCaps(hDC1, LOGPIXELSY), nDeciPtHeight, 720));   // 72 points/inch, 10 decipoints/point
+#endif // _WIN32_WCE
+		if(hDC == nullptr)
+			::ReleaseDC(nullptr, hDC1);
+	}
+
+	void SetCaptionFont(){
+		NONCLIENTMETRICS ncm;
+		memset(&ncm, 0, sizeof(ncm));
+		WINASSERT(::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0));
+		Copy(&ncm.lfCaptionFont);
+	}
+
+	void SetMenuFont(){
+		NONCLIENTMETRICS ncm;
+		memset(&ncm, 0, sizeof(ncm));
+		WINASSERT(::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0));
+		Copy(&ncm.lfMenuFont);
+	}
+
+	void SetStatusFont(){
+		NONCLIENTMETRICS ncm;
+		memset(&ncm, 0, sizeof(ncm));
+		WINASSERT(::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0));
+		Copy(&ncm.lfStatusFont);
+	}
+
+	void SetMessageBoxFont(){
+		NONCLIENTMETRICS ncm;
+		memset(&ncm, 0, sizeof(ncm));
+		WINASSERT(::SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0));
+		Copy(&ncm.lfMessageFont);
+	}
+
+	void Copy(const LOGFONT* pGDILogFont){
+		WINASSERT(pGDILogFont!= nullptr);
+		*(LOGFONT*)this = *pGDILogFont;
+	}
+
+	GDILogFont& operator =(const GDILogFont& src)	{
+		Copy(&src);
+		return *this;
+	}
+
+	GDILogFont& operator =(const LOGFONT& src)	{
+		Copy(&src);
+		return *this;
+	}
+
+	GDILogFont& operator =(HFONT hFont)	{
+		WINASSERT(::GetObjectType(hFont) == OBJ_FONT);
+		::GetObject(hFont, sizeof(GDILogFont), (GDILogFont*)this);
+		return *this;
+	}
+
+	bool operator ==(const LOGFONT& logfont) const	{
+		return(logfont.lfHeight == lfHeight &&
+		       logfont.lfWidth == lfWidth &&
+		       logfont.lfEscapement == lfEscapement &&
+		       logfont.lfOrientation == lfOrientation &&
+		       logfont.lfWeight == lfWeight &&
+		       logfont.lfItalic == lfItalic &&
+		       logfont.lfUnderline == lfUnderline &&
+		       logfont.lfStrikeOut == lfStrikeOut &&
+		       logfont.lfCharSet == lfCharSet &&
+		       logfont.lfOutPrecision == lfOutPrecision &&
+		       logfont.lfClipPrecision == lfClipPrecision &&
+		       logfont.lfQuality == lfQuality &&
+		       logfont.lfPitchAndFamily == lfPitchAndFamily &&
+		       lstrcmp(logfont.lfFaceName, lfFaceName) == 0);
+	}
+};
+
+template <bool Managed>
+class FontT{
+public:
+	HFONT m_font;
+
+	FontT(HFONT hFont = nullptr) : m_font(hFont){ }
+
+	~FontT(){
+		if(Managed && m_font!= nullptr)
+			DeleteObject();
+	}
+
+	FontT<Managed>& operator =(HFONT hFont){
+		Attach(hFont);
+		return *this;
+	}
+
+	void Attach(HFONT hFont){
+		if(Managed && m_font!= nullptr && m_font!= hFont)
+			::DeleteObject(m_font);
+		m_font= hFont;
+	}
+
+	HFONT Detach(){
+		HFONT hFont = m_font;
+		m_font= nullptr;
+		return hFont;
+	}
+
+	operator HFONT() const { return m_font; }
+
+	bool IsNull() const { return (m_font== nullptr); }
+
+	HFONT CreateFontIndirect(const GDILogFont* lpGDILogFont){
+		WINASSERT(m_font== nullptr);
+		m_font= ::CreateFontIndirect(lpGDILogFont);
+		return m_font;
+	}
+
+	HFONT CreateFontIndirectEx(CONST ENUMLOGFONTEXDV* penumlfex){
+		WINASSERT(m_font== nullptr);
+		m_font= ::CreateFontIndirectEx(penumlfex);
+		return m_font;
+	}
+
+	HFONT CreateFont(int nHeight, int nWidth, int nEscapement,
+			int nOrientation, int nWeight, BYTE bItalic, BYTE bUnderline,
+			BYTE cStrikeOut, BYTE nCharSet, BYTE nOutPrecision,
+			BYTE nClipPrecision, BYTE nQuality, BYTE nPitchAndFamily,
+			LPCTSTR lpszFacename){
+		WINASSERT(m_font== nullptr);
+
+		m_font= ::CreateFont(nHeight, nWidth, nEscapement,
+			nOrientation, nWeight, bItalic, bUnderline, cStrikeOut,
+			nCharSet, nOutPrecision, nClipPrecision, nQuality,
+			nPitchAndFamily, lpszFacename);
+		return m_font;
+	}
+
+	HFONT CreatePointFont(int nPointSize, LPCTSTR lpszFaceName, HDC hDC = nullptr, bool bBold = false, bool bItalic = false){
+		LOGFONT LFont = { 0 };
+		LFont.lfCharSet = DEFAULT_CHARSET;
+		LFont.lfHeight = nPointSize;
+
+		if(_countof(LFont.lfFaceName) >= _tcslen(lpszFaceName))	{
+		#ifdef UNICODE
+			wcsncpy_s(LFont.lfFaceName,_countof(LFont.lfFaceName),lpszFaceName,_tcslen(lpszFaceName));
+		#else
+			strncpy_s(LFont.lfFaceName,_countof(LFont.lfFaceName),lpszFaceName,_tcslen(lpszFaceName));
+		#endif
+		}else{
+			#ifdef UNICODE
+			wcsncpy_s(LFont.lfFaceName,_countof(LFont.lfFaceName),lpszFaceName,_countof(LFont.lfFaceName));
+		#else
+			strncpy_s(LFont.lfFaceName,_countof(LFont.lfFaceName),lpszFaceName,_countof(LFont.lfFaceName));
+		#endif
+		}
+
+		if(bBold)
+			LFont.lfWeight = FW_BOLD;
+		if(bItalic)
+			LFont.lfItalic = (BYTE)TRUE;
+
+		return CreatePointFontIndirect(&LFont, hDC);
+	}
+
+	HFONT CreatePointFontIndirect(const LOGFONT* lpGDILogFont, HDC hDC = nullptr){
+		HDC hDC1 = (hDC != nullptr) ? hDC : ::GetDC(nullptr);
+		LOGFONT font = *lpGDILogFont;
+		POINT pt = { 0, 0 };
+		pt.y = ::MulDiv(::GetDeviceCaps(hDC1, LOGPIXELSY), font.lfHeight, 720);   // 72 points/inch, 10 decipoints/point
+		::DPtoLP(hDC1, &pt, 1);
+		POINT ptOrg = { 0, 0 };
+		::DPtoLP(hDC1, &ptOrg, 1);
+		font.lfHeight = -abs(pt.y - ptOrg.y);
+
+		if(hDC == nullptr)
+			::ReleaseDC(nullptr, hDC1);
+
+		return CreateFontIndirect(&font);
+	}
+
+	BOOL DeleteObject(){
+		WINASSERT(m_font!= nullptr);
+		BOOL bRet = ::DeleteObject(m_font);
+		if(bRet)
+			m_font= nullptr;
+		return bRet;
+	}
+
+	int GetLogFont(LOGFONT* pGDILogFont) const{
+		WINASSERT(m_font!= nullptr);
+		return ::GetObject(m_font, sizeof(GDILogFont), pGDILogFont);
+	}
+
+	bool GetLogFont(LOGFONT& GDILogFont) const{
+		WINASSERT(m_font!= nullptr);
+		return (::GetObject(m_font, sizeof(GDILogFont), &GDILogFont) == sizeof(GDILogFont));
+	}
+};
+
+typedef FontT<false>   GDIFontHandle;
+typedef FontT<true>    GDIFont;
+
+template <bool Managed>
+class BitmapT{
+public:
+	HBITMAP m_bitmap;
+
+	BitmapT(HBITMAP hBitmap = nullptr) : m_bitmap(hBitmap){ }
+
+	~BitmapT(){
+		if(Managed && m_bitmap != nullptr)
+			DeleteObject();
+	}
+
+	BitmapT<Managed>& operator =(HBITMAP hBitmap){
+		Attach(hBitmap);
+		return *this;
+	}
+
+	void Attach(HBITMAP hBitmap){
+		if(Managed && m_bitmap != nullptr&& m_bitmap != hBitmap)
+			::DeleteObject(m_bitmap);
+		m_bitmap = hBitmap;
+	}
+
+	HBITMAP Detach(){
+		HBITMAP hBitmap = m_bitmap;
+		m_bitmap = nullptr;
+		return hBitmap;
+	}
+
+	operator HBITMAP() const { return m_bitmap; }
+
+	bool IsNull() const { return (m_bitmap == nullptr); }
+
+	HBITMAP LoadBitmap(HMODULE hResource,UStringOrId bitmap){
+		WINASSERT(m_bitmap == nullptr);
+		m_bitmap = ::LoadBitmap(hResource, bitmap.Get());
+		return m_bitmap;
+	}
+
+	HBITMAP LoadOEMBitmap(UINT nIDBitmap) {
+		WINASSERT(m_bitmap == nullptr);
+		m_bitmap = ::LoadBitmap(nullptr, MAKEINTRESOURCE(nIDBitmap));
+		return m_bitmap;
+	}
+
+	HBITMAP LoadMappedBitmap(HMODULE hResource,UINT nIDBitmap, UINT nFlags = 0, LPCOLORMAP lpColorMap = nullptr, int nMapSize = 0){
+		WINASSERT(m_bitmap == nullptr);
+		m_bitmap = ::CreateMappedBitmap(hResource, nIDBitmap, (WORD)nFlags, lpColorMap, nMapSize);
+		return m_bitmap;
+	}
+
+	HBITMAP CreateBitmap(int nWidth, int nHeight, UINT nPlanes, UINT nBitsPerPixel, const void* lpBits){
+		WINASSERT(m_bitmap == nullptr);
+		m_bitmap = ::CreateBitmap(nWidth, nHeight, nPlanes, nBitsPerPixel, lpBits);
+		return m_bitmap;
+	}
+
+	HBITMAP CreateBitmapIndirect(LPBITMAP lpBitmap){
+		WINASSERT(m_bitmap == nullptr);
+		m_bitmap = ::CreateBitmapIndirect(lpBitmap);
+		return m_bitmap;
+	}
+
+	HBITMAP CreateCompatibleBitmap(HDC hDC, int nWidth, int nHeight){
+		WINASSERT(m_bitmap == nullptr);
+		m_bitmap = ::CreateCompatibleBitmap(hDC, nWidth, nHeight);
+		return m_bitmap;
+	}
+
+	HBITMAP CreateDiscardableBitmap(HDC hDC, int nWidth, int nHeight){
+		WINASSERT(m_bitmap == nullptr);
+		m_bitmap = ::CreateDiscardableBitmap(hDC, nWidth, nHeight);
+		return m_bitmap;
+	}
+
+	BOOL DeleteObject(){
+		WINASSERT(m_bitmap != nullptr);
+		BOOL bRet = ::DeleteObject(m_bitmap);
+		if(bRet)
+			m_bitmap = nullptr;
+		return bRet;
+	}
+
+	int GetBitmap(BITMAP* pBitMap) const{
+		WINASSERT(m_bitmap != nullptr);
+		return ::GetObject(m_bitmap, sizeof(BITMAP), pBitMap);
+	}
+
+	bool GetBitmap(BITMAP& bm) const{
+		WINASSERT(m_bitmap != nullptr);
+		return (::GetObject(m_bitmap, sizeof(BITMAP), &bm) == sizeof(BITMAP));
+	}
+
+	bool GetSize(SIZE& size) const{
+		WINASSERT(m_bitmap != nullptr);
+		BITMAP bm = { 0 };
+		if(!GetBitmap(&bm))
+			return false;
+		size.cx = bm.bmWidth;
+		size.cy = bm.bmHeight;
+		return true;
+	}
+
+	DWORD GetBitmapBits(DWORD dwCount, LPVOID lpBits) const{
+		WINASSERT(m_bitmap != nullptr);
+		return ::GetBitmapBits(m_bitmap, dwCount, lpBits);
+	}
+
+	DWORD SetBitmapBits(DWORD dwCount, const void* lpBits){
+		WINASSERT(m_bitmap != nullptr);
+		return ::SetBitmapBits(m_bitmap, dwCount, lpBits);
+	}
+
+	BOOL GetBitmapDimension(LPSIZE lpSize) const{
+		WINASSERT(m_bitmap != nullptr);
+		return ::GetBitmapDimensionEx(m_bitmap, lpSize);
+	}
+
+	BOOL SetBitmapDimension(int nWidth, int nHeight, LPSIZE lpSize = nullptr){
+		WINASSERT(m_bitmap != nullptr);
+		return ::SetBitmapDimensionEx(m_bitmap, nWidth, nHeight, lpSize);
+	}
+
+	HBITMAP CreateDIBitmap(HDC hDC, CONST BITMAPINFOHEADER* lpbmih, DWORD dwInit, CONST VOID* lpbInit, CONST BITMAPINFO* lpbmi, UINT uColorUse){
+		WINASSERT(m_bitmap == nullptr);
+		m_bitmap = ::CreateDIBitmap(hDC, lpbmih, dwInit, lpbInit, lpbmi, uColorUse);
+		return m_bitmap;
+	}
+
+	HBITMAP CreateDIBSection(HDC hDC, CONST BITMAPINFO* lpbmi, UINT uColorUse, VOID** ppvBits, HANDLE hSection, DWORD dwOffset){
+		WINASSERT(m_bitmap == nullptr);
+		m_bitmap = ::CreateDIBSection(hDC, lpbmi, uColorUse, ppvBits, hSection, dwOffset);
+		return m_bitmap;
+	}
+
+	int GetDIBits(HDC hDC, UINT uStartScan, UINT cScanLines,  LPVOID lpvBits, LPBITMAPINFO lpbmi, UINT uColorUse) const{
+		WINASSERT(m_bitmap != nullptr);
+		return ::GetDIBits(hDC, m_bitmap, uStartScan, cScanLines,  lpvBits, lpbmi, uColorUse);
+	}
+
+	int SetDIBits(HDC hDC, UINT uStartScan, UINT cScanLines, CONST VOID* lpvBits, CONST BITMAPINFO* lpbmi, UINT uColorUse){
+		WINASSERT(m_bitmap != nullptr);
+		return ::SetDIBits(hDC, m_bitmap, uStartScan, cScanLines, lpvBits, lpbmi, uColorUse);
+	}
+};
+
+typedef BitmapT<false>   BitmapHandle;
+typedef BitmapT<true>    Bitmap;
+
+template <bool Managed>
+class PaletteT{
+public:
+	HPALETTE m_palette;
+
+	PaletteT(HPALETTE hPalette = nullptr) : m_palette(hPalette){ }
+
+	~PaletteT(){
+		if(Managed && m_palette != nullptr)
+			DeleteObject();
+	}
+
+	PaletteT<Managed>& operator =(HPALETTE hPalette){
+		Attach(hPalette);
+		return *this;
+	}
+
+	void Attach(HPALETTE hPalette){
+		if(Managed && m_palette != nullptr && m_palette != hPalette)
+			::DeleteObject(m_palette);
+		m_palette = hPalette;
+	}
+
+	HPALETTE Detach(){
+		HPALETTE hPalette = m_palette;
+		m_palette = nullptr;
+		return hPalette;
+	}
+
+	operator HPALETTE() const { return m_palette; }
+
+	bool IsNull() const { return (m_palette == nullptr); }
+
+	HPALETTE CreatePalette(LPLOGPALETTE lpLogPalette){
+		WINASSERT(m_palette == nullptr);
+		m_palette = ::CreatePalette(lpLogPalette);
+		return m_palette;
+	}
+
+	HPALETTE CreateHalftonePalette(HDC hDC){
+		WINASSERT(m_palette == nullptr);
+		WINASSERT(hDC != nullptr);
+		m_palette = ::CreateHalftonePalette(hDC);
+		return m_palette;
+	}
+
+	BOOL DeleteObject(){
+		WINASSERT(m_palette != nullptr);
+		BOOL bRet = ::DeleteObject(m_palette);
+		if(bRet)
+			m_palette = nullptr;
+		return bRet;
+	}
+	
+	int GetEntryCount() const{
+		WINASSERT(m_palette != nullptr);
+		WORD nEntries = 0;
+		::GetObject(m_palette, sizeof(WORD), &nEntries);
+		return (int)nEntries;
+	}
+
+	UINT GetPaletteEntries(UINT nStartIndex, UINT nNumEntries, LPPALETTEENTRY lpPaletteColors) const{
+		WINASSERT(m_palette != nullptr);
+		return ::GetPaletteEntries(m_palette, nStartIndex, nNumEntries, lpPaletteColors);
+	}
+
+	UINT SetPaletteEntries(UINT nStartIndex, UINT nNumEntries, LPPALETTEENTRY lpPaletteColors){
+		WINASSERT(m_palette != nullptr);
+		return ::SetPaletteEntries(m_palette, nStartIndex, nNumEntries, lpPaletteColors);
+	}
+
+	void AnimatePalette(UINT nStartIndex, UINT nNumEntries, LPPALETTEENTRY lpPaletteColors){
+		WINASSERT(m_palette != nullptr);
+		::AnimatePalette(m_palette, nStartIndex, nNumEntries, lpPaletteColors);
+	}
+
+	BOOL ResizePalette(UINT nNumEntries){
+		WINASSERT(m_palette != nullptr);
+		return ::ResizePalette(m_palette, nNumEntries);
+	}
+
+	UINT GetNearestPaletteIndex(COLORREF crColor) const{
+		WINASSERT(m_palette != nullptr);
+		return ::GetNearestPaletteIndex(m_palette, crColor);
+	}
+};
+
+typedef PaletteT<false>   PaletteHandle;
+typedef PaletteT<true>    Palette;
+
+template <bool Managed>
+class RgnT{
+public:
+	HRGN m_rgn;
+
+	RgnT(HRGN hRgn = nullptr) : m_rgn(hRgn){ }
+
+	~RgnT(){
+		if(Managed && m_rgn != nullptr)
+			DeleteObject();
+	}
+
+	RgnT<Managed>& operator =(HRGN hRgn){
+		Attach(hRgn);
+		return *this;
+	}
+
+	void Attach(HRGN hRgn){
+		if(Managed && m_rgn != nullptr && m_rgn != hRgn)
+			::DeleteObject(m_rgn);
+		m_rgn = hRgn;
+	}
+
+	HRGN Detach(){
+		HRGN hRgn = m_rgn;
+		m_rgn = nullptr;
+		return hRgn;
+	}
+
+	operator HRGN() const { return m_rgn; }
+
+	bool IsNull() const { return (m_rgn == nullptr); }
+
+	HRGN CreateRectRgn(int x1, int y1, int x2, int y2){
+		WINASSERT(m_rgn == nullptr);
+		m_rgn = ::CreateRectRgn(x1, y1, x2, y2);
+		return m_rgn;
+	}
+
+	HRGN CreateRectRgnIndirect(LPCRECT lpRect){
+		WINASSERT(m_rgn == nullptr);
+		m_rgn = ::CreateRectRgnIndirect(lpRect);
+		return m_rgn;
+	}
+
+	HRGN CreateEllipticRgn(int x1, int y1, int x2, int y2){
+		WINASSERT(m_rgn == nullptr);
+		m_rgn = ::CreateEllipticRgn(x1, y1, x2, y2);
+		return m_rgn;
+	}
+
+	HRGN CreateEllipticRgnIndirect(LPCRECT lpRect){
+		WINASSERT(m_rgn == nullptr);
+		m_rgn = ::CreateEllipticRgnIndirect(lpRect);
+		return m_rgn;
+	}
+
+	HRGN CreatePolygonRgn(LPPOINT lpPoints, int nCount, int nMode){
+		WINASSERT(m_rgn == nullptr);
+		m_rgn = ::CreatePolygonRgn(lpPoints, nCount, nMode);
+		return m_rgn;
+	}
+
+	HRGN CreatePolyPolygonRgn(LPPOINT lpPoints, LPINT lpPolyCounts, int nCount, int nPolyFillMode){
+		WINASSERT(m_rgn == nullptr);
+		m_rgn = ::CreatePolyPolygonRgn(lpPoints, lpPolyCounts, nCount, nPolyFillMode);
+		return m_rgn;
+	}
+
+	HRGN CreateRoundRectRgn(int x1, int y1, int x2, int y2, int x3, int y3){
+		WINASSERT(m_rgn == nullptr);
+		m_rgn = ::CreateRoundRectRgn(x1, y1, x2, y2, x3, y3);
+		return m_rgn;
+	}
+
+	HRGN CreateFromPath(HDC hDC){
+		WINASSERT(m_rgn == nullptr);
+		WINASSERT(hDC != nullptr);
+		m_rgn = ::PathToRegion(hDC);
+		return m_rgn;
+	}
+
+	HRGN CreateFromData(const XFORM* lpXForm, int nCount, const RGNDATA* pRgnData){
+		WINASSERT(m_rgn == nullptr);
+		m_rgn = ::ExtCreateRegion(lpXForm, nCount, pRgnData);
+		return m_rgn;
+	}
+
+	BOOL DeleteObject(){
+		WINASSERT(m_rgn != nullptr);
+		BOOL bRet = ::DeleteObject(m_rgn);
+		if(bRet)
+			m_rgn = nullptr;
+		return bRet;
+	}
+
+	void SetRectRgn(int x1, int y1, int x2, int y2){
+		WINASSERT(m_rgn != nullptr);
+		::SetRectRgn(m_rgn, x1, y1, x2, y2);
+	}
+
+	void SetRectRgn(LPCRECT lpRect){
+		WINASSERT(m_rgn != nullptr);
+		::SetRectRgn(m_rgn, lpRect->left, lpRect->top, lpRect->right, lpRect->bottom);
+	}
+
+	int CombineRgn(HRGN hRgnSrc1, HRGN hRgnSrc2, int nCombineMode){
+		WINASSERT(m_rgn != nullptr);
+		return ::CombineRgn(m_rgn, hRgnSrc1, hRgnSrc2, nCombineMode);
+	}
+
+	int CombineRgn(HRGN hRgnSrc, int nCombineMode){
+		WINASSERT(m_rgn != nullptr);
+		return ::CombineRgn(m_rgn, m_rgn, hRgnSrc, nCombineMode);
+	}
+
+	int CopyRgn(HRGN hRgnSrc){
+		WINASSERT(m_rgn != nullptr);
+		return ::CombineRgn(m_rgn, hRgnSrc, nullptr, RGN_COPY);
+	}
+
+	BOOL EqualRgn(HRGN hRgn) const{
+		WINASSERT(m_rgn != nullptr);
+		return ::EqualRgn(m_rgn, hRgn);
+	}
+
+	int OffsetRgn(int x, int y){
+		WINASSERT(m_rgn != nullptr);
+		return ::OffsetRgn(m_rgn, x, y);
+	}
+
+	int OffsetRgn(POINT point){
+		WINASSERT(m_rgn != nullptr);
+		return ::OffsetRgn(m_rgn, point.x, point.y);
+	}
+
+	int GetRgnBox(LPRECT lpRect) const{
+		WINASSERT(m_rgn != nullptr);
+		return ::GetRgnBox(m_rgn, lpRect);
+	}
+
+	BOOL PtInRegion(int x, int y) const{
+		WINASSERT(m_rgn != nullptr);
+		return ::PtInRegion(m_rgn, x, y);
+	}
+
+	BOOL PtInRegion(POINT point) const{
+		WINASSERT(m_rgn != nullptr);
+		return ::PtInRegion(m_rgn, point.x, point.y);
+	}
+
+	BOOL RectInRegion(LPCRECT lpRect) const{
+		WINASSERT(m_rgn != nullptr);
+		return ::RectInRegion(m_rgn, lpRect);
+	}
+
+	int GetRegionData(LPRGNDATA lpRgnData, int nDataSize) const{
+		WINASSERT(m_rgn != nullptr);
+		return (int)::GetRegionData(m_rgn, nDataSize, lpRgnData);
+	}
+};
+
+typedef RgnT<false>   RgnHandle;
+typedef RgnT<true>    Rgn;
+
+template <bool Managed>
+class DCT{
+public:
+	HDC m_hdc;
+	
+	DCT(HDC hDC = nullptr) : m_hdc(hDC){
+	}
+
+	~DCT(){
+		if(Managed && m_hdc != nullptr)
+			::DeleteDC(Detach());
+	}
+
+	DCT<Managed>& operator =(HDC hDC){
+		Attach(hDC);
+		return *this;
+	}
+
+	void Attach(HDC hDC){
+		if(Managed && m_hdc != nullptr && m_hdc != hDC)
+			::DeleteDC(m_hdc);
+		m_hdc = hDC;
+	}
+
+	HDC Detach(){
+		HDC hDC = m_hdc;
+		m_hdc = nullptr;
+		return hDC;
+	}
+
+	operator HDC() const { return m_hdc; }
+
+	bool IsNull() const { return (m_hdc == nullptr); }
+
+	HWND WindowFromDC() const{
+		WINASSERT(m_hdc != nullptr);
+		return ::WindowFromDC(m_hdc);
+	}
+
+	PenHandle GetCurrentPen() const{
+		WINASSERT(m_hdc != nullptr);
+		return PenHandle((HPEN)::GetCurrentObject(m_hdc, OBJ_PEN));
+	}
+
+	BrushHandle GetCurrentBrush() const{
+		WINASSERT(m_hdc != nullptr);
+		return BrushHandle((HBRUSH)::GetCurrentObject(m_hdc, OBJ_BRUSH));
+	}
+
+	PaletteHandle GetCurrentPalette() const{
+		WINASSERT(m_hdc != nullptr);
+		return PaletteHandle((HPALETTE)::GetCurrentObject(m_hdc, OBJ_PAL));
+	}
+	
+	GDIFontHandle GetCurrentFont() const{
+		WINASSERT(m_hdc != nullptr);
+		return GDIFontHandle((HFONT)::GetCurrentObject(m_hdc, OBJ_FONT));
+	}
+
+	BitmapHandle GetCurrentBitmap() const{
+		WINASSERT(m_hdc != nullptr);
+		return BitmapHandle((HBITMAP)::GetCurrentObject(m_hdc, OBJ_BITMAP));
+	}
+
+	HDC CreateDC(LPCTSTR lpszDriverName, LPCTSTR lpszDeviceName, LPCTSTR lpszOutput, const DEVMODE* lpInitData){
+		WINASSERT(m_hdc == nullptr);
+		m_hdc = ::CreateDC(lpszDriverName, lpszDeviceName, lpszOutput, lpInitData);
+		return m_hdc;
+	}
+
+	HDC CreateCompatibleDC(HDC hDC = nullptr){
+		WINASSERT(m_hdc == nullptr);
+		m_hdc = ::CreateCompatibleDC(hDC);
+		return m_hdc;
+	}
+
+	BOOL DeleteDC(){
+		if(m_hdc == nullptr)
+			return FALSE;
+		BOOL bRet = ::DeleteDC(m_hdc);
+		if(bRet)
+			m_hdc = nullptr;
+		return bRet;
+	}
+
+	int SaveDC()	{
+		WINASSERT(m_hdc != nullptr);
+		return ::SaveDC(m_hdc);
+	}
+
+	BOOL RestoreDC(int nSavedDC){
+		WINASSERT(m_hdc != nullptr);
+		return ::RestoreDC(m_hdc, nSavedDC);
+	}
+
+	int GetDeviceCaps(int nIndex) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetDeviceCaps(m_hdc, nIndex);
+	}
+
+	UINT SetBoundsRect(LPCRECT lpRectBounds, UINT flags){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetBoundsRect(m_hdc, lpRectBounds, flags);
+	}
+
+	UINT GetBoundsRect(LPRECT lpRectBounds, UINT flags) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetBoundsRect(m_hdc, lpRectBounds, flags);
+	}
+
+	BOOL ResetDC(const DEVMODE* lpDevMode){
+		WINASSERT(m_hdc != nullptr);
+		return ::ResetDC(m_hdc, lpDevMode) != nullptr;
+	}
+
+	BOOL GetBrushOrg(LPPOINT lpPoint) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetBrushOrgEx(m_hdc, lpPoint);
+	}
+
+	BOOL SetBrushOrg(int x, int y, LPPOINT lpPoint = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetBrushOrgEx(m_hdc, x, y, lpPoint);
+	}
+
+	BOOL SetBrushOrg(POINT point, LPPOINT lpPointRet = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetBrushOrgEx(m_hdc, point.x, point.y, lpPointRet);
+	}
+
+	int EnumObjects(int nObjectType, int (CALLBACK* lpfn)(LPVOID, LPARAM), LPARAM lpData){
+		WINASSERT(m_hdc != nullptr);
+#ifdef STRICT
+		return ::EnumObjects(m_hdc, nObjectType, (GOBJENUMPROC)lpfn, lpData);
+#else
+		return ::EnumObjects(m_hdc, nObjectType, (GOBJENUMPROC)lpfn, (LPVOID)lpData);
+#endif
+	}
+
+	HPEN SelectPen(HPEN hPen){
+		WINASSERT(m_hdc != nullptr);
+		WINASSERT(hPen == nullptr || ::GetObjectType(hPen) == OBJ_PEN || ::GetObjectType(hPen) == OBJ_EXTPEN);
+		return (HPEN)::SelectObject(m_hdc, hPen);
+	}
+
+	HBRUSH SelectBrush(HBRUSH hBrush){
+		WINASSERT(m_hdc != nullptr);
+		WINASSERT(hBrush == nullptr || ::GetObjectType(hBrush) == OBJ_BRUSH);
+		return (HBRUSH)::SelectObject(m_hdc, hBrush);
+	}
+
+	HFONT SelectFont(HFONT hFont){
+		WINASSERT(m_hdc != nullptr);
+		WINASSERT(hFont == nullptr || ::GetObjectType(hFont) == OBJ_FONT);
+		return (HFONT)::SelectObject(m_hdc, hFont);
+	}
+
+	HBITMAP SelectBitmap(HBITMAP hBitmap){
+		WINASSERT(m_hdc != nullptr);
+		WINASSERT(hBitmap == nullptr || ::GetObjectType(hBitmap) == OBJ_BITMAP);
+		return (HBITMAP)::SelectObject(m_hdc, hBitmap);
+	}
+
+	int SelectRgn(HRGN hRgn)      {
+		WINASSERT(m_hdc != nullptr);
+		WINASSERT(hRgn == nullptr || ::GetObjectType(hRgn) == OBJ_REGION);
+		return PtrToInt(::SelectObject(m_hdc, hRgn));
+	}
+
+	HPEN SelectStockPen(int nPen)	{
+		WINASSERT(m_hdc != nullptr);
+#if (_WIN32_WINNT >= 0x0500)
+		WINASSERT(nPen == WHITE_PEN || nPen == BLACK_PEN || nPen == NULL_PEN || nPen == DC_PEN);
+#else
+		WINASSERT(nPen == WHITE_PEN || nPen == BLACK_PEN || nPen == NULL_PEN);
+#endif
+		return SelectPen((HPEN)::GetStockObject(nPen));
+	}
+
+	HBRUSH SelectStockBrush(int nBrush){
+#if (_WIN32_WINNT >= 0x0500)
+		WINASSERT((nBrush >= WHITE_BRUSH && nBrush <= HOLLOW_BRUSH) || nBrush == DC_BRUSH);
+#else
+		WINASSERT(nBrush >= WHITE_BRUSH && nBrush <= HOLLOW_BRUSH);
+#endif 
+		return SelectBrush((HBRUSH)::GetStockObject(nBrush));
+	}
+
+	HFONT SelectStockFont(int nFont){
+		WINASSERT(( nFont>= OEM_FIXED_FONT && nFont<= SYSTEM_FIXED_FONT) || nFont== DEFAULT_GUI_FONT);
+		return SelectFont((HFONT)::GetStockObject(nFont));
+	}
+
+	HPALETTE SelectStockPalette(int nPalette, BOOL bForceBackground){
+		WINASSERT(nPalette == DEFAULT_PALETTE); // the only one supported
+		return SelectPalette((HPALETTE)::GetStockObject(nPalette), bForceBackground);
+	}
+
+	COLORREF GetNearestColor(COLORREF crColor) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetNearestColor(m_hdc, crColor);
+	}
+
+	HPALETTE SelectPalette(HPALETTE hPalette, BOOL bForceBackground){
+		WINASSERT(m_hdc != nullptr);
+
+		return ::SelectPalette(m_hdc, hPalette, bForceBackground);
+	}
+
+	UINT RealizePalette(){
+		WINASSERT(m_hdc != nullptr);
+		return ::RealizePalette(m_hdc);
+	}
+
+	void UpdateColors(){
+		WINASSERT(m_hdc != nullptr);
+		::UpdateColors(m_hdc);
+	}
+
+	COLORREF GetBkColor() const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetBkColor(m_hdc);
+	}
+
+	int GetBkMode() const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetBkMode(m_hdc);
+	}
+
+	int GetPolyFillMode() const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetPolyFillMode(m_hdc);
+	}
+
+	int GetROP2() const	{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetROP2(m_hdc);
+	}
+
+	int GetStretchBltMode() const	{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetStretchBltMode(m_hdc);
+	}
+
+	COLORREF GetTextColor() const	{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetTextColor(m_hdc);
+	}
+
+	COLORREF SetBkColor(COLORREF crColor)	{
+		WINASSERT(m_hdc != nullptr);
+		return ::SetBkColor(m_hdc, crColor);
+	}
+
+	int SetBkMode(int nBkMode){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetBkMode(m_hdc, nBkMode);
+	}
+
+	int SetPolyFillMode(int nPolyFillMode){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetPolyFillMode(m_hdc, nPolyFillMode);
+	}
+
+	int SetROP2(int nDrawMode){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetROP2(m_hdc, nDrawMode);
+	}
+
+	int SetStretchBltMode(int nStretchMode){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetStretchBltMode(m_hdc, nStretchMode);
+	}
+
+	COLORREF SetTextColor(COLORREF crColor){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetTextColor(m_hdc, crColor);
+	}
+
+	BOOL GetColorAdjustment(LPCOLORADJUSTMENT lpColorAdjust) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetColorAdjustment(m_hdc, lpColorAdjust);
+	}
+
+	BOOL SetColorAdjustment(const COLORADJUSTMENT* lpColorAdjust){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetColorAdjustment(m_hdc, lpColorAdjust);
+	}
+
+	int GetMapMode() const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetMapMode(m_hdc);
+	}
+
+	BOOL GetViewportOrg(LPPOINT lpPoint) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetViewportOrgEx(m_hdc, lpPoint);
+	}
+
+	int SetMapMode(int nMapMode){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetMapMode(m_hdc, nMapMode);
+	}
+
+	BOOL SetViewportOrg(int x, int y, LPPOINT lpPoint = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetViewportOrgEx(m_hdc, x, y, lpPoint);
+	}
+
+	BOOL SetViewportOrg(POINT point, LPPOINT lpPointRet = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return SetViewportOrg(point.x, point.y, lpPointRet);
+	}
+
+	BOOL OffsetViewportOrg(int nWidth, int nHeight, LPPOINT lpPoint = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::OffsetViewportOrgEx(m_hdc, nWidth, nHeight, lpPoint);
+	}
+
+	BOOL GetViewportExt(LPSIZE lpSize) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetViewportExtEx(m_hdc, lpSize);
+	}
+	
+	BOOL SetViewportExt(int x, int y, LPSIZE lpSize = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetViewportExtEx(m_hdc, x, y, lpSize);
+	}
+
+	BOOL SetViewportExt(SIZE size, LPSIZE lpSizeRet = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return SetViewportExt(size.cx, size.cy, lpSizeRet);
+	}
+
+	BOOL ScaleViewportExt(int xNum, int xDenom, int yNum, int yDenom, LPSIZE lpSize = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::ScaleViewportExtEx(m_hdc, xNum, xDenom, yNum, yDenom, lpSize);
+	}
+
+	BOOL GetWindowOrg(LPPOINT lpPoint) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetWindowOrgEx(m_hdc, lpPoint);
+	}
+
+	BOOL SetWindowOrg(int x, int y, LPPOINT lpPoint = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetWindowOrgEx(m_hdc, x, y, lpPoint);
+	}
+
+	BOOL SetWindowOrg(POINT point, LPPOINT lpPointRet = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return SetWindowOrg(point.x, point.y, lpPointRet);
+	}
+
+	BOOL OffsetWindowOrg(int nWidth, int nHeight, LPPOINT lpPoint = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::OffsetWindowOrgEx(m_hdc, nWidth, nHeight, lpPoint);
+	}
+
+	BOOL GetWindowExt(LPSIZE lpSize) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetWindowExtEx(m_hdc, lpSize);
+	}
+
+	BOOL SetWindowExt(int x, int y, LPSIZE lpSize = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetWindowExtEx(m_hdc, x, y, lpSize);
+	}
+
+	BOOL SetWindowExt(SIZE size, LPSIZE lpSizeRet = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return SetWindowExt(size.cx, size.cy, lpSizeRet);
+	}
+
+	BOOL ScaleWindowExt(int xNum, int xDenom, int yNum, int yDenom, LPSIZE lpSize = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::ScaleWindowExtEx(m_hdc, xNum, xDenom, yNum, yDenom, lpSize);
+	}
+
+	BOOL DPtoLP(LPPOINT lpPoints, int nCount = 1) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::DPtoLP(m_hdc, lpPoints, nCount);
+	}
+
+	BOOL DPtoLP(LPRECT lpRect) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::DPtoLP(m_hdc, (LPPOINT)lpRect, 2);
+	}
+
+	BOOL DPtoLP(LPSIZE lpSize) const{
+		SIZE sizeWinExt = { 0, 0 };
+		if(!GetWindowExt(&sizeWinExt))
+			return FALSE;
+		SIZE sizeVpExt = { 0, 0 };
+		if(!GetViewportExt(&sizeVpExt))
+			return FALSE;
+		lpSize->cx = ::MulDiv(lpSize->cx, abs(sizeWinExt.cx), abs(sizeVpExt.cx));
+		lpSize->cy = ::MulDiv(lpSize->cy, abs(sizeWinExt.cy), abs(sizeVpExt.cy));
+		return TRUE;
+	}
+
+	BOOL LPtoDP(LPPOINT lpPoints, int nCount = 1) const	{
+		WINASSERT(m_hdc != nullptr);
+		return ::LPtoDP(m_hdc, lpPoints, nCount);
+	}
+
+	BOOL LPtoDP(LPRECT lpRect) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::LPtoDP(m_hdc, (LPPOINT)lpRect, 2);
+	}
+
+	BOOL LPtoDP(LPSIZE lpSize) const{
+		SIZE sizeWinExt = { 0, 0 };
+		if(!GetWindowExt(&sizeWinExt))
+			return FALSE;
+		SIZE sizeVpExt = { 0, 0 };
+		if(!GetViewportExt(&sizeVpExt))
+			return FALSE;
+		lpSize->cx = ::MulDiv(lpSize->cx, abs(sizeVpExt.cx), abs(sizeWinExt.cx));
+		lpSize->cy = ::MulDiv(lpSize->cy, abs(sizeVpExt.cy), abs(sizeWinExt.cy));
+		return TRUE;
+	}
+
+	#define HIMETRIC_INCH   2540    // HIMETRIC units per inch
+
+	void DPtoHIMETRIC(LPSIZE lpSize) const{
+		WINASSERT(m_hdc != nullptr);
+		int nMapMode;
+		if((nMapMode = GetMapMode()) < MM_ISOTROPIC && nMapMode != MM_TEXT){
+			// when using a constrained map mode, map against physical inch
+			((DCT<true>*)this)->SetMapMode(MM_HIMETRIC);
+			DPtoLP(lpSize);
+			((DCT<true>*)this)->SetMapMode(nMapMode);
+		}else{
+			// map against logical inch for non-constrained mapping modes
+			int cxPerInch = GetDeviceCaps(LOGPIXELSX);
+			int cyPerInch = GetDeviceCaps(LOGPIXELSY);
+			WINASSERT(cxPerInch != 0 && cyPerInch != 0);
+			lpSize->cx = ::MulDiv(lpSize->cx, HIMETRIC_INCH, cxPerInch);
+			lpSize->cy = ::MulDiv(lpSize->cy, HIMETRIC_INCH, cyPerInch);
+		}
+	}
+
+	void HIMETRICtoDP(LPSIZE lpSize) const{
+		WINASSERT(m_hdc != nullptr);
+		int nMapMode;
+		if((nMapMode = GetMapMode()) < MM_ISOTROPIC && nMapMode != MM_TEXT){
+			// when using a constrained map mode, map against physical inch
+			((DCT<true>*)this)->SetMapMode(MM_HIMETRIC);
+			LPtoDP(lpSize);
+			((DCT<true>*)this)->SetMapMode(nMapMode);
+		}else{
+			// map against logical inch for non-constrained mapping modes
+			int cxPerInch = GetDeviceCaps(LOGPIXELSX);
+			int cyPerInch = GetDeviceCaps(LOGPIXELSY);
+			WINASSERT(cxPerInch != 0 && cyPerInch != 0);
+			lpSize->cx = ::MulDiv(lpSize->cx, cxPerInch, HIMETRIC_INCH);
+			lpSize->cy = ::MulDiv(lpSize->cy, cyPerInch, HIMETRIC_INCH);
+		}
+	}
+
+	void LPtoHIMETRIC(LPSIZE lpSize) const{
+		LPtoDP(lpSize);
+		DPtoHIMETRIC(lpSize);
+	}
+
+	void HIMETRICtoLP(LPSIZE lpSize) const{
+		HIMETRICtoDP(lpSize);
+		DPtoLP(lpSize);
+	}
+
+	BOOL FillRgn(HRGN hRgn, HBRUSH hBrush){
+		WINASSERT(m_hdc != nullptr);
+		return ::FillRgn(m_hdc, hRgn, hBrush);
+	}
+
+	BOOL FrameRgn(HRGN hRgn, HBRUSH hBrush, int nWidth, int nHeight){
+		WINASSERT(m_hdc != nullptr);
+		return ::FrameRgn(m_hdc, hRgn, hBrush, nWidth, nHeight);
+	}
+
+	BOOL InvertRgn(HRGN hRgn){
+		WINASSERT(m_hdc != nullptr);
+		return ::InvertRgn(m_hdc, hRgn);
+	}
+
+	BOOL PaintRgn(HRGN hRgn){
+		WINASSERT(m_hdc != nullptr);
+		return ::PaintRgn(m_hdc, hRgn);
+	}
+
+	int GetClipBox(LPRECT lpRect) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetClipBox(m_hdc, lpRect);
+	}
+
+	int GetClipRgn(Rgn& region) const{
+		WINASSERT(m_hdc != nullptr);
+		if(region.IsNull())
+			region.CreateRectRgn(0, 0, 0, 0);
+
+		int nRet = ::GetClipRgn(m_hdc, region);
+		if(nRet != 1)
+			region.DeleteObject();
+
+		return nRet;
+	}
+
+	BOOL PtVisible(int x, int y) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::PtVisible(m_hdc, x, y);
+	}
+
+	BOOL PtVisible(POINT point) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::PtVisible(m_hdc, point.x, point.y);
+	}
+
+	BOOL RectVisible(LPCRECT lpRect) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::RectVisible(m_hdc, lpRect);
+	}
+
+	int SelectClipRgn(HRGN hRgn){
+		WINASSERT(m_hdc != nullptr);
+		return ::SelectClipRgn(m_hdc, (HRGN)hRgn);
+	}
+
+	int ExcludeClipRect(int x1, int y1, int x2, int y2){
+		WINASSERT(m_hdc != nullptr);
+		return ::ExcludeClipRect(m_hdc, x1, y1, x2, y2);
+	}
+
+	int ExcludeClipRect(LPCRECT lpRect){
+		WINASSERT(m_hdc != nullptr);
+		return ::ExcludeClipRect(m_hdc, lpRect->left, lpRect->top, lpRect->right, lpRect->bottom);
+	}
+
+	int ExcludeUpdateRgn(HWND hWnd){
+		WINASSERT(m_hdc != nullptr);
+		return ::ExcludeUpdateRgn(m_hdc, hWnd);
+	}
+
+	int IntersectClipRect(int x1, int y1, int x2, int y2){
+		WINASSERT(m_hdc != nullptr);
+		return ::IntersectClipRect(m_hdc, x1, y1, x2, y2);
+	}
+
+	int IntersectClipRect(LPCRECT lpRect){
+		WINASSERT(m_hdc != nullptr);
+		return ::IntersectClipRect(m_hdc, lpRect->left, lpRect->top, lpRect->right, lpRect->bottom);
+	}
+
+	int OffsetClipRgn(int x, int y){
+		WINASSERT(m_hdc != nullptr);
+		return ::OffsetClipRgn(m_hdc, x, y);
+	}
+
+	int OffsetClipRgn(SIZE size){
+		WINASSERT(m_hdc != nullptr);
+		return ::OffsetClipRgn(m_hdc, size.cx, size.cy);
+	}
+
+	int SelectClipRgn(HRGN hRgn, int nMode){
+		WINASSERT(m_hdc != nullptr);
+		return ::ExtSelectClipRgn(m_hdc, hRgn, nMode);
+	}
+
+	BOOL GetCurrentPosition(LPPOINT lpPoint) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetCurrentPositionEx(m_hdc, lpPoint);
+	}
+
+	BOOL MoveTo(int x, int y, LPPOINT lpPoint = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::MoveToEx(m_hdc, x, y, lpPoint);
+	}
+
+	BOOL MoveTo(POINT point, LPPOINT lpPointRet = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return MoveTo(point.x, point.y, lpPointRet);
+	}
+
+	BOOL LineTo(int x, int y){
+		WINASSERT(m_hdc != nullptr);
+		return ::LineTo(m_hdc, x, y);
+	}
+
+	BOOL LineTo(POINT point){
+		WINASSERT(m_hdc != nullptr);
+		return LineTo(point.x, point.y);
+	}
+
+	BOOL Arc(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4){
+		WINASSERT(m_hdc != nullptr);
+		return ::Arc(m_hdc, x1, y1, x2, y2, x3, y3, x4, y4);
+	}
+
+	BOOL Arc(LPCRECT lpRect, POINT ptStart, POINT ptEnd){
+		WINASSERT(m_hdc != nullptr);
+		return ::Arc(m_hdc, lpRect->left, lpRect->top,
+			lpRect->right, lpRect->bottom, ptStart.x, ptStart.y,
+			ptEnd.x, ptEnd.y);
+	}
+
+	BOOL Polyline(const POINT* lpPoints, int nCount){
+		WINASSERT(m_hdc != nullptr);
+		return ::Polyline(m_hdc, lpPoints, nCount);
+	}
+
+	BOOL AngleArc(int x, int y, int nRadius, float fStartAngle, float fSweepAngle){
+		WINASSERT(m_hdc != nullptr);
+		return ::AngleArc(m_hdc, x, y, nRadius, fStartAngle, fSweepAngle);
+	}
+
+	BOOL ArcTo(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4){
+		WINASSERT(m_hdc != nullptr);
+		return ::ArcTo(m_hdc, x1, y1, x2, y2, x3, y3, x4, y4);
+	}
+
+	BOOL ArcTo(LPCRECT lpRect, POINT ptStart, POINT ptEnd){
+		WINASSERT(m_hdc != nullptr);
+		return ArcTo(lpRect->left, lpRect->top, lpRect->right,
+		lpRect->bottom, ptStart.x, ptStart.y, ptEnd.x, ptEnd.y);
+	}
+
+	int GetArcDirection() const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetArcDirection(m_hdc);
+	}
+
+	int SetArcDirection(int nArcDirection){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetArcDirection(m_hdc, nArcDirection);
+	}
+
+	BOOL PolyDraw(const POINT* lpPoints, const BYTE* lpTypes, int nCount){
+		WINASSERT(m_hdc != nullptr);
+		return ::PolyDraw(m_hdc, lpPoints, lpTypes, nCount);
+	}
+
+	BOOL PolylineTo(const POINT* lpPoints, int nCount){
+		WINASSERT(m_hdc != nullptr);
+		return ::PolylineTo(m_hdc, lpPoints, nCount);
+	}
+
+	BOOL PolyPolyline(const POINT* lpPoints,
+		const DWORD* lpPolyPoints, int nCount){
+		WINASSERT(m_hdc != nullptr);
+		return ::PolyPolyline(m_hdc, lpPoints, lpPolyPoints, nCount);
+	}
+
+	BOOL PolyBezier(const POINT* lpPoints, int nCount){
+		WINASSERT(m_hdc != nullptr);
+		return ::PolyBezier(m_hdc, lpPoints, nCount);
+	}
+
+	BOOL PolyBezierTo(const POINT* lpPoints, int nCount){
+		WINASSERT(m_hdc != nullptr);
+		return ::PolyBezierTo(m_hdc, lpPoints, nCount);
+	}
+
+	BOOL FillRect(LPCRECT lpRect, HBRUSH hBrush){
+		WINASSERT(m_hdc != nullptr);
+		return ::FillRect(m_hdc, lpRect, hBrush);
+	}
+
+	BOOL FillRect(LPCRECT lpRect, int nColorIndex){
+		WINASSERT(m_hdc != nullptr);
+		return ::FillRect(m_hdc, lpRect, (HBRUSH)LongToPtr(nColorIndex + 1));
+	}
+
+	BOOL FrameRect(LPCRECT lpRect, HBRUSH hBrush){
+		WINASSERT(m_hdc != nullptr);
+		return ::FrameRect(m_hdc, lpRect, hBrush);
+	}
+
+	BOOL InvertRect(LPCRECT lpRect){
+		WINASSERT(m_hdc != nullptr);
+		return ::InvertRect(m_hdc, lpRect);
+	}
+
+	BOOL DrawIcon(int x, int y, HICON hIcon){
+		WINASSERT(m_hdc != nullptr);
+		return ::DrawIcon(m_hdc, x, y, hIcon);
+	}
+
+	BOOL DrawIcon(POINT point, HICON hIcon){
+		WINASSERT(m_hdc != nullptr);
+		return ::DrawIcon(m_hdc, point.x, point.y, hIcon);
+	}
+
+	BOOL DrawIconEx(int x, int y, HICON hIcon, int cxWidth, int cyWidth, UINT uStepIfAniCur = 0, HBRUSH hbrFlickerFreeDraw = nullptr, UINT uFlags = DI_NORMAL){
+		WINASSERT(m_hdc != nullptr);
+		return ::DrawIconEx(m_hdc, x, y, hIcon, cxWidth, cyWidth, uStepIfAniCur, hbrFlickerFreeDraw, uFlags);
+	}
+
+	BOOL DrawIconEx(POINT point, HICON hIcon, SIZE size, UINT uStepIfAniCur = 0, HBRUSH hbrFlickerFreeDraw = nullptr, UINT uFlags = DI_NORMAL){
+		WINASSERT(m_hdc != nullptr);
+		return ::DrawIconEx(m_hdc, point.x, point.y, hIcon, size.cx, size.cy, uStepIfAniCur, hbrFlickerFreeDraw, uFlags);
+	}
+
+	BOOL DrawState(POINT pt, SIZE size, HBITMAP hBitmap, UINT nFlags, HBRUSH hBrush = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::DrawState(m_hdc, hBrush, nullptr, (LPARAM)hBitmap, 0, pt.x, pt.y, size.cx, size.cy, nFlags | DST_BITMAP);
+	}
+
+	BOOL DrawState(POINT pt, SIZE size, HICON hIcon, UINT nFlags, HBRUSH hBrush = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::DrawState(m_hdc, hBrush, nullptr, (LPARAM)hIcon, 0, pt.x, pt.y, size.cx, size.cy, nFlags | DST_ICON);
+	}
+
+	BOOL DrawState(POINT pt, SIZE size, LPCTSTR lpszText, UINT nFlags, BOOL bPrefixText = TRUE, int nTextLen = 0, HBRUSH hBrush = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::DrawState(m_hdc, hBrush, nullptr, (LPARAM)lpszText, (WPARAM)nTextLen, pt.x, pt.y, size.cx, size.cy, nFlags | (bPrefixText ? DST_PREFIXTEXT : DST_TEXT));
+	}
+
+	BOOL DrawState(POINT pt, SIZE size, DRAWSTATEPROC lpDrawProc, LPARAM lData, UINT nFlags, HBRUSH hBrush = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::DrawState(m_hdc, hBrush, lpDrawProc, lData, 0, pt.x, pt.y, size.cx, size.cy, nFlags | DST_COMPLEX);
+	}
+
+	BOOL Chord(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4){
+		WINASSERT(m_hdc != nullptr);
+		return ::Chord(m_hdc, x1, y1, x2, y2, x3, y3, x4, y4);
+	}
+
+	BOOL Chord(LPCRECT lpRect, POINT ptStart, POINT ptEnd){
+		WINASSERT(m_hdc != nullptr);
+		return ::Chord(m_hdc, lpRect->left, lpRect->top, lpRect->right, lpRect->bottom, ptStart.x, ptStart.y, ptEnd.x, ptEnd.y);
+	}
+
+	void DrawFocusRect(LPCRECT lpRect){
+		WINASSERT(m_hdc != nullptr);
+		::DrawFocusRect(m_hdc, lpRect);
+	}
+
+	BOOL Ellipse(int x1, int y1, int x2, int y2){
+		WINASSERT(m_hdc != nullptr);
+		return ::Ellipse(m_hdc, x1, y1, x2, y2);
+	}
+
+	BOOL Ellipse(LPCRECT lpRect){
+		WINASSERT(m_hdc != nullptr);
+		return ::Ellipse(m_hdc, lpRect->left, lpRect->top, lpRect->right, lpRect->bottom);
+	}
+
+	BOOL Pie(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4){
+		WINASSERT(m_hdc != nullptr);
+		return ::Pie(m_hdc, x1, y1, x2, y2, x3, y3, x4, y4);
+	}
+
+	BOOL Pie(LPCRECT lpRect, POINT ptStart, POINT ptEnd){
+		WINASSERT(m_hdc != nullptr);
+		return ::Pie(m_hdc, lpRect->left, lpRect->top, lpRect->right, lpRect->bottom, ptStart.x, ptStart.y, ptEnd.x, ptEnd.y);
+	}
+
+	BOOL Polygon(const POINT* lpPoints, int nCount){
+		WINASSERT(m_hdc != nullptr);
+		return ::Polygon(m_hdc, lpPoints, nCount);
+	}
+
+	BOOL PolyPolygon(const POINT* lpPoints, const INT* lpPolyCounts, int nCount){
+		WINASSERT(m_hdc != nullptr);
+		return ::PolyPolygon(m_hdc, lpPoints, lpPolyCounts, nCount);
+	}
+
+	BOOL Rectangle(int x1, int y1, int x2, int y2){
+		WINASSERT(m_hdc != nullptr);
+		return ::Rectangle(m_hdc, x1, y1, x2, y2);
+	}
+
+	BOOL Rectangle(LPCRECT lpRect){
+		WINASSERT(m_hdc != nullptr);
+		return ::Rectangle(m_hdc, lpRect->left, lpRect->top, lpRect->right, lpRect->bottom);
+	}
+
+	BOOL RoundRect(int x1, int y1, int x2, int y2, int x3, int y3){
+		WINASSERT(m_hdc != nullptr);
+		return ::RoundRect(m_hdc, x1, y1, x2, y2, x3, y3);
+	}
+
+	BOOL RoundRect(LPCRECT lpRect, POINT point){
+		WINASSERT(m_hdc != nullptr);
+		return ::RoundRect(m_hdc, lpRect->left, lpRect->top, lpRect->right, lpRect->bottom, point.x, point.y);
+	}
+
+	BOOL PatBlt(int x, int y, int nWidth, int nHeight, DWORD dwRop){
+		WINASSERT(m_hdc != nullptr);
+		return ::PatBlt(m_hdc, x, y, nWidth, nHeight, dwRop);
+	}
+
+	BOOL BitBlt(int x, int y, int nWidth, int nHeight, HDC hSrcDC,
+		int xSrc, int ySrc, DWORD dwRop){
+		WINASSERT(m_hdc != nullptr);
+		return ::BitBlt(m_hdc, x, y, nWidth, nHeight, hSrcDC, xSrc, ySrc, dwRop);
+	}
+
+	BOOL StretchBlt(int x, int y, int nWidth, int nHeight, HDC hSrcDC, int xSrc, int ySrc, int nSrcWidth, int nSrcHeight, DWORD dwRop){
+		WINASSERT(m_hdc != nullptr);
+		return ::StretchBlt(m_hdc, x, y, nWidth, nHeight, hSrcDC, xSrc, ySrc, nSrcWidth, nSrcHeight, dwRop);
+	}
+
+	COLORREF GetPixel(int x, int y) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetPixel(m_hdc, x, y);
+	}
+
+	COLORREF GetPixel(POINT point) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetPixel(m_hdc, point.x, point.y);
+	}
+
+	COLORREF SetPixel(int x, int y, COLORREF crColor){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetPixel(m_hdc, x, y, crColor);
+	}
+
+	COLORREF SetPixel(POINT point, COLORREF crColor){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetPixel(m_hdc, point.x, point.y, crColor);
+	}
+
+	BOOL FloodFill(int x, int y, COLORREF crColor){
+		WINASSERT(m_hdc != nullptr);
+		return ::FloodFill(m_hdc, x, y, crColor);
+	}
+
+	BOOL ExtFloodFill(int x, int y, COLORREF crColor, UINT nFillType){
+		WINASSERT(m_hdc != nullptr);
+		return ::ExtFloodFill(m_hdc, x, y, crColor, nFillType);
+	}
+
+	BOOL MaskBlt(int x, int y, int nWidth, int nHeight, HDC hSrcDC, int xSrc, int ySrc, HBITMAP hMaskBitmap, int xMask, int yMask, DWORD dwRop){
+		WINASSERT(m_hdc != nullptr);
+		return ::MaskBlt(m_hdc, x, y, nWidth, nHeight, hSrcDC, xSrc, ySrc, hMaskBitmap, xMask, yMask, dwRop);
+	}
+
+	BOOL PlgBlt(LPPOINT lpPoint, HDC hSrcDC, int xSrc, int ySrc, int nWidth, int nHeight, HBITMAP hMaskBitmap, int xMask, int yMask){
+		WINASSERT(m_hdc != nullptr);
+		return ::PlgBlt(m_hdc, lpPoint, hSrcDC, xSrc, ySrc, nWidth, nHeight, hMaskBitmap, xMask, yMask);
+	}
+
+	BOOL SetPixelV(int x, int y, COLORREF crColor){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetPixelV(m_hdc, x, y, crColor);
+	}
+
+	BOOL SetPixelV(POINT point, COLORREF crColor){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetPixelV(m_hdc, point.x, point.y, crColor);
+	}
+
+	BOOL TransparentBlt(int x, int y, int nWidth, int nHeight, HDC hSrcDC, int xSrc, int ySrc, int nSrcWidth, int nSrcHeight, UINT crTransparent){
+		WINASSERT(m_hdc != nullptr);
+		return ::TransparentBlt(m_hdc, x, y, nWidth, nHeight, hSrcDC, xSrc, ySrc, nSrcWidth, nSrcHeight, crTransparent);
+	}
+
+	BOOL GradientFill(const PTRIVERTEX pVertices, DWORD nVertices, void* pMeshElements, DWORD nMeshElements, DWORD dwMode){
+		WINASSERT(m_hdc != nullptr);
+		return ::GradientFill(m_hdc, pVertices, nVertices, pMeshElements, nMeshElements, dwMode);
+	}
+
+	BOOL GradientFillRect(RECT& rect, COLORREF clr1, COLORREF clr2, bool bHorizontal){
+		WINASSERT(m_hdc != nullptr);
+		TRIVERTEX arrTvx[2] = { { 0 }, { 0 } };
+		arrTvx[0].x = rect.left;
+		arrTvx[0].y = rect.top;
+		arrTvx[0].Red = MAKEWORD(0, GetRValue(clr1));
+		arrTvx[0].Green = MAKEWORD(0, GetGValue(clr1));
+		arrTvx[0].Blue = MAKEWORD(0, GetBValue(clr1));
+		arrTvx[0].Alpha = 0;
+		arrTvx[1].x = rect.right;
+		arrTvx[1].y = rect.bottom;
+		arrTvx[1].Red = MAKEWORD(0, GetRValue(clr2));
+		arrTvx[1].Green = MAKEWORD(0, GetGValue(clr2));
+		arrTvx[1].Blue = MAKEWORD(0, GetBValue(clr2));
+		arrTvx[1].Alpha = 0;
+		GRADIENT_RECT gr = { 0, 1 };
+		return ::GradientFill(m_hdc, arrTvx, 2, &gr, 1, bHorizontal ? GRADIENT_FILL_RECT_H : GRADIENT_FILL_RECT_V);
+	}
+
+	BOOL AlphaBlend(int x, int y, int nWidth, int nHeight, HDC hSrcDC, int xSrc, int ySrc, int nSrcWidth, int nSrcHeight, BLENDFUNCTION bf){
+		WINASSERT(m_hdc != nullptr);
+		return ::AlphaBlend(m_hdc, x, y, nWidth, nHeight, hSrcDC, xSrc, ySrc, nSrcWidth, nSrcHeight, bf);
+	}
+
+	BOOL DitherBlt(int x, int y, int nWidth, int nHeight, HDC hSrcDC, HBITMAP hBitmap, int xSrc, int ySrc,
+			HBRUSH hBrushBackground = ::GetSysColorBrush(COLOR_3DFACE),
+			HBRUSH hBrush3DEffect = ::GetSysColorBrush(COLOR_3DHILIGHT),
+			HBRUSH hBrushDisabledImage = ::GetSysColorBrush(COLOR_3DSHADOW)){
+		WINASSERT(m_hdc != nullptr || hBitmap != nullptr);
+		WINASSERT(nWidth > 0 && nHeight > 0);
+		
+		// Create a generic DC for all BitBlts
+		DCT<true> dc = (hSrcDC != nullptr) ? hSrcDC : ::CreateCompatibleDC(m_hdc);
+		WINASSERT(dc.m_hdc != nullptr);
+		if(dc.m_hdc == nullptr)
+			return FALSE;
+		
+		// Create a DC for the monochrome DIB section
+		DCT<false> dcBW = ::CreateCompatibleDC(m_hdc);
+		WINASSERT(dcBW.m_hdc != nullptr);
+		if(dcBW.m_hdc == nullptr){
+			if(hSrcDC == nullptr)
+				dc.DeleteDC();
+			return FALSE;
+		}
+
+		// Create the monochrome DIB section with a black and white palette
+		struct RGBBWBITMAPINFO{
+			BITMAPINFOHEADER bmiHeader; 
+			RGBQUAD bmiColors[2]; 
+		};
+
+		RGBBWBITMAPINFO rgbBWBitmapInfo = {
+			{ sizeof(BITMAPINFOHEADER), nWidth, nHeight, 1, 1, BI_RGB, 0, 0, 0, 0, 0 },
+			{ { 0x00, 0x00, 0x00, 0x00 }, { 0xFF, 0xFF, 0xFF, 0x00 } }
+		};
+
+		VOID* pbitsBW;
+		Bitmap bmpBW = ::CreateDIBSection(dcBW, (LPBITMAPINFO)&rgbBWBitmapInfo, DIB_RGB_COLORS, &pbitsBW, nullptr, 0);
+		WINASSERT(bmpBW.m_bitmap != nullptr);
+		if(bmpBW.m_bitmap == nullptr){
+			if(hSrcDC == nullptr)
+				dc.DeleteDC();
+			return FALSE;
+		}
+		
+		// Attach the monochrome DIB section and the bitmap to the DCs
+		HBITMAP hbmOldBW = dcBW.SelectBitmap(bmpBW);
+		HBITMAP hbmOldDC = nullptr;
+		if(hBitmap != nullptr)
+			hbmOldDC = dc.SelectBitmap(hBitmap);
+
+		// Block: Dark gray removal: we want (128, 128, 128) pixels to become black and not white
+		{
+			DCT<false> dcTemp1 = ::CreateCompatibleDC(m_hdc);
+			DCT<false> dcTemp2 = ::CreateCompatibleDC(m_hdc);
+			Bitmap bmpTemp1;
+			bmpTemp1.CreateCompatibleBitmap(dc, nWidth, nHeight);
+			Bitmap bmpTemp2;
+			bmpTemp2.CreateBitmap(nWidth, nHeight, 1, 1, nullptr);
+			HBITMAP hOldBmp1 = dcTemp1.SelectBitmap(bmpTemp1);
+			HBITMAP hOldBmp2 = dcTemp2.SelectBitmap(bmpTemp2);
+			// Let's copy our image, it will be altered
+			dcTemp1.BitBlt(0, 0, nWidth, nHeight, dc, xSrc, ySrc, SRCCOPY);
+
+			// All dark gray pixels will become white, the others black
+			dcTemp1.SetBkColor(RGB(128, 128, 128));
+			dcTemp2.BitBlt(0, 0, nWidth, nHeight, dcTemp1, 0, 0, SRCCOPY);
+			// Do an XOR to set to black these white pixels
+			dcTemp1.BitBlt(0, 0, nWidth, nHeight, dcTemp2, 0, 0, SRCINVERT);
+
+			// BitBlt the bitmap into the monochrome DIB section
+			// The DIB section will do a true monochrome conversion
+			// The magenta background being closer to white will become white
+			dcBW.BitBlt(0, 0, nWidth, nHeight, dcTemp1, 0, 0, SRCCOPY);
+
+			// Cleanup
+			dcTemp1.SelectBitmap(hOldBmp1);
+			dcTemp2.SelectBitmap(hOldBmp2);
+		}
+		
+		// Paint the destination rectangle using hBrushBackground
+		if(hBrushBackground != nullptr){
+			RECT rc = { x, y, x + nWidth, y + nHeight };
+			FillRect(&rc, hBrushBackground);
+		}
+
+		// BitBlt the black bits in the monochrome bitmap into hBrush3DEffect color in the destination DC
+		// The magic ROP comes from the Charles Petzold's book
+		HBRUSH hOldBrush = SelectBrush(hBrush3DEffect);
+		BitBlt(x + 1, y + 1, nWidth, nHeight, dcBW, 0, 0, 0xB8074A);
+
+		// BitBlt the black bits in the monochrome bitmap into hBrushDisabledImage color in the destination DC
+		SelectBrush(hBrushDisabledImage);
+		BitBlt(x, y, nWidth, nHeight, dcBW, 0, 0, 0xB8074A);
+
+		SelectBrush(hOldBrush);
+		dcBW.SelectBitmap(hbmOldBW);
+		dc.SelectBitmap(hbmOldDC);
+
+		if(hSrcDC == nullptr)
+			dc.DeleteDC();
+
+		return TRUE;
+	}
+
+	BOOL TextOut(int x, int y, LPCTSTR lpszString, int nCount = -1){
+		WINASSERT(m_hdc != nullptr);
+		if(nCount == -1)
+			nCount = lstrlen(lpszString);
+		return ::TextOut(m_hdc, x, y, lpszString, nCount);
+	}
+
+	BOOL ExtTextOut(int x, int y, UINT nOptions, LPCRECT lpRect, LPCTSTR lpszString, UINT nCount = -1, LPINT lpDxWidths = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		if(nCount == -1)
+			nCount = lstrlen(lpszString);
+		return ::ExtTextOut(m_hdc, x, y, nOptions, lpRect, lpszString, nCount, lpDxWidths);
+	}
+
+	SIZE TabbedTextOut(int x, int y, LPCTSTR lpszString, int nCount = -1, int nTabPositions = 0, LPINT lpnTabStopPositions = nullptr, int nTabOrigin = 0){
+		WINASSERT(m_hdc != nullptr);
+		if(nCount == -1)
+			nCount = lstrlen(lpszString);
+		LONG lRes = ::TabbedTextOut(m_hdc, x, y, lpszString, nCount, nTabPositions, lpnTabStopPositions, nTabOrigin);
+		SIZE size = { GET_X_LPARAM(lRes), GET_Y_LPARAM(lRes) };
+		return size;
+	}
+
+	int DrawText(LPCTSTR lpstrText, int cchText, LPRECT lpRect, UINT uFormat){
+		WINASSERT(m_hdc != nullptr);
+		WINASSERT((uFormat & DT_MODIFYSTRING) == 0);
+		return ::DrawText(m_hdc, lpstrText, cchText, lpRect, uFormat);
+	}
+
+	int DrawText(LPTSTR lpstrText, int cchText, LPRECT lpRect, UINT uFormat){
+		WINASSERT(m_hdc != nullptr);
+		return ::DrawText(m_hdc, lpstrText, cchText, lpRect, uFormat);
+	}
+
+	int DrawTextEx(LPTSTR lpstrText, int cchText, LPRECT lpRect, UINT uFormat, LPDRAWTEXTPARAMS lpDTParams = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::DrawTextEx(m_hdc, lpstrText, cchText, lpRect, uFormat, lpDTParams);
+	}
+
+	int DrawShadowText(LPCWSTR lpstrText, int cchText, LPRECT lpRect, DWORD dwFlags, COLORREF clrText, COLORREF clrShadow, int xOffset, int yOffset){
+		WINASSERT(m_hdc != nullptr);
+		// This function is present only if comctl32.dll version 6 is loaded;
+		// we use LoadLibrary/GetProcAddress to allow apps compiled with
+		// _WIN32_WINNT >= 0x0501 to run on older Windows/CommCtrl
+		int nRet = 0;
+		HMODULE hCommCtrlDLL = ::LoadLibrary(TEXT("comctl32.dll"));
+		WINASSERT(hCommCtrlDLL != nullptr);
+		if(hCommCtrlDLL != nullptr){
+			typedef int (WINAPI *PFN_DrawShadowText)(HDC hDC, LPCWSTR lpstrText, UINT cchText, LPRECT lpRect, DWORD dwFlags, COLORREF clrText, COLORREF clrShadow, int xOffset, int yOffset);
+			PFN_DrawShadowText pfnDrawShadowText = (PFN_DrawShadowText)::GetProcAddress(hCommCtrlDLL, "DrawShadowText");
+			WINASSERT(pfnDrawShadowText != nullptr);   // this function requires CommCtrl6
+			if(pfnDrawShadowText != nullptr)
+				nRet = pfnDrawShadowText(m_hdc, lpstrText, cchText, lpRect, dwFlags, clrText, clrShadow, xOffset, yOffset);
+			::FreeLibrary(hCommCtrlDLL);
+		}
+		return nRet;
+	}
+
+	BOOL GetTextExtent(LPCTSTR lpszString, int nCount, LPSIZE lpSize) const{
+		WINASSERT(m_hdc != nullptr);
+		if(nCount == -1)
+			nCount = lstrlen(lpszString);
+		return ::GetTextExtentPoint32(m_hdc, lpszString, nCount, lpSize);
+	}
+
+	BOOL GetTextExtentExPoint(LPCTSTR lpszString, int cchString, LPSIZE lpSize, int nMaxExtent, LPINT lpnFit = nullptr, LPINT alpDx = nullptr){
+		WINASSERT(m_hdc != nullptr);
+		return ::GetTextExtentExPoint(m_hdc, lpszString, cchString, nMaxExtent, lpnFit, alpDx, lpSize);
+	}
+
+	DWORD GetTabbedTextExtent(LPCTSTR lpszString, int nCount = -1, int nTabPositions = 0, LPINT lpnTabStopPositions = nullptr) const{
+		WINASSERT(m_hdc != nullptr);
+		if(nCount == -1)
+			nCount = lstrlen(lpszString);
+		return ::GetTabbedTextExtent(m_hdc, lpszString, nCount, nTabPositions, lpnTabStopPositions);
+	}
+
+	BOOL GrayString(HBRUSH hBrush, BOOL (CALLBACK* lpfnOutput)(HDC, LPARAM, int), LPARAM lpData, int nCount, int x, int y, int nWidth, int nHeight){
+		WINASSERT(m_hdc != nullptr);
+		return ::GrayString(m_hdc, hBrush, (GRAYSTRINGPROC)lpfnOutput, lpData, nCount, x, y, nWidth, nHeight);
+	}
+
+	UINT GetTextAlign() const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetTextAlign(m_hdc);
+	}
+
+	UINT SetTextAlign(UINT nFlags){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetTextAlign(m_hdc, nFlags);
+	}
+
+	int GetTextFace(LPTSTR lpszFacename, int nCount) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetTextFace(m_hdc, nCount, lpszFacename);
+	}
+
+	int GetTextFaceLen() const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetTextFace(m_hdc, 0, nullptr);
+	}
+
+	BOOL GetTextMetrics(LPTEXTMETRIC lpMetrics) const	{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetTextMetrics(m_hdc, lpMetrics);
+	}
+
+	int SetTextJustification(int nBreakExtra, int nBreakCount){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetTextJustification(m_hdc, nBreakExtra, nBreakCount);
+	}
+
+	int GetTextCharacterExtra() const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetTextCharacterExtra(m_hdc);
+	}
+
+	int SetTextCharacterExtra(int nCharExtra){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetTextCharacterExtra(m_hdc, nCharExtra);
+	}
+
+	BOOL DrawEdge(LPRECT lpRect, UINT nEdge, UINT nFlags){
+		WINASSERT(m_hdc != nullptr);
+		return ::DrawEdge(m_hdc, lpRect, nEdge, nFlags);
+	}
+
+	BOOL DrawFrameControl(LPRECT lpRect, UINT nType, UINT nState){
+		WINASSERT(m_hdc != nullptr);
+		return ::DrawFrameControl(m_hdc, lpRect, nType, nState);
+	}
+
+	BOOL ScrollDC(int dx, int dy, LPCRECT lpRectScroll, LPCRECT lpRectClip, HRGN hRgnUpdate, LPRECT lpRectUpdate){
+		WINASSERT(m_hdc != nullptr);
+		return ::ScrollDC(m_hdc, dx, dy, lpRectScroll, lpRectClip, hRgnUpdate, lpRectUpdate);
+	}
+
+	BOOL GetCharWidth(UINT nFirstChar, UINT nLastChar, LPINT lpBuffer) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetCharWidth(m_hdc, nFirstChar, nLastChar, lpBuffer);
+	}
+
+	BOOL GetCharWidth32(UINT nFirstChar, UINT nLastChar, LPINT lpBuffer) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetCharWidth32(m_hdc, nFirstChar, nLastChar, lpBuffer);
+	}
+
+	DWORD SetMapperFlags(DWORD dwFlag){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetMapperFlags(m_hdc, dwFlag);
+	}
+
+	BOOL GetAspectRatioFilter(LPSIZE lpSize) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetAspectRatioFilterEx(m_hdc, lpSize);
+	}
+
+	BOOL GetCharABCWidths(UINT nFirstChar, UINT nLastChar, LPABC lpabc) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetCharABCWidths(m_hdc, nFirstChar, nLastChar, lpabc);
+	}
+
+	DWORD GetFontData(DWORD dwTable, DWORD dwOffset, LPVOID lpData, DWORD cbData) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetFontData(m_hdc, dwTable, dwOffset, lpData, cbData);
+	}
+
+	int GetKerningPairs(int nPairs, LPKERNINGPAIR lpkrnpair) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetKerningPairs(m_hdc, nPairs, lpkrnpair);
+	}
+
+	UINT GetOutlineTextMetrics(UINT cbData, LPOUTLINETEXTMETRIC lpotm) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetOutlineTextMetrics(m_hdc, cbData, lpotm);
+	}
+
+	DWORD GetGlyphOutline(UINT nChar, UINT nFormat, LPGLYPHMETRICS lpgm, DWORD cbBuffer, LPVOID lpBuffer, const MAT2* lpmat2) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetGlyphOutline(m_hdc, nChar, nFormat, lpgm, cbBuffer, lpBuffer, lpmat2);
+	}
+
+	BOOL GetCharABCWidths(UINT nFirstChar, UINT nLastChar, LPABCFLOAT lpABCF) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetCharABCWidthsFloat(m_hdc, nFirstChar, nLastChar, lpABCF);
+	}
+
+	BOOL GetCharWidth(UINT nFirstChar, UINT nLastChar, float* lpFloatBuffer) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetCharWidthFloat(m_hdc, nFirstChar, nLastChar, lpFloatBuffer);
+	}
+
+	int Escape(int nEscape, int nCount, LPCSTR lpszInData, LPVOID lpOutData){
+		WINASSERT(m_hdc != nullptr);
+		return ::Escape(m_hdc, nEscape, nCount, lpszInData, lpOutData);
+	}
+
+	int Escape(int nEscape, int nInputSize, LPCSTR lpszInputData,
+		int nOutputSize, LPSTR lpszOutputData){
+		WINASSERT(m_hdc != nullptr);
+		return ::ExtEscape(m_hdc, nEscape, nInputSize, lpszInputData, nOutputSize, lpszOutputData);
+	}
+
+	int DrawEscape(int nEscape, int nInputSize, LPCSTR lpszInputData){
+		WINASSERT(m_hdc != nullptr);
+		return ::DrawEscape(m_hdc, nEscape, nInputSize, lpszInputData);
+	}
+
+	int StartDoc(LPCTSTR lpszDocName){
+		DOCINFO di = { 0 };
+		di.cbSize = sizeof(DOCINFO);
+		di.lpszDocName = lpszDocName;
+		return StartDoc(&di);
+	}
+
+	int StartDoc(LPDOCINFO lpDocInfo){
+		WINASSERT(m_hdc != nullptr);
+		return ::StartDoc(m_hdc, lpDocInfo);
+	}
+
+	int StartPage(){
+		WINASSERT(m_hdc != nullptr);
+		return ::StartPage(m_hdc);
+	}
+
+	int EndPage(){
+		WINASSERT(m_hdc != nullptr);
+		return ::EndPage(m_hdc);
+	}
+
+	int SetAbortProc(BOOL (CALLBACK* lpfn)(HDC, int)){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetAbortProc(m_hdc, (ABORTPROC)lpfn);
+	}
+
+	int AbortDoc(){
+		WINASSERT(m_hdc != nullptr);
+		return ::AbortDoc(m_hdc);
+	}
+
+	int EndDoc(){
+		WINASSERT(m_hdc != nullptr);
+		return ::EndDoc(m_hdc);
+	}
+
+	BOOL PlayMetaFile(HMETAFILE hMF){
+		WINASSERT(m_hdc != nullptr);
+		if(::GetDeviceCaps(m_hdc, TECHNOLOGY) == DT_METAFILE){
+			// playing metafile in metafile, just use core windows API
+			return ::PlayMetaFile(m_hdc, hMF);
+		}
+		return ::EnumMetaFile(m_hdc, hMF, EnumMetaFileProc, (LPARAM)this);
+	}
+
+	BOOL PlayMetaFile(HENHMETAFILE hEnhMetaFile, LPCRECT lpBounds){
+		WINASSERT(m_hdc != nullptr);
+		return ::PlayEnhMetaFile(m_hdc, hEnhMetaFile, lpBounds);
+	}
+
+	BOOL AddMetaFileComment(UINT nDataSize, const BYTE* pCommentData) {
+		WINASSERT(m_hdc != nullptr);
+		return ::GdiComment(m_hdc, nDataSize, pCommentData);
+	}
+
+	static int CALLBACK EnumMetaFileProc(HDC hDC, HANDLETABLE* pHandleTable, METARECORD* pMetaRec, int nHandles, LPARAM lParam){
+		DCT<true>* pDC = (DCT<true>*)lParam;
+		switch (pMetaRec->rdFunction)
+		{
+		case META_SETMAPMODE:
+			pDC->SetMapMode((int)(short)pMetaRec->rdParm[0]);
+			break;
+		case META_SETWINDOWEXT:
+			pDC->SetWindowExt((int)(short)pMetaRec->rdParm[1], (int)(short)pMetaRec->rdParm[0]);
+			break;
+		case META_SETWINDOWORG:
+			pDC->SetWindowOrg((int)(short)pMetaRec->rdParm[1], (int)(short)pMetaRec->rdParm[0]);
+			break;
+		case META_SETVIEWPORTEXT:
+			pDC->SetViewportExt((int)(short)pMetaRec->rdParm[1], (int)(short)pMetaRec->rdParm[0]);
+			break;
+		case META_SETVIEWPORTORG:
+			pDC->SetViewportOrg((int)(short)pMetaRec->rdParm[1], (int)(short)pMetaRec->rdParm[0]);
+			break;
+		case META_SCALEWINDOWEXT:
+			pDC->ScaleWindowExt((int)(short)pMetaRec->rdParm[3], (int)(short)pMetaRec->rdParm[2], 
+				(int)(short)pMetaRec->rdParm[1], (int)(short)pMetaRec->rdParm[0]);
+			break;
+		case META_SCALEVIEWPORTEXT:
+			pDC->ScaleViewportExt((int)(short)pMetaRec->rdParm[3], (int)(short)pMetaRec->rdParm[2],
+				(int)(short)pMetaRec->rdParm[1], (int)(short)pMetaRec->rdParm[0]);
+			break;
+		case META_OFFSETVIEWPORTORG:
+			pDC->OffsetViewportOrg((int)(short)pMetaRec->rdParm[1], (int)(short)pMetaRec->rdParm[0]);
+			break;
+		case META_SAVEDC:
+			pDC->SaveDC();
+			break;
+		case META_RESTOREDC:
+			pDC->RestoreDC((int)(short)pMetaRec->rdParm[0]);
+			break;
+		case META_SETBKCOLOR:
+			pDC->SetBkColor(*(UNALIGNED COLORREF*)&pMetaRec->rdParm[0]);
+			break;
+		case META_SETTEXTCOLOR:
+			pDC->SetTextColor(*(UNALIGNED COLORREF*)&pMetaRec->rdParm[0]);
+			break;
+		case META_SELECTOBJECT:
+			{
+				HGDIOBJ hObject = pHandleTable->objectHandle[pMetaRec->rdParm[0]];
+				UINT nObjType = ::GetObjectType(hObject);
+				if(nObjType == 0){
+					// object type is unknown, determine if it is a font
+					HFONT hStockFont= (HFONT)::GetStockObject(SYSTEM_FONT);
+					HFONT hFontOld = (HFONT)::SelectObject(pDC->m_hdc, hStockFont);
+					HGDIOBJ hObjOld = ::SelectObject(pDC->m_hdc, hObject);
+					if(hObjOld == hStockFont){
+						// got the stock object back, so must be selecting a font
+						pDC->SelectFont((HFONT)hObject);
+						break;  // don't play the default record
+					}else{
+						// didn't get the stock object back, so restore everything
+						::SelectObject(pDC->m_hdc, hFontOld);
+						::SelectObject(pDC->m_hdc, hObjOld);
+					}
+					// and fall through to PlayMetaFileRecord...
+				}else if(nObjType == OBJ_FONT){
+					// play back as DCT<true>::SelectFont(HFONT)
+					pDC->SelectFont((HFONT)hObject);
+					break;  // don't play the default record
+				}
+			}
+		default:
+			::PlayMetaFileRecord(hDC, pHandleTable, pMetaRec, nHandles);
+			break;
+		}
+
+		return 1;
+	}
+
+	BOOL AbortPath(){
+		WINASSERT(m_hdc != nullptr);
+		return ::AbortPath(m_hdc);
+	}
+
+	BOOL BeginPath(){
+		WINASSERT(m_hdc != nullptr);
+		return ::BeginPath(m_hdc);
+	}
+
+	BOOL CloseFigure(){
+		WINASSERT(m_hdc != nullptr);
+		return ::CloseFigure(m_hdc);
+	}
+
+	BOOL EndPath(){
+		WINASSERT(m_hdc != nullptr);
+		return ::EndPath(m_hdc);
+	}
+
+	BOOL FillPath(){
+		WINASSERT(m_hdc != nullptr);
+		return ::FillPath(m_hdc);
+	}
+
+	BOOL FlattenPath(){
+		WINASSERT(m_hdc != nullptr);
+		return ::FlattenPath(m_hdc);
+	}
+
+	BOOL StrokeAndFillPath(){
+		WINASSERT(m_hdc != nullptr);
+		return ::StrokeAndFillPath(m_hdc);
+	}
+
+	BOOL StrokePath(){
+		WINASSERT(m_hdc != nullptr);
+		return ::StrokePath(m_hdc);
+	}
+
+	BOOL WidenPath(){
+		WINASSERT(m_hdc != nullptr);
+		return ::WidenPath(m_hdc);
+	}
+
+	BOOL GetMiterLimit(PFLOAT pfMiterLimit) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetMiterLimit(m_hdc, pfMiterLimit);
+	}
+
+	BOOL SetMiterLimit(float fMiterLimit){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetMiterLimit(m_hdc, fMiterLimit, nullptr);
+	}
+
+	int GetPath(LPPOINT lpPoints, LPBYTE lpTypes, int nCount) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetPath(m_hdc, lpPoints, lpTypes, nCount);
+	}
+
+	BOOL SelectClipPath(int nMode){
+		WINASSERT(m_hdc != nullptr);
+		return ::SelectClipPath(m_hdc, nMode);
+	}
+	
+	static BrushHandle PASCAL GetHalftoneBrush(){
+		HBRUSH halftoneBrush = nullptr;
+		WORD grayPattern[8] = { 0 };
+		for(int i = 0; i < 8; i++)
+			grayPattern[i] = (WORD)(0x5555 << (i & 1));
+		HBITMAP grayBitmap = CreateBitmap(8, 8, 1, 1, &grayPattern);
+		if(grayBitmap != nullptr)
+		{
+			halftoneBrush = ::CreatePatternBrush(grayBitmap);
+			DeleteObject(grayBitmap);
+		}
+		return BrushHandle(halftoneBrush);
+	}
+
+	void DrawDragRect(LPCRECT lpRect, SIZE size, LPCRECT lpRectLast, SIZE sizeLast, HBRUSH hBrush = nullptr, HBRUSH hBrushLast = nullptr){
+		Rgn rgnOutside;
+		rgnOutside.CreateRectRgnIndirect(lpRect);
+		RECT rect = *lpRect;
+		::InflateRect(&rect, -size.cx, -size.cy);
+		::IntersectRect(&rect, &rect, lpRect);
+		Rgn rgnInside;
+		rgnInside.CreateRectRgnIndirect(&rect);
+		Rgn rgnNew;
+		rgnNew.CreateRectRgn(0, 0, 0, 0);
+		rgnNew.CombineRgn(rgnOutside, rgnInside, RGN_XOR);
+
+		HBRUSH hBrushOld = nullptr;
+		Brush brushHalftone;
+		if(hBrush == nullptr)
+			brushHalftone = hBrush = DCT<true>::GetHalftoneBrush();
+		if(hBrushLast == nullptr)
+			hBrushLast = hBrush;
+
+		Rgn rgnLast;
+		Rgn rgnUpdate;
+		if(lpRectLast != nullptr){
+			rgnLast.CreateRectRgn(0, 0, 0, 0);
+			rgnOutside.SetRectRgn(lpRectLast->left, lpRectLast->top, lpRectLast->right, lpRectLast->bottom);
+			rect = *lpRectLast;
+			::InflateRect(&rect, -sizeLast.cx, -sizeLast.cy);
+			::IntersectRect(&rect, &rect, lpRectLast);
+			rgnInside.SetRectRgn(rect.left, rect.top, rect.right, rect.bottom);
+			rgnLast.CombineRgn(rgnOutside, rgnInside, RGN_XOR);
+
+			if(hBrush == hBrushLast){
+				rgnUpdate.CreateRectRgn(0, 0, 0, 0);
+				rgnUpdate.CombineRgn(rgnLast, rgnNew, RGN_XOR);
+			}
+		}
+		if(hBrush != hBrushLast && lpRectLast != nullptr){
+			SelectClipRgn(rgnLast);
+			GetClipBox(&rect);
+			hBrushOld = SelectBrush(hBrushLast);
+			PatBlt(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, PATINVERT);
+			SelectBrush(hBrushOld);
+			hBrushOld = nullptr;
+		}
+		SelectClipRgn(rgnUpdate.IsNull() ? rgnNew : rgnUpdate);
+		GetClipBox(&rect);
+		hBrushOld = SelectBrush(hBrush);
+		PatBlt(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, PATINVERT);
+		if(hBrushOld != nullptr)
+			SelectBrush(hBrushOld);
+		SelectClipRgn(nullptr);
+	}
+
+	void FillSolidRect(LPCRECT lpRect, COLORREF clr){
+		WINASSERT(m_hdc != nullptr);
+		COLORREF clrOld = ::SetBkColor(m_hdc, clr);
+		WINASSERT(clrOld != CLR_INVALID);
+		if(clrOld != CLR_INVALID)
+		{
+			::ExtTextOut(m_hdc, 0, 0, ETO_OPAQUE, lpRect, nullptr, 0, nullptr);
+			::SetBkColor(m_hdc, clrOld);
+		}
+	}
+
+	void FillSolidRect(int x, int y, int cx, int cy, COLORREF clr){
+		WINASSERT(m_hdc != nullptr);
+		RECT rect = { x, y, x + cx, y + cy };
+		FillSolidRect(&rect, clr);
+	}
+
+	void Draw3dRect(LPCRECT lpRect, COLORREF clrTopLeft, COLORREF clrBottomRight){
+		Draw3dRect(lpRect->left, lpRect->top, lpRect->right - lpRect->left,
+			lpRect->bottom - lpRect->top, clrTopLeft, clrBottomRight);
+	}
+
+	void Draw3dRect(int x, int y, int cx, int cy, COLORREF clrTopLeft, COLORREF clrBottomRight){
+		FillSolidRect(x, y, cx - 1, 1, clrTopLeft);
+		FillSolidRect(x, y, 1, cy - 1, clrTopLeft);
+		FillSolidRect(x + cx, y, -1, cy, clrBottomRight);
+		FillSolidRect(x, y + cy, cx, -1, clrBottomRight);
+	}
+
+	int SetDIBitsToDevice(int x, int y, DWORD dwWidth, DWORD dwHeight, int xSrc, int ySrc, UINT uStartScan, UINT cScanLines, CONST VOID* lpvBits, CONST BITMAPINFO* lpbmi, UINT uColorUse){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetDIBitsToDevice(m_hdc, x, y, dwWidth, dwHeight, xSrc, ySrc, uStartScan, cScanLines, lpvBits, lpbmi, uColorUse);
+	}
+
+	int StretchDIBits(int x, int y, int nWidth, int nHeight, int xSrc, int ySrc, int nSrcWidth, int nSrcHeight, CONST VOID* lpvBits, CONST BITMAPINFO* lpbmi, UINT uColorUse, DWORD dwRop){
+		WINASSERT(m_hdc != nullptr);
+		return ::StretchDIBits(m_hdc, x, y, nWidth, nHeight, xSrc, ySrc, nSrcWidth, nSrcHeight, lpvBits, lpbmi, uColorUse, dwRop);
+	}
+
+	UINT GetDIBColorTable(UINT uStartIndex, UINT cEntries, RGBQUAD* pColors) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetDIBColorTable(m_hdc, uStartIndex, cEntries, pColors);
+	}
+
+	UINT SetDIBColorTable(UINT uStartIndex, UINT cEntries, CONST RGBQUAD* pColors){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetDIBColorTable(m_hdc, uStartIndex, cEntries, pColors);
+	}
+
+	int ChoosePixelFormat(CONST PIXELFORMATDESCRIPTOR* ppfd){
+		WINASSERT(m_hdc != nullptr);
+		return ::ChoosePixelFormat(m_hdc, ppfd);
+	}
+
+	int DescribePixelFormat(int iPixelFormat, UINT nBytes, LPPIXELFORMATDESCRIPTOR ppfd){
+		WINASSERT(m_hdc != nullptr);
+		return ::DescribePixelFormat(m_hdc, iPixelFormat, nBytes, ppfd);
+	}
+
+	int GetPixelFormat() const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetPixelFormat(m_hdc);
+	}
+
+	BOOL SetPixelFormat(int iPixelFormat, CONST PIXELFORMATDESCRIPTOR* ppfd){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetPixelFormat(m_hdc, iPixelFormat, ppfd);
+	}
+
+	BOOL SwapBuffers(){
+		WINASSERT(m_hdc != nullptr);
+		return ::SwapBuffers(m_hdc);
+	}
+
+	HGLRC wglCreateContext(){
+		WINASSERT(m_hdc != nullptr);
+		return ::wglCreateContext(m_hdc);
+	}
+
+	HGLRC wglCreateLayerContext(int iLayerPlane){
+		WINASSERT(m_hdc != nullptr);
+		return ::wglCreateLayerContext(m_hdc, iLayerPlane);
+	}
+
+	BOOL wglMakeCurrent(HGLRC hglrc){
+		WINASSERT(m_hdc != nullptr);
+		return ::wglMakeCurrent(m_hdc, hglrc);
+	}
+
+	BOOL wglUseFontBitmaps(DWORD dwFirst, DWORD dwCount, DWORD listBase){
+		WINASSERT(m_hdc != nullptr);
+		return ::wglUseFontBitmaps(m_hdc, dwFirst, dwCount, listBase);
+	}
+
+	BOOL wglUseFontOutlines(DWORD dwFirst, DWORD dwCount, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, LPGLYPHMETRICSFLOAT lpgmf){
+		WINASSERT(m_hdc != nullptr);
+		return ::wglUseFontOutlines(m_hdc, dwFirst, dwCount, listBase, deviation, extrusion, format, lpgmf);
+	}
+
+	BOOL wglDescribeLayerPlane(int iPixelFormat, int iLayerPlane, UINT nBytes, LPLAYERPLANEDESCRIPTOR plpd){
+		WINASSERT(m_hdc != nullptr);
+		return ::wglDescribeLayerPlane(m_hdc, iPixelFormat, iLayerPlane, nBytes, plpd);
+	}
+
+	int wglSetLayerPaletteEntries(int iLayerPlane, int iStart, int cEntries, CONST COLORREF* pclr){
+		WINASSERT(m_hdc != nullptr);
+		return ::wglSetLayerPaletteEntries(m_hdc, iLayerPlane, iStart, cEntries, pclr);
+	}
+
+	int wglGetLayerPaletteEntries(int iLayerPlane, int iStart, int cEntries, COLORREF* pclr){
+		WINASSERT(m_hdc != nullptr);
+		return ::wglGetLayerPaletteEntries(m_hdc, iLayerPlane, iStart, cEntries, pclr);
+	}
+
+	BOOL wglRealizeLayerPalette(int iLayerPlane, BOOL bRealize)	{
+		WINASSERT(m_hdc != nullptr);
+		return ::wglRealizeLayerPalette(m_hdc, iLayerPlane, bRealize);
+	}
+
+	BOOL wglSwapLayerBuffers(UINT uPlanes){
+		WINASSERT(m_hdc != nullptr);
+		return ::wglSwapLayerBuffers(m_hdc, uPlanes);
+	}
+
+	COLORREF GetDCPenColor() const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetDCPenColor(m_hdc);
+	}
+
+	COLORREF SetDCPenColor(COLORREF clr){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetDCPenColor(m_hdc, clr);
+	}
+
+	COLORREF GetDCBrushColor() const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetDCBrushColor(m_hdc);
+	}
+
+	COLORREF SetDCBrushColor(COLORREF clr){
+		WINASSERT(m_hdc != nullptr);
+		return ::SetDCBrushColor(m_hdc, clr);
+	}
+
+	DWORD GetFontUnicodeRanges(LPGLYPHSET lpgs) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetFontUnicodeRanges(m_hdc, lpgs);
+	}
+
+	DWORD GetGlyphIndices(LPCTSTR lpstr, int cch, LPWORD pgi, DWORD dwFlags) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetGlyphIndices(m_hdc, lpstr, cch, pgi, dwFlags);
+	}
+
+	BOOL GetTextExtentPointI(LPWORD pgiIn, int cgi, LPSIZE lpSize) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetTextExtentPointI(m_hdc, pgiIn, cgi, lpSize);
+	}
+
+	BOOL GetTextExtentExPointI(LPWORD pgiIn, int cgi, int nMaxExtent, LPINT lpnFit, LPINT alpDx, LPSIZE lpSize) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetTextExtentExPointI(m_hdc, pgiIn, cgi, nMaxExtent, lpnFit, alpDx, lpSize);
+	}
+
+	BOOL GetCharWidthI(UINT giFirst, UINT cgi, LPWORD pgi, LPINT lpBuffer) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetCharWidthI(m_hdc, giFirst, cgi, pgi, lpBuffer);
+	}
+
+	BOOL GetCharABCWidthsI(UINT giFirst, UINT cgi, LPWORD pgi, LPABC lpabc) const{
+		WINASSERT(m_hdc != nullptr);
+		return ::GetCharABCWidthsI(m_hdc, giFirst, cgi, pgi, lpabc);
+	}
+
+	BOOL ColorCorrectPalette(HPALETTE hPalette, DWORD dwFirstEntry, DWORD dwNumOfEntries){
+		WINASSERT(m_hdc != nullptr);
+		return ::ColorCorrectPalette(m_hdc, hPalette, dwFirstEntry, dwNumOfEntries);
+	}
+};
+
+typedef DCT<false>   DCHandle;
+typedef DCT<true>    DC;
+
+class PaintDC : public DC{
+public:
+	HWND m_hwnd;
+	PAINTSTRUCT m_ps;
+
+	PaintDC(HWND hWnd){
+		WINASSERT(::IsWindow(hWnd));
+		m_hwnd = hWnd;
+		m_hdc = ::BeginPaint(hWnd, &m_ps);
+	}
+
+	~PaintDC(){
+		WINASSERT(m_hdc != nullptr);
+		WINASSERT(::IsWindow(m_hwnd));
+		::EndPaint(m_hwnd, &m_ps);
+		Detach();
+	}
+};
+
+class ClientDC : public DC{
+public:
+	HWND m_hwnd;
+	
+	ClientDC(HWND hWnd){
+		WINASSERT(hWnd == nullptr || ::IsWindow(hWnd));
+		m_hwnd = hWnd;
+		m_hdc = ::GetDC(hWnd);
+	}
+
+	~ClientDC(){
+		WINASSERT(m_hdc != nullptr);
+		::ReleaseDC(m_hwnd, Detach());
+	}
+};
+
+class WindowDC : public DC{
+public:
+	HWND m_hwnd;
+
+	WindowDC(HWND hWnd){
+		WINASSERT(hWnd == nullptr || ::IsWindow(hWnd));
+		m_hwnd = hWnd;
+		m_hdc = ::GetWindowDC(hWnd);
+	}
+
+	~WindowDC(){
+		WINASSERT(m_hdc != nullptr);
+		::ReleaseDC(m_hwnd, Detach());
+	}
+};
+
+class MemoryDC : public DC{
+public:
+
+	HDC m_hdcOriginal;
+	RECT m_rcPaint;
+	Bitmap m_bmp;
+	HBITMAP m_hBmpOld;
+	
+	MemoryDC(HDC hDC, const RECT& rcPaint) : m_hdcOriginal(hDC), m_hBmpOld(nullptr){
+		m_rcPaint = rcPaint;
+		CreateCompatibleDC(m_hdcOriginal);
+		WINASSERT(m_hdc != nullptr);
+		m_bmp.CreateCompatibleBitmap(m_hdcOriginal, m_rcPaint.right - m_rcPaint.left, m_rcPaint.bottom - m_rcPaint.top);
+		WINASSERT(m_bmp.m_bitmap != nullptr);
+		m_hBmpOld = SelectBitmap(m_bmp);
+		SetViewportOrg(-m_rcPaint.left, -m_rcPaint.top);
+	}
+
+	~MemoryDC(){
+		::BitBlt(m_hdcOriginal, m_rcPaint.left, m_rcPaint.top, m_rcPaint.right - m_rcPaint.left, m_rcPaint.bottom - m_rcPaint.top, m_hdc, m_rcPaint.left, m_rcPaint.top, SRCCOPY);
+		SelectBitmap(m_hBmpOld);
+	}
+};
+
+class EnhMetaFileInfo{
+public:
+	HENHMETAFILE m_emf;
+	BYTE* m_bits;
+	TCHAR* m_desc;
+	ENHMETAHEADER m_header;
+	PIXELFORMATDESCRIPTOR m_pfd;
+
+	EnhMetaFileInfo(HENHMETAFILE hEMF) : m_bits(nullptr), m_desc(nullptr), m_emf(hEMF)
+	{ }
+
+	~EnhMetaFileInfo(){
+		delete [] m_bits;
+		delete [] m_desc;
+	}
+
+	BYTE* GetEnhMetaFileBits(){
+		WINASSERT(m_emf != nullptr);
+		UINT nBytes = ::GetEnhMetaFileBits(m_emf, 0, nullptr);
+		delete [] m_bits;
+		m_bits = nullptr;
+		m_bits = new BYTE[nBytes];
+		if (m_bits != nullptr)
+			::GetEnhMetaFileBits(m_emf, nBytes, m_bits);
+		return m_bits;
+	}
+
+	LPTSTR GetEnhMetaFileDescription(){
+		WINASSERT(m_emf != nullptr);
+		UINT nLen = ::GetEnhMetaFileDescription(m_emf, 0, nullptr);
+		delete [] m_desc;
+		m_desc = nullptr;
+		m_desc = new TCHAR[nLen];
+		if (m_desc != nullptr)
+			nLen = ::GetEnhMetaFileDescription(m_emf, nLen, m_desc);
+		return m_desc;
+	}
+
+	ENHMETAHEADER* GetEnhMetaFileHeader(){
+		WINASSERT(m_emf != nullptr);
+		memset(&m_header, 0, sizeof(m_header));
+		m_header.iType = EMR_HEADER;
+		m_header.nSize = sizeof(ENHMETAHEADER);
+		UINT n = ::GetEnhMetaFileHeader(m_emf, sizeof(ENHMETAHEADER), &m_header);
+		return (n != 0) ? &m_header : nullptr;
+	}
+
+	PIXELFORMATDESCRIPTOR* GetEnhMetaFilePixelFormat(){
+		WINASSERT(m_emf != nullptr);
+		memset(&m_pfd, 0, sizeof(m_pfd));
+		UINT n = ::GetEnhMetaFilePixelFormat(m_emf, sizeof(m_pfd), &m_pfd);
+		return (n != 0) ? &m_pfd : nullptr;
+	}
+};
+
+template <bool Managed>
+class CEnhMetaFileT{
+public:
+	HENHMETAFILE m_emf;
+	
+	CEnhMetaFileT(HENHMETAFILE hEMF = nullptr) : m_emf(hEMF){
+	}
+
+	~CEnhMetaFileT(){
+		if(Managed && m_emf != nullptr)
+			DeleteObject();
+	}
+
+	CEnhMetaFileT<Managed>& operator =(HENHMETAFILE hEMF){
+		Attach(hEMF);
+		return *this;
+	}
+
+	void Attach(HENHMETAFILE hEMF){
+		if(Managed && m_emf != nullptr && m_emf != hEMF)
+			DeleteObject();
+		m_emf = hEMF;
+	}
+
+	HENHMETAFILE Detach(){
+		HENHMETAFILE hEMF = m_emf;
+		m_emf = nullptr;
+		return hEMF;
+	}
+
+	operator HENHMETAFILE() const { return m_emf; }
+
+	bool IsNull() const { return (m_emf == nullptr); }
+
+	BOOL DeleteObject(){
+		WINASSERT(m_emf != nullptr);
+		BOOL bRet = ::DeleteEnhMetaFile(m_emf);
+		m_emf = nullptr;
+		return bRet;
+	}
+
+	UINT GetEnhMetaFileBits(UINT cbBuffer, LPBYTE lpbBuffer) const{
+		WINASSERT(m_emf != nullptr);
+		return ::GetEnhMetaFileBits(m_emf, cbBuffer, lpbBuffer);
+	}
+
+	UINT GetEnhMetaFileDescription(UINT cchBuffer, LPTSTR lpszDescription) const{
+		WINASSERT(m_emf != nullptr);
+		return ::GetEnhMetaFileDescription(m_emf, cchBuffer, lpszDescription);
+	}
+
+	UINT GetEnhMetaFileHeader(LPENHMETAHEADER lpemh) const{
+		WINASSERT(m_emf != nullptr);
+		lpemh->iType = EMR_HEADER;
+		lpemh->nSize = sizeof(ENHMETAHEADER);
+		return ::GetEnhMetaFileHeader(m_emf, sizeof(ENHMETAHEADER), lpemh);
+	}
+
+	UINT GetEnhMetaFilePaletteEntries(UINT cEntries, LPPALETTEENTRY lppe) const{
+		WINASSERT(m_emf != nullptr);
+		return ::GetEnhMetaFilePaletteEntries(m_emf, cEntries, lppe);
+	}
+
+	UINT GetEnhMetaFilePixelFormat(DWORD cbBuffer, PIXELFORMATDESCRIPTOR* ppfd) const{
+		WINASSERT(m_emf != nullptr);
+		return ::GetEnhMetaFilePixelFormat(m_emf, cbBuffer, ppfd);
+	}
+};
+
+typedef CEnhMetaFileT<false>   CEnhMetaFileHandle;
+typedef CEnhMetaFileT<true>    CEnhMetaFile;
+
+class CEnhMetaFileDC : public DC{
+public:
+	CEnhMetaFileDC(){
+	}
+
+	CEnhMetaFileDC(HDC hdc, LPCRECT lpRect){
+		Create(hdc, nullptr, lpRect, nullptr);
+		WINASSERT(m_hdc != nullptr);
+	}
+
+	CEnhMetaFileDC(HDC hdcRef, LPCTSTR lpFilename, LPCRECT lpRect, LPCTSTR lpDescription){
+		Create(hdcRef, lpFilename, lpRect, lpDescription);
+		WINASSERT(m_hdc != nullptr);
+	}
+
+	~CEnhMetaFileDC(){
+		HENHMETAFILE hEMF = Close();
+		if (hEMF != nullptr)
+			::DeleteEnhMetaFile(hEMF);
+	}
+
+	void Create(HDC hdcRef, LPCTSTR lpFilename, LPCRECT lpRect, LPCTSTR lpDescription){
+		WINASSERT(m_hdc == nullptr);
+		m_hdc = ::CreateEnhMetaFile(hdcRef, lpFilename, lpRect, lpDescription);
+	}
+
+	HENHMETAFILE Close(){
+		HENHMETAFILE hEMF = nullptr;
+		if (m_hdc != nullptr){
+			hEMF = ::CloseEnhMetaFile(m_hdc);
+			m_hdc = nullptr;
+		}
+		return hEMF;
+	}
+};
+#endif
 #endif

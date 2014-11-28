@@ -7,10 +7,8 @@
         g++ wintest.cpp -std=c++11 -municode -mwindows  -static -g  wintest.exe
 */
 
-
 #include <utility/BaseWindow.h>
 #include <utility/ComPtr.h>
-
 
 class MyWindow : public BaseWindow<MyWindow, Window, FrameWinTraits> {
 public:
@@ -26,23 +24,19 @@ public:
   END_MSG_MAP()
 };
 
-void MyWindow::OnClose()
-{
+void MyWindow::OnClose(){
 	PostQuitMessage(0);
 }
 
-void MyWindow::OnLButtonDown(UINT nFlags,const Point& pt)
-{
+void MyWindow::OnLButtonDown(UINT nFlags,const Point& pt){
 	std::tstringstream str;
 	str << TEXT("Clicked At: ") << pt.x << TEXT(",") << pt.y;
 	MessageBox(str.str().c_str(),TEXT("Mouse Position"), MB_OK);	
 }
 
-
-
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPTSTR, int nShow) {
   MyWindow win;
-  win.Create(nullptr,TEXT("Test Win"));
+  win.Create(nullptr,&Window::rcDefault,TEXT("Test Win"));
   win.ShowWindow(nShow);
   win.UpdateWindow();
 
