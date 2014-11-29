@@ -3632,6 +3632,288 @@ enum class AnimateType : DWORD {
   SlideDown = AW_SLIDE | AW_VER_NEGATIVE
 };
 
+enum class ShowWindowType : int {
+  Hide,
+  Normal,
+  ShowMinimized,
+  ShowMaximized,
+  NoActivate,
+  Show,
+  Minimized,
+  MinNoActivate,
+  ShowNoActivate,
+  Restore,
+  Default,
+  ForceMimize
+};
+
+enum class MessageBoxButtons : UINT {
+    Ok,
+    OkCancel,
+    AbortRetryIgnore,
+    YesNoCancel,
+    YesNo,
+    RetryCancel,
+    CancelTryContinue,
+    Help
+};
+
+enum class MessageBoxIcon : UINT {
+    Hand = 0x00000010L,
+    Error = 0x00000010L,
+    Stop = 0x00000010L,
+    Question = 0x00000020L,
+    Warning = 0x00000030L,
+    Exclamation = 0x00000030L,
+    Information = 0x00000040L,
+    Asterisk = 0x00000040L
+};
+
+enum class MessageBoxDefaultButton : UINT {
+    Button1 = 0x00000000L,
+    Button2 = 0x00000100L,
+    Button3 = 0x00000200L,
+    Button4 = 0x00000300L
+};
+
+enum class MessageBoxModalType : UINT {
+    ApplicationModal,
+    SystemModal = 0x00001000L,
+    TaskModal = 0x00002000L
+};
+
+enum class MessageBoxOtherOptions : UINT {
+    DefaultDesktopOnly = 0x00020000L,
+    RightJustified = 0x00080000L,
+    RightToLeftReading = 0x00100000L,
+    SetForeGround = 0x00010000L,
+    TopMost = 0x00040000L,
+    ServiceNotification = 0x00200000L
+};
+
+enum class MessageBoxResult : UINT {
+    Ok = 1,
+    Cancel,
+    Abort,
+    Retry,
+    Ignore,
+    Yes,
+    No,
+    TryAgain = 10
+};
+
+class MessageBox {
+public:
+    static
+    MessageBoxResult Show(LPCTSTR lpszText, LPCTSTR lpszCaption, MessageBoxButtons buttons){
+         return static_cast<MessageBoxResult>(::MessageBox(nullptr, lpszText, lpszCaption,
+                                                           static_cast<UINT>(buttons)));
+    }
+
+    static
+    MessageBoxResult Show(HWND hwnd,LPCTSTR lpszText, LPCTSTR lpszCaption, MessageBoxButtons buttons){
+         WINCHECK(hwnd);
+         return static_cast<MessageBoxResult>(::MessageBox(hwnd, lpszText, lpszCaption, static_cast<UINT>(buttons)));
+    }
+
+    static
+    MessageBoxResult Show(LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxIcon icon){
+         return static_cast<MessageBoxResult>(::MessageBox(nullptr, lpszText, lpszCaption,
+                                                           static_cast<UINT>(buttons) |
+                                                           static_cast<UINT>(icon)));
+    }
+
+    static
+    MessageBoxResult Show(HWND hwnd,LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxIcon icon){
+         WINCHECK(hwnd);
+         return static_cast<MessageBoxResult>(::MessageBox(hwnd, lpszText, lpszCaption,
+                                                           static_cast<UINT>(buttons) |
+                                                           static_cast<UINT>(icon)));
+    }
+
+    static
+    MessageBoxResult Show(LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                  MessageBoxDefaultButton defa){
+        return static_cast<MessageBoxResult>(::MessageBox(nullptr, lpszText, lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(defa)));
+    }
+
+    static
+    MessageBoxResult Show(HWND hwnd,LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                  MessageBoxDefaultButton defa){
+        WINCHECK(hwnd);
+        return static_cast<MessageBoxResult>(::MessageBox(hwnd, lpszText, lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(defa)));
+    }
+
+    static
+    MessageBoxResult Show(LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxModalType mode) {
+        return static_cast<MessageBoxResult>(::MessageBox(nullptr,lpszText,lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(mode)));
+    }
+
+    static
+    MessageBoxResult Show(HWND hwnd,LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxModalType mode) {
+        WINCHECK(hwnd);
+        return static_cast<MessageBoxResult>(::MessageBox(hwnd,lpszText,lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(mode)));
+    }
+
+    static
+    MessageBoxResult Show(LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxOtherOptions opt){
+         return static_cast<MessageBoxResult>(::MessageBox(nullptr, lpszText, lpszCaption,
+                                                           static_cast<UINT>(buttons) |
+                                                           static_cast<UINT>(opt)));
+    }
+
+    static
+    MessageBoxResult Show(HWND hwnd,LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxOtherOptions opt){
+         WINCHECK(hwnd);
+         return static_cast<MessageBoxResult>(::MessageBox(hwnd, lpszText, lpszCaption,
+                                                           static_cast<UINT>(buttons) |
+                                                           static_cast<UINT>(opt)));
+    }
+
+    static
+    MessageBoxResult Show(LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxIcon icon, MessageBoxDefaultButton def) {
+        return static_cast<MessageBoxResult>(::MessageBox(nullptr, lpszText, lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(icon) |
+                                                          static_cast<UINT>(def)));
+    }
+
+    static
+    MessageBoxResult Show(HWND hwnd,LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxIcon icon, MessageBoxDefaultButton def) {
+        WINCHECK(hwnd);
+        return static_cast<MessageBoxResult>(::MessageBox(hwnd, lpszText, lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(icon) |
+                                                          static_cast<UINT>(def)));
+    }
+
+    static
+    MessageBoxResult Show(LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxIcon icon, MessageBoxModalType type) {
+        return static_cast<MessageBoxResult>(::MessageBox(nullptr, lpszText, lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(icon) |
+                                                          static_cast<UINT>(type)));
+    }
+
+    static
+    MessageBoxResult Show(HWND hwnd,LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxIcon icon, MessageBoxModalType type) {
+        WINCHECK(hwnd);
+        return static_cast<MessageBoxResult>(::MessageBox(hwnd, lpszText, lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(icon) |
+                                                          static_cast<UINT>(type)));
+    }
+
+    static
+    MessageBoxResult Show(LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxIcon icon, MessageBoxOtherOptions opt) {
+        return static_cast<MessageBoxResult>(::MessageBox(nullptr, lpszText, lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(icon) |
+                                                          static_cast<UINT>(opt)));
+    }
+
+    static
+    MessageBoxResult Show(HWND hwnd,LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxIcon icon, MessageBoxOtherOptions opt) {
+        WINCHECK(hwnd);
+        return static_cast<MessageBoxResult>(::MessageBox(hwnd, lpszText, lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(icon) |
+                                                          static_cast<UINT>(opt)));
+    }
+
+
+    static
+    MessageBoxResult Show(LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxIcon icon, MessageBoxDefaultButton def,
+                                MessageBoxModalType type) {
+        return static_cast<MessageBoxResult>(::MessageBox(nullptr, lpszText, lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(icon) |
+                                                          static_cast<UINT>(def)) |
+                                                          static_cast<UINT>(type));
+    }
+
+    static
+    MessageBoxResult Show(HWND hwnd,LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxIcon icon, MessageBoxDefaultButton def,
+                                MessageBoxModalType type) {
+        WINCHECK(hwnd);
+        return static_cast<MessageBoxResult>(::MessageBox(hwnd, lpszText, lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(icon) |
+                                                          static_cast<UINT>(def)) |
+                                                          static_cast<UINT>(type));
+    }
+
+    static
+    MessageBoxResult Show(LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxIcon icon, MessageBoxDefaultButton def,
+                                MessageBoxOtherOptions opt) {
+        return static_cast<MessageBoxResult>(::MessageBox(nullptr, lpszText, lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(icon) |
+                                                          static_cast<UINT>(def)) |
+                                                          static_cast<UINT>(opt));
+    }
+
+    static
+    MessageBoxResult Show(HWND hwnd,LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxIcon icon, MessageBoxDefaultButton def,
+                                MessageBoxOtherOptions opt) {
+        WINCHECK(hwnd);
+        return static_cast<MessageBoxResult>(::MessageBox(hwnd, lpszText, lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(icon) |
+                                                          static_cast<UINT>(def)) |
+                                                          static_cast<UINT>(opt));
+    }
+
+    static
+    MessageBoxResult Show(LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxIcon icon, MessageBoxDefaultButton def,
+                                MessageBoxModalType type,  MessageBoxOtherOptions opt) {
+        return static_cast<MessageBoxResult>(::MessageBox(nullptr, lpszText, lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(icon) |
+                                                          static_cast<UINT>(def)) |
+                                                          static_cast<UINT>(type) |
+                                                          static_cast<UINT>(opt));
+    }
+
+    static
+    MessageBoxResult Show(HWND hwnd,LPCTSTR lpszText, LPCTSTR lpszCaption,MessageBoxButtons buttons,
+                                MessageBoxIcon icon, MessageBoxDefaultButton def,
+                                MessageBoxModalType type,  MessageBoxOtherOptions opt) {
+        WINCHECK(hwnd);
+        return static_cast<MessageBoxResult>(::MessageBox(hwnd, lpszText, lpszCaption,
+                                                          static_cast<UINT>(buttons) |
+                                                          static_cast<UINT>(icon) |
+                                                          static_cast<UINT>(def)) |
+                                                          static_cast<UINT>(type) |
+                                                          static_cast<UINT>(opt));
+    }
+};
+
 class Window {
 public:
   static RECT rcDefault;
@@ -3646,6 +3928,8 @@ public:
 
   Window &operator=(Window &) = default;
   Window &operator=(Window &&) = default;
+
+  operator HWND() { return m_hwnd; }
 
   static LPCTSTR GetWndClassName() { return nullptr; }
 
@@ -4373,6 +4657,18 @@ public:
                         rcWnd.bottom - rcWnd.top, uFlags);
   }
 
+  BOOL SetWidth(int Width, BOOL redraw = TRUE) {
+      Rect rc;
+      GetClientRect(rc);
+      return ResizeClient(Width,rc.Height(), redraw);
+  }
+
+  BOOL SetHeight(int Height, BOOL redraw = TRUE){
+      Rect rc;
+      GetClientRect(rc);
+      return ResizeClient(rc.Width(),Height, redraw);
+  }
+
   int GetWindowRgn(HRGN hRgn) {
     WINCHECK(m_hwnd);
     return ::GetWindowRgn(m_hwnd, hRgn);
@@ -4422,6 +4718,16 @@ public:
   BOOL ShowWindowAsync(int nCmdShow) {
     WINCHECK(m_hwnd);
     return ::ShowWindowAsync(m_hwnd, nCmdShow);
+  }
+
+  BOOL ShowWindowAsync(ShowWindowType type) {
+    WINCHECK(m_hwnd);
+    return ::ShowWindowAsync(m_hwnd, static_cast<int>(type));
+  }
+
+  BOOL ShowWindow(ShowWindowType type){
+    WINCHECK(m_hwnd);
+    return ::ShowWindow(m_hwnd,static_cast<int>(type));
   }
 
   Window GetDecendantWindow(int nID) const {
@@ -4540,9 +4846,23 @@ public:
     return ::SetWindowPos(m_hwnd, nullptr, xLeft, yTop, -1, -1,
                           SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
   }
+#if _WIN32_WINNT >= 0x0500
+  BOOL AnimateWindow(DWORD time, DWORD flags){
+      WINASSERT(::IsWindow(m_hwnd));
+      return ::AnimateWindow(m_hwnd,time,flags);
+  }
+
+  BOOL AnimateWindow(DWORD time, AnimateType type){
+      WINASSERT(::IsWindow(m_hwnd));
+      return ::AnimateWindow(m_hwnd,time,static_cast<DWORD>(type));
+  }
+
+#endif
 };
 
+
 RECT Window::rcDefault = {CW_USEDEFAULT, CW_USEDEFAULT, 0, 0};
+
 
 template <DWORD m_dwStyle = 0, DWORD m_dwExStyle = 0> class WinTraits {
 public:
@@ -4554,6 +4874,7 @@ public:
     return dwExStyle ? dwExStyle : m_dwExStyle;
   }
 };
+
 
 typedef WinTraits<WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0>
     ControlTraits;
@@ -4577,10 +4898,12 @@ public:
   }
 };
 
+
 struct CreateWndData {
   void *pThis;
   DWORD dwThreadId;
 };
+
 
 class CriticalSection {
 public:
@@ -4599,11 +4922,13 @@ public:
   CRITICAL_SECTION m_Sec;
 };
 
+
 struct CriticalSectionLock {
   CriticalSection *m_t;
   CriticalSectionLock(CriticalSection &t) : m_t(&t) { m_t->Lock(); }
   ~CriticalSectionLock() { m_t->UnLock(); }
 };
+
 
 CriticalSection _wndCS;
 std::vector<CreateWndData> _wndData;
@@ -4722,6 +5047,7 @@ template <typename TBase>
 LRESULT
 WindowImplRoot<TBase>::ReflectNotifications(HWND hWnd, UINT msg, WPARAM wParam,
                                             LPARAM lParam, BOOL &bHandled) {
+
   HWND hchild = nullptr;
   switch (msg) {
   case WM_COMMAND:
@@ -4781,10 +5107,12 @@ WindowImplRoot<TBase>::ReflectNotifications(HWND hWnd, UINT msg, WPARAM wParam,
   return ::SendMessage(hchild, OCM__BASE + msg, wParam, lParam);
 }
 
+
 template <typename TBase>
 LRESULT
 WindowImplRoot<TBase>::ForwardNotifications(HWND hWnd, UINT uMsg, WPARAM wParam,
                                             LPARAM lParam, BOOL &bHandled) {
+
   LRESULT lResult = 0;
   switch (uMsg) {
   case WM_COMMAND:
@@ -4817,6 +5145,7 @@ WindowImplRoot<TBase>::ForwardNotifications(HWND hWnd, UINT uMsg, WPARAM wParam,
 template <typename TBase>
 BOOL WindowImplRoot<TBase>::DefaultReflectNotificationHandler(
     HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, BOOL &bHandled) {
+
   LRESULT lresult = 0;
   switch (msg) {
   case OCM_COMMAND:
@@ -4848,6 +5177,7 @@ BOOL WindowImplRoot<TBase>::DefaultReflectNotificationHandler(
 
 template <typename TBase, class TWinTraits = ControlTraits>
 class BaseWindowImplT : public WindowImplRoot<TBase> {
+
 public:
   WNDPROC m_pSuperWindowProc;
   WndProcThunk m_thunk;
@@ -5049,6 +5379,7 @@ public:
 
 template <typename T, typename TBaseWindow, typename TWindowTraits>
 class BaseWindow : public BaseWindowImplT<TBaseWindow, TWindowTraits> {
+
 public:
   HWND Create(HWND hWndParent = nullptr, LPRECT rect = nullptr,
               LPCTSTR szWindowName = nullptr, DWORD dwStyle = 0,
@@ -5112,6 +5443,7 @@ public:
 
 // Standard-Controls.
 template <typename TBase> class StaticT : public TBase {
+
 public:
   StaticT(HWND hWnd = nullptr) : TBase(hWnd) {}
 
@@ -5182,6 +5514,7 @@ public:
 typedef StaticT<Window> Static;
 
 template <typename TBase> class ButtonT : public TBase {
+
 public:
   ButtonT(HWND hwnd = nullptr) : TBase(hwnd) {}
 
@@ -5348,6 +5681,7 @@ public:
 typedef ButtonT<Window> Button;
 
 template <typename TBase> class ListBoxT : public TBase {
+
 public:
   ListBoxT(HWND hwnd = nullptr) : TBase(hwnd) {}
 
@@ -5651,6 +5985,7 @@ public:
 typedef ListBoxT<Window> ListBox;
 
 template <typename TBase> class ComboBoxT : public TBase {
+
   ComboBoxT(HWND hWnd = NULL) : TBase(hWnd) {}
   ComboBoxT<TBase> &operator=(HWND hWnd) {
     ((TBase *)this)->m_hwnd = hWnd;
@@ -5937,6 +6272,7 @@ template <typename TBase> class ComboBoxT : public TBase {
 typedef ComboBoxT<Window> ComboBox;
 
 template <typename TBase> class EditT : public TBase {
+
 public:
   EditT(HWND hWnd = NULL) : TBase(hWnd) {}
   EditT<TBase> &operator=(HWND hWnd) {
@@ -6313,6 +6649,7 @@ public:
 typedef EditT<Window> Edit;
 
 template <typename TBase> class ScrollBarT : public TBase {
+
   ScrollBarT(HWND hWnd = NULL) : TBase(hWnd) {}
   ScrollBarT<TBase> &operator=(HWND hWnd) {
     ((TBase *)this)->m_hwnd = hWnd;
@@ -6395,6 +6732,7 @@ template <typename TBase> class ScrollBarT : public TBase {
 
 typedef ScrollBarT<Window> ScrollBar;
 //Standard-Controls
+
 
 #define BEGIN_MSG_MAP()                                                        \
   BOOL bHandled = FALSE;                                                       \
@@ -6530,7 +6868,7 @@ typedef ScrollBarT<Window> ScrollBar;
 #endif
 
 #ifndef NOTIFY_HANDLERS
-#define NOTIFY_HANDLERS
+
 // LRESULT OnNotifyHandlerEX(LPNMHDR pnmh)
 #define NOTIFY_HANDLER_EX(id, cd, func)                                        \
   if (uMsg == WM_NOTIFY && cd == ((LPNMHDR)lParam)->code &&                    \
@@ -6636,7 +6974,6 @@ typedef ScrollBarT<Window> ScrollBar;
 #endif
 
 #ifndef CHAIN_HANDLERS
-#define CHAIN_HANDLERS
 
 #define CHAIN_MSG_MAP(theChainClass)                                           \
   {                                                                            \
