@@ -3702,6 +3702,266 @@ enum class MessageBoxResult : UINT {
     TryAgain = 10
 };
 
+enum class DCCreationFlags : DWORD {
+    Window = DCX_WINDOW,
+    Cache = DCX_CACHE,
+    ParentClip = DCX_PARENTCLIP,
+    ClipSiblings = DCX_CLIPSIBLINGS,
+    ClipChildren = DCX_CLIPCHILDREN,
+    NoResetAttributes = DCX_NORESETATTRS,
+    LockWindowUpdate = DCX_LOCKWINDOWUPDATE,
+    ExcludeRegion = DCX_EXCLUDERGN,
+    Intersection = DCX_INTERSECTRGN,
+    Validate = DCX_VALIDATE
+};
+
+enum class PrintFlag : DWORD {
+    CheckVisible = PRF_CHECKVISIBLE,
+    Children = PRF_CHILDREN,
+    Client = PRF_CLIENT,
+    EraseBackground = PRF_ERASEBKGND,
+    NonClient = PRF_NONCLIENT,
+    Owned = PRF_OWNED
+};
+
+class PrintFlags{
+    DWORD m_flag;
+public:
+    PrintFlags(PrintClientFlag flag) : m_flag(0) {
+        m_flag = static_cast<DWORD>(flag);
+    }
+
+    PrintFlags(std::initializer_list<PrintClientFlag> flags) : m_flag(0){
+        for(int i = 0; i < flags.size(); i++){
+            m_flag |= static_cast<DWORD>(flags[i]);
+        }
+    }
+
+    operator DWORD() { return m_flag; }
+};
+
+enum class GWLFlag : int {
+    ExStyle = -20,
+    HINSTANCE = -6,
+    HwndParent = -8,
+    ID = -12,
+    Style = -16,
+    UserData = -21,
+    WndProc = -4,
+    DialogProc = DWLP_MSGRESULT + sizeof(LRESULT),
+    MsgResult = 0,
+    User = DWLP_DLGPROC + sizeof(DLGPROC)
+};
+
+enum class WindowsMessage : unsigned int {
+    Null = WM_NULL,
+    Create = WM_CREATE,
+    Destroy = WM_DESTROY,
+    Move = WM_MOVE,
+    Size = WM_SIZE,
+    Activate = WM_ACTIVATE,
+    SetFocus = WM_SETFOCUS,
+    KillFocus = WM_KILLFOCUS,
+    Enable = WM_ENABLE,
+    SetReDraw = WM_SETREDRAW,
+    SetText = WM_SETTEXT,
+    GetText = WM_GETTEXT,
+    GetTextLength = WM_GETTEXTLENGTH,
+    Paint = WM_PAINT,
+    Close = WM_CLOSE,
+    QueryEndSession = WM_QUERYENDSESSION,
+    Quit = WM_QUIT,
+    EraseBackground = WM_ERASEBKGND,
+    SysColorChange = WM_SYSCOLORCHANGE,
+    EndSession = WM_ENDSESSION,
+    SystemError = 0x17,
+    ShowWindow = WM_SHOWWINDOW,
+    ControlColor = WM_CTLCOLOR,
+    WinInitChange = WM_WININICHANGE,
+    SettingChange = WM_SETTINGCHANGE,
+    DevModeChange = WM_DEVMODECHANGE,
+    ActivateApp = WM_ACTIVATEAPP,
+    FontChange = WM_FONTCHANGE,
+    TimeChange = WM_TIMECHANGE,
+    CancelMode = WM_CANCELMODE,
+    SetCursor = WM_SETCURSOR,
+    MouseActivate = WM_MOUSEACTIVATE,
+    ChildActivate = WM_CHILDACTIVATE,
+    QueUESync = WM_QUEUESYNC,
+    GetMinMaxInfo = WM_GETMINMAXINFO,
+    PaintIcon = WM_PAINTICON,
+    IconEraseBackground = WM_ICONERASEBKGND,
+    NextDialogControl = WM_NEXTDLGCTL,
+    SpoolerStatus = WM_SPOOLERSTATUS,
+    DrawItem = WM_DRAWITEM,
+    MeasureItem = WM_MEASUREITEM,
+    DeleteItem = WM_DELETEITEM,
+    VKeyToItem = WM_VKEYTOITEM,
+    CharToItem = WM_CHARTOITEM,
+    SetFont = WM_SETFONT,
+    GetFont= WM_GETFONT,
+    SetHotKey = WM_SETHOTKEY,
+    GetHotKey = WM_GETHOTKEY,
+    QueryDragIcon = WM_QUERYDRAGICON,
+    CompareItem = WM_COMPAREITEM,
+    Compacting = WM_COMPACTING,
+    WindowPosChanging = WM_WINDOWPOSCHANGING,
+    WindowPosChanged = WM_WINDOWPOSCHANGED,
+    Power = WM_POWER,
+    CopyData = WM_COPYDATA,
+    CancelJournal = WM_CANCELJOURNAL,
+    Notify = WM_NOTIFY,
+    InputLanguageChangeRequest = WM_INPUTLANGCHANGEREQUEST,
+    InputLanguageChange = WM_INPUTLANGCHANGE,
+    TCard = WM_TCARD,
+    Help = WM_HELP,
+    UserChanged = WM_USERCHANGED,
+    NotifyFormat = WM_NOTIFYFORMAT ,
+    ContextMenu = WM_CONTEXTMENU,
+    StyleChanging = WM_STYLECHANGING,
+    StyleChanged = WM_STYLECHANGED,
+    DislayChange = WM_DISPLAYCHANGE,
+    GetIcon = WM_GETICON,
+    SetIcon = WM_SETICON,
+    NcCreate = WM_NCCREATE,
+    NcDestroy = WM_NCDESTROY,
+    NcCalcSize = WM_NCCALCSIZE,
+    NcHitTest = WM_NCHITTEST,
+    NcPaint = WM_NCPAINT,
+    NcActivate = WM_NCACTIVATE,
+    GetDialogCode = WM_GETDLGCODE,
+    NcMouseMove = WM_NCMOUSEMOVE,
+    NcLButtonDown = WM_NCLBUTTONDOWN,
+    NcLButtonUp = WM_NCLBUTTONUP,
+    NcLButtonDoubleClick = WM_NCLBUTTONDBLCLK,
+    NcRButtonDown = WM_NCRBUTTONDOWN,
+    NcRButtonUp = WM_NCRBUTTONUP,
+    NcRButtonDoubleClick = WM_NCRBUTTONDBLCLK,
+    NcMButtonDown = WM_NCMBUTTONDOWN,
+    NcMButtonUp = WM_NCMBUTTONUP,
+    NcMButtonDoubleClick = WM_NCMBUTTONDBLCLK,
+    KeyFirst = WM_KEYFIRST,
+    KeyDown  = WM_KEYDOWN,
+    KeyUp = WM_KEYUP,
+    Char = WM_CHAR,
+    DeadChar = WM_DEADCHAR,
+    SysKeyDown = WM_SYSKEYDOWN,
+    SysKeyUp = WM_SYSKEYUP,
+    SysChar = WM_SYSCHAR,
+    SysDeadChar = WM_SYSDEADCHAR,
+    KeyLast = WM_KEYLAST,
+    IME_StartComposition = WM_IME_STARTCOMPOSITION,
+    IME_EndComposition = WM_IME_ENDCOMPOSITION,
+    IME_Composition = WM_IME_COMPOSITION,
+    IME_KeyLast = WM_IME_KEYLAST,
+    InitDialog = WM_INITDIALOG,
+    Command = WM_COMMAND,
+    SysCommand = WM_SYSCOMMAND,
+    Timer = WM_TIMER,
+    HScroll= WM_HSCROLL,
+    VScroll = WM_VSCROLL,
+    InitMenu = WM_INITMENU,
+    InitMenuPopUp = WM_INITMENUPOPUP,
+    MenuSelect = WM_MENUSELECT,
+    MenuChar = WM_MENUCHAR,
+    EnterIdle = WM_ENTERIDLE,
+    ControlColorMessageBox = WM_CTLCOLORMSGBOX,
+    ControlColorEdit = WM_CTLCOLOREDIT,
+    ControlColorListBox = WM_CTLCOLORLISTBOX,
+    ControlColorButton = WM_CTLCOLORBTN,
+    ControlColorDialog = WM_CTLCOLORDLG,
+    ControlColorScrollBar = WM_CTLCOLORSCROLLBAR,
+    ControlColorStatic = WM_CTLCOLORSTATIC,
+    MouseFirst = WM_MOUSEFIRST,
+    MouseMove = WM_MOUSEMOVE,
+    LButtonDown = WM_LBUTTONDOWN,
+    LButtonUp = WM_LBUTTONUP,
+    LButtonDoubleClick = WM_LBUTTONDBLCLK,
+    RButtonDown = WM_RBUTTONDOWN,
+    RButtonUp = WM_RBUTTONUP,
+    RButtonDoubleClick = WM_RBUTTONDBLCLK,
+    MButtonDown = WM_MBUTTONDOWN,
+    MButtonUp = WM_MBUTTONUP,
+    MButtonDoulbeClick = WM_MBUTTONDBLCLK,
+    MouseWheel = WM_MOUSEWHEEL,
+    MouseHWheel = 0x20E,
+    ParentNotify = WM_PARENTNOTIFY,
+    EnterMenuLoop = WM_ENTERMENULOOP,
+    ExitMenuLoop = WM_EXITMENULOOP,
+    NextMenu = WM_NEXTMENU,
+    Sizing = WM_SIZING,
+    CaptureChanged = WM_CAPTURECHANGED ,
+    Moving = WM_MOVING,
+    PowerBroadcast = WM_POWERBROADCAST,
+    DeviceChange = WM_DEVICECHANGE,
+    MdiCreate = WM_MDICREATE,
+    MdiDestroy = WM_MDIDESTROY,
+    MdiActivate = WM_MDIACTIVATE,
+    MdiRestore = WM_MDIRESTORE,
+    MdiNext = WM_MDINEXT,
+    MdiMaximize = WM_MDIMAXIMIZE,
+    MdiTitle = WM_MDITITLE,
+    MdiCascade = WM_MDICASCADE,
+    MdiIconArrange = WM_MDIICONARRANGE,
+    MdiGetActive = WM_MDIGETACTIVE,
+    MdiSetMenu = WM_MDISETMENU,
+    EnterSizeMove = WM_ENTERSIZEMOVE,
+    ExitSizeMove = WM_EXITSIZEMOVE,
+    DropFiles = WM_DROPFILES,
+    MdiRefreshMenu = WM_MDIREFRESHMENU,
+    IME_SetContext = WM_IME_SETCONTEXT,
+    IME_Notify = WM_IME_NOTIFY,
+    IME_Control = WM_IME_CONTROL,
+    IME_CompositionFull = WM_IME_COMPOSITIONFULL,
+    IME_Select = WM_IME_SELECT,
+    IME_Char = WM_IME_CHAR,
+    IME_KeyDown = WM_IME_KEYDOWN,
+    IME_KeyUp = WM_IME_KEYUP,
+    MouseHover = WM_MOUSEHOVER,
+    NcMouseLeave = WM_NCMOUSELEAVE,
+    MouseLeave = WM_MOUSELEAVE,
+    Cut = WM_CUT,
+    Copy = WM_COPY,
+    Paste = WM_PASTE,
+    Clear = WM_CLEAR,
+    Undo = WM_UNDO,
+    RenderFormat = WM_RENDERFORMAT,
+    RenderAllFormats = WM_RENDERALLFORMATS,
+    DestroyClipBoard = WM_DESTROYCLIPBOARD,
+    DrawClipBoard = WM_DRAWCLIPBOARD,
+    PaintClipBoard = WM_PAINTCLIPBOARD,
+    VScrollClipBoard = WM_VSCROLLCLIPBOARD,
+    SizeClipBoard = WM_SIZECLIPBOARD,
+    AskCbFormatName = WM_ASKCBFORMATNAME,
+    ChangeCbChain = WM_CHANGECBCHAIN,
+    HScrollClipBoard = WM_HSCROLLCLIPBOARD,
+    QueryNewPlatte = WM_QUERYNEWPALETTE,
+    PaletteIsChanging = WM_PALETTEISCHANGING,
+    PaletteChanged = WM_PALETTECHANGED,
+    HotKey = WM_HOTKEY,
+    Print = WM_PRINT,
+    PrintClient = WM_PRINTCLIENT,
+    HandHeldFirst = WM_HANDHELDFIRST,
+    HandHeldLast = WM_HANDHELDLAST,
+    PenWinFirst = WM_PENWINFIRST,
+    PenWInLast = WM_PENWINLAST ,
+    CoalesceFirst = 0x390,
+    CoalesceLast = 0x39F,
+    DDE_First = WM_DDE_FIRST,
+    DDE_Initiate = WM_DDE_INITIATE,
+    DDE_Terminate = WM_DDE_TERMINATE,
+    DDE_Advise = WM_DDE_ADVISE,
+    DDE_Unadvise = WM_DDE_UNADVISE,
+    DDE_Ack = WM_DDE_ACK,
+    DDE_Data = WM_DDE_DATA,
+    DDE_Request = WM_DDE_REQUEST,
+    DDE_Poke = WM_DDE_POKE,
+    DDE_Execute = WM_DDE_EXECUTE,
+    DDE_Last = WM_DDE_LAST,
+    User = WM_USER,
+    App = WM_APP
+};
+
 class MessageBox {
 public:
     static
@@ -3978,14 +4238,29 @@ public:
     return ::GetWindowLong(m_hwnd, nIndex);
   }
 
+  LONG GetWindowLong(GWLFlag flag) const {
+    WINCHECK(m_hwnd);
+    return ::GetWindowLong(m_hwnd, static_cast<int>(flag));
+  }
+
   LONG_PTR GetWindowLongPtr(int nIndex) const {
     WINCHECK(m_hwnd);
     return ::GetWindowLongPtr(m_hwnd, nIndex);
   }
 
+  LONG_PTR GetWindowLongPtr(GWLFlag flag) const {
+    WINCHECK(m_hwnd);
+    return ::GetWindowLongPtr(m_hwnd, static_cast<int>(flag));
+  }
+
   LONG SetWindowLong(int nIndex, LONG dwNewLong) {
     WINCHECK(m_hwnd);
     return ::SetWindowLong(m_hwnd, nIndex, dwNewLong);
+  }
+
+  LONG SetWindowLong(GWLFlag flag, LONG dwNewLong) {
+    WINCHECK(m_hwnd);
+    return ::SetWindowLong(m_hwnd, static_cast<int>(flag), dwNewLong);
   }
 
   HRESULT SetWindowLong(int nIndex, LONG dwNewLong, LONG &oldLong) {
@@ -3998,9 +4273,24 @@ public:
     }
   }
 
+  HRESULT SetWindowLong(GWLFlag flag, LONG dwNewLong, LONG &oldLong) {
+    WINCHECK(m_hwnd);
+    oldLong = ::SetWindowLong(m_hwnd,static_cast<int>(flag), dwNewLong);
+    if (oldLong == 0) {
+      return __HRESULT_FROM_WIN32(GetLastError());
+    } else {
+      return S_OK;
+    }
+  }
+
   LONG_PTR SetWindowLongPtr(int nIndex, LONG_PTR dwNewLong) {
     WINCHECK(m_hwnd);
     return ::SetWindowLongPtr(m_hwnd, nIndex, dwNewLong);
+  }
+
+  LONG_PTR SetWindowLongPtr(GWLFlag flag, LONG_PTR dwNewLong) {
+    WINCHECK(m_hwnd);
+    return ::SetWindowLongPtr(m_hwnd, static_cast<int>(flag), dwNewLong);
   }
 
   LRESULT SendMessage(UINT msg, WPARAM wParam = 0, LPARAM lParam = 0) {
@@ -4216,9 +4506,19 @@ public:
     ::SendMessage(m_hwnd, WM_PRINT, (WPARAM)hDC, dwFlags);
   }
 
+  void Print(HDC hDC, PrintFlags dwFlags) const {
+    WINCHECK(m_hwnd);
+    ::SendMessage(m_hwnd, WM_PRINT, (WPARAM)hDC, dwFlags);
+  }
+
   void PrintClient(HDC hDC, DWORD dwFlags) {
     WINCHECK(m_hwnd);
     ::SendMessage(m_hwnd, WM_PRINTCLIENT, (WPARAM)hDC, dwFlags);
+  }
+
+  void PrintClient(HDC hDC, PrintFlags flags){
+      WINCHECK(m_hwnd);
+      ::SendMessage(m_hwnd, WM_PRINTCLIENT, (WPARAM)hDC, flags);
   }
 
   BOOL UpdateWindow() {
@@ -4271,6 +4571,11 @@ public:
     return ::ShowWindow(m_hwnd, nCmdShow);
   }
 
+  BOOL ShowWindow(ShowWindowType type){
+    WINCHECK(m_hwnd);
+    return ::ShowWindow(m_hwnd,static_cast<int>(type));
+  }
+
   BOOL IsWindowVisible() const {
     WINCHECK(m_hwnd);
     return ::IsWindowVisible(m_hwnd);
@@ -4284,6 +4589,11 @@ public:
   HDC GetDCEx(HRGN hRgnClip, DWORD flags) {
     WINCHECK(m_hwnd);
     return ::GetDCEx(m_hwnd, hRgnClip, flags);
+  }
+
+  HDC GetDCEx(HRGN hRgnClip, DCCreationFlags flags) {
+    WINCHECK(m_hwnd);
+    return ::GetDCEx(m_hwnd, hRgnClip, static_cast<DWORD>(flags));
   }
 
   BOOL LockWindowUpdate(BOOL bLock = TRUE) {
@@ -4723,11 +5033,6 @@ public:
   BOOL ShowWindowAsync(ShowWindowType type) {
     WINCHECK(m_hwnd);
     return ::ShowWindowAsync(m_hwnd, static_cast<int>(type));
-  }
-
-  BOOL ShowWindow(ShowWindowType type){
-    WINCHECK(m_hwnd);
-    return ::ShowWindow(m_hwnd,static_cast<int>(type));
   }
 
   Window GetDecendantWindow(int nID) const {
