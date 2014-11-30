@@ -3727,13 +3727,13 @@ enum class PrintFlag : DWORD {
 class PrintFlags{
     DWORD m_flag;
 public:
-    PrintFlags(PrintClientFlag flag) : m_flag(0) {
+    PrintFlags(PrintFlag flag) : m_flag(0) {
         m_flag = static_cast<DWORD>(flag);
     }
 
-    PrintFlags(std::initializer_list<PrintClientFlag> flags) : m_flag(0){
-        for(int i = 0; i < flags.size(); i++){
-            m_flag |= static_cast<DWORD>(flags[i]);
+    PrintFlags(std::initializer_list<PrintFlag> flags) : m_flag(0){
+        for(auto i = flags.begin(); i != flags.end(); ++i){
+            m_flag |= static_cast<DWORD>(*i);
         }
     }
 
@@ -3900,7 +3900,7 @@ enum class WindowsMessage : unsigned int {
     MdiRestore = WM_MDIRESTORE,
     MdiNext = WM_MDINEXT,
     MdiMaximize = WM_MDIMAXIMIZE,
-    MdiTitle = WM_MDITITLE,
+    MdiTitle = WM_MDITILE,
     MdiCascade = WM_MDICASCADE,
     MdiIconArrange = WM_MDIICONARRANGE,
     MdiGetActive = WM_MDIGETACTIVE,
@@ -3960,6 +3960,63 @@ enum class WindowsMessage : unsigned int {
     DDE_Last = WM_DDE_LAST,
     User = WM_USER,
     App = WM_APP
+};
+
+enum class SwpFlag : UINT {
+    AsyncWindowPos = SWP_ASYNCWINDOWPOS,
+    DeferErase = SWP_DEFERERASE,
+    DrawFrame = SWP_DRAWFRAME,
+    FrameChanged = SWP_FRAMECHANGED,
+    HideWindow = SWP_HIDEWINDOW,
+    NoActivate = SWP_NOACTIVATE,
+    NoCopyBits = SWP_NOCOPYBITS,
+    NoMove = SWP_NOMOVE,
+    NoOwnerZOrder = SWP_NOOWNERZORDER,
+    NoReDraw = SWP_NOREDRAW,
+    NoReposition = SWP_NOREPOSITION,
+    NoSendChanging = SWP_NOSENDCHANGING,
+    NoSize = SWP_NOSIZE,
+    NoZOrder = SWP_NOZORDER,
+    ShowWindow = SWP_SHOWWINDOW
+};
+
+class SwpFlags {
+    UINT m_uint;
+public:
+    SwpFlags(SwpFlag flag) : m_uint(static_cast<UINT>(flag)) {}
+    SwpFlags(std::initializer_list<SwpFlag> flags){
+        for(auto i = flags.begin(); i !=  flags.end(); ++i){
+            m_uint |= static_cast<UINT>(*i);
+        }
+    }
+    operator UINT() { return m_uint ;}
+};
+
+enum class RedrawFlag : UINT{
+    Erase = RDW_ERASE,
+    Frame = RDW_FRAME,
+    InternalPaint = RDW_INTERNALPAINT,
+    Invalidate = RDW_INVALIDATE,
+    NoErase = RDW_NOERASE,
+    NoFrame = RDW_NOFRAME,
+    NoInternalPaint = RDW_NOINTERNALPAINT,
+    Validate = RDW_VALIDATE,
+    EraseNow = RDW_ERASENOW,
+    UpdateNow = RDW_UPDATENOW,
+    AllChildren = RDW_ALLCHILDREN,
+    NoChildren = RDW_NOCHILDREN
+};
+
+class RedrawFlags {
+    UINT m_flag;
+public:
+    RedrawFlags(RedrawFlag flag) : m_flag(static_cast<UINT>(flag)) {}
+    RedrawFlags(std::initializer_list<RedrawFlag> flags) : m_flag(0){
+        for(auto i = flags.begin(); i != flags.end();++i){
+            m_flag |= static_cast<UINT>(*i);
+        }
+    }
+    operator UINT() { return m_flag; }
 };
 
 class MessageBox {
@@ -4298,14 +4355,29 @@ public:
     return ::SendMessage(m_hwnd, msg, wParam, lParam);
   }
 
+  LRESULT SendMessage(WindowsMessage msg, WPARAM wParam = 0, LPARAM lParam = 0) {
+    WINCHECK(m_hwnd);
+    return ::SendMessage(m_hwnd, static_cast<UINT>(msg), wParam, lParam);
+  }
+
   BOOL PostMessage(UINT msg, WPARAM wParam = 0, LPARAM lParam = 0) {
     WINCHECK(m_hwnd);
     return ::PostMessage(m_hwnd, msg, wParam, lParam);
   }
 
+  BOOL PostMessage(WindowsMessage msg, WPARAM wParam = 0, LPARAM lParam = 0) {
+    WINCHECK(m_hwnd);
+    return ::PostMessage(m_hwnd, static_cast<UINT>(msg), wParam, lParam);
+  }
+
   BOOL SendNotifyMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
     WINCHECK(m_hwnd);
     return ::SendNotifyMessage(m_hwnd, msg, wParam, lParam);
+  }
+
+  BOOL SendNotifyMessage(WindowsMessage msg, WPARAM wParam, LPARAM lParam) {
+    WINCHECK(m_hwnd);
+    return ::SendNotifyMessage(m_hwnd, static_cast<UINT>(msg), wParam, lParam);
   }
 
   BOOL SetWindowText(LPCTSTR lpszString) {
@@ -4404,7 +4476,20 @@ public:
     return ::SetWindowPos(m_hwnd, hWndInsertAfter, x, y, cx, cy, nFlags);
   }
 
+  BOOL SetWindowPos(HWND hWndInsertAfter, int x, int y, int cx, int cy,
+                    SwpFlags nFlags) {
+    WINCHECK(m_hwnd);
+    return ::SetWindowPos(m_hwnd, hWndInsertAfter, x, y, cx, cy, nFlags);
+  }
+
   BOOL SetWindowPos(HWND hWndInsertAfter, LPCRECT lpRect, UINT nFlags) {
+    WINCHECK(m_hwnd);
+    return ::SetWindowPos(m_hwnd, hWndInsertAfter, lpRect->left, lpRect->top,
+                          lpRect->right - lpRect->left,
+                          lpRect->bottom - lpRect->top, nFlags);
+  }
+
+  BOOL SetWindowPos(HWND hWndInsertAfter, LPCRECT lpRect, SwpFlags nFlags) {
     WINCHECK(m_hwnd);
     return ::SetWindowPos(m_hwnd, hWndInsertAfter, lpRect->left, lpRect->top,
                           lpRect->right - lpRect->left,
@@ -4601,8 +4686,18 @@ public:
     return ::LockWindowUpdate(bLock ? m_hwnd : nullptr);
   }
 
+  /*
   BOOL RedrawWindow(LPCRECT lpRectUpdate = nullptr, HRGN hRgnUpdate = nullptr,
                     UINT flags = RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE) {
+    WINCHECK(m_hwnd);
+    return ::RedrawWindow(m_hwnd, lpRectUpdate, hRgnUpdate, flags);
+  }
+  */
+
+  BOOL RedrawWindow(LPCRECT lpRectUpdate = nullptr, HRGN hRgnUpdate = nullptr,
+                    RedrawFlags flags = {RedrawFlag::Invalidate,
+                                         RedrawFlag::UpdateNow,
+                                         RedrawFlag::Erase}) {
     WINCHECK(m_hwnd);
     return ::RedrawWindow(m_hwnd, lpRectUpdate, hRgnUpdate, flags);
   }
