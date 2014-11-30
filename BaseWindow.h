@@ -161,6 +161,21 @@ inline LONG_PTR GetWindowLongPtrW(_In_ HWND hWnd, _In_ int nIndex) {
 }
 #endif
 
+#ifdef SendMessageA
+#undef SendMessageA
+inline LRESULT SendMessageA(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam){
+    return ::SendMessageA(hWnd,Msg,wParam, lParam);
+}
+#endif
+
+#ifdef SendMessageW
+#undef SendMessageW
+inline LRESULT SendMessageW(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam){
+   return ::SendMessageW(hWnd,Msg,wParam,lParam);
+}
+
+#endif
+
 namespace std {
 typedef std::basic_string<TCHAR> tstring;
 typedef std::basic_stringstream<TCHAR> tstringstream;
@@ -3990,6 +4005,9 @@ public:
         }
     }
     operator UINT() { return m_uint ;}
+    operator |=(SwpFlag flag){
+        m_uint |= static_cast<UINT>(flag);
+    }
 };
 
 enum class RedrawFlag : UINT{
@@ -4350,12 +4368,7 @@ public:
     return ::SetWindowLongPtr(m_hwnd, static_cast<int>(flag), dwNewLong);
   }
 
-  LRESULT SendMessage(UINT msg, WPARAM wParam = 0, LPARAM lParam = 0) {
-    WINCHECK(m_hwnd);
-    return ::SendMessage(m_hwnd, msg, wParam, lParam);
-  }
-
-  LRESULT SendMessage(WindowsMessage msg, WPARAM wParam = 0, LPARAM lParam = 0) {
+  LRESULT SendMessage(WindowsMessage msg, WPARAM wParam = 0, LPARAM lParam = 0) const {
     WINCHECK(m_hwnd);
     return ::SendMessage(m_hwnd, static_cast<UINT>(msg), wParam, lParam);
   }
@@ -4421,13 +4434,13 @@ public:
 
   void SetFont(HFONT hFont, BOOL bRedraw = TRUE) {
     WINCHECK(m_hwnd);
-    ::SendMessage(m_hwnd, WM_SETFONT, reinterpret_cast<WPARAM>(hFont),
+    SendMessage(WindowsMessage::SetFont, reinterpret_cast<WPARAM>(hFont),
                   MAKELPARAM(bRedraw, 0));
   }
 
   HFONT GetFont() const {
     WINCHECK(m_hwnd);
-    return reinterpret_cast<HFONT>(::SendMessage(m_hwnd, WM_GETFONT, 0, 0));
+    return reinterpret_cast<HFONT>(this->SendMessage(WindowsMessage::GetFont, 0, 0));
   }
 
   HMENU GetMenu() const {
@@ -4587,23 +4600,19 @@ public:
   }
 
   void Print(HDC hDC, DWORD dwFlags) const {
-    WINCHECK(m_hwnd);
-    ::SendMessage(m_hwnd, WM_PRINT, (WPARAM)hDC, dwFlags);
+    this->SendMessage(WindowsMessage::Print, (WPARAM)hDC, dwFlags);
   }
 
   void Print(HDC hDC, PrintFlags dwFlags) const {
-    WINCHECK(m_hwnd);
-    ::SendMessage(m_hwnd, WM_PRINT, (WPARAM)hDC, dwFlags);
+    this->SendMessage(WindowsMessage::Print, (WPARAM)hDC, dwFlags);
   }
 
-  void PrintClient(HDC hDC, DWORD dwFlags) {
-    WINCHECK(m_hwnd);
-    ::SendMessage(m_hwnd, WM_PRINTCLIENT, (WPARAM)hDC, dwFlags);
+  void PrintClient(HDC hDC, DWORD dwFlags) {  
+    this->SendMessage(WindowsMessage::PrintClient, (WPARAM)hDC, dwFlags);
   }
 
   void PrintClient(HDC hDC, PrintFlags flags){
-      WINCHECK(m_hwnd);
-      ::SendMessage(m_hwnd, WM_PRINTCLIENT, (WPARAM)hDC, flags);
+      this->SendMessage(WindowsMessage::PrintClient, (WPARAM)hDC, flags);
   }
 
   BOOL UpdateWindow() {
@@ -4612,8 +4621,8 @@ public:
   }
 
   void SetRedraw(BOOL bRedraw = TRUE) {
-    WINCHECK(m_hwnd);
-    ::SendMessage(m_hwnd, WM_SETREDRAW, (WPARAM)bRedraw, 0);
+
+    SendMessage(WindowsMessage::SetReDraw, (WPARAM)bRedraw, 0);
   }
 
   BOOL GetUpdateRect(LPRECT lpRect, BOOL bErase = FALSE) {
@@ -4685,14 +4694,6 @@ public:
     WINCHECK(m_hwnd);
     return ::LockWindowUpdate(bLock ? m_hwnd : nullptr);
   }
-
-  /*
-  BOOL RedrawWindow(LPCRECT lpRectUpdate = nullptr, HRGN hRgnUpdate = nullptr,
-                    UINT flags = RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE) {
-    WINCHECK(m_hwnd);
-    return ::RedrawWindow(m_hwnd, lpRectUpdate, hRgnUpdate, flags);
-  }
-  */
 
   BOOL RedrawWindow(LPCRECT lpRectUpdate = nullptr, HRGN hRgnUpdate = nullptr,
                     RedrawFlags flags = {RedrawFlag::Invalidate,
@@ -4969,15 +4970,13 @@ public:
   }
 
   HICON SetIcon(HICON hIcon, BOOL bBigIcon = TRUE) {
-    WINCHECK(m_hwnd);
     return reinterpret_cast<HICON>(
-        ::SendMessage(m_hwnd, WM_SETICON, bBigIcon, (LPARAM)hIcon));
+        SendMessage(WindowsMessage::SetIcon, bBigIcon, (LPARAM)hIcon));
   }
 
   HICON GetIcon(BOOL bBigIcon = TRUE) const {
-    WINCHECK(m_hwnd);
     return reinterpret_cast<HICON>(
-        ::SendMessage(m_hwnd, WM_GETICON, bBigIcon, 0));
+        SendMessage(WindowsMessage::GetIcon, bBigIcon, 0));
   }
 
   BOOL WinHelp(LPCTSTR lpzHelp, UINT cmd = HELP_CONTEXT, DWORD dwData = 0) {
@@ -4997,13 +4996,12 @@ public:
 
   int SetHotKey(WORD wVirtualKeyCode, WORD wModifiers) {
     WINCHECK(m_hwnd);
-    return (int)::SendMessage(m_hwnd, WM_SETHOTKEY,
+    return (int)SendMessage(WindowsMessage::SetHotKey,
                               MAKEWORD(wVirtualKeyCode, wModifiers), 0);
   }
 
   DWORD GetHotKey() const {
-    WINCHECK(m_hwnd);
-    return (DWORD)::SendMessage(m_hwnd, WM_GETHOTKEY, 0, 0);
+    return (DWORD)SendMessage(WindowsMessage::GetHotKey, 0, 0);
   }
 
   BOOL GetScrollInfo(int nBar, LPSCROLLINFO lpScrollInfo) {
@@ -5022,18 +5020,16 @@ public:
   }
 
   void NextDlgCtrl() const {
-    WINCHECK(m_hwnd);
-    ::SendMessage(m_hwnd, WM_NEXTDLGCTL, 0, 0L);
+    SendMessage(WindowsMessage::NextDialogControl, 0, 0L);
   }
 
   void PrevDlgCtrl() const {
-    WINCHECK(m_hwnd);
-    ::SendMessage(m_hwnd, WM_NEXTDLGCTL, 1, 0L);
+
+    SendMessage(WindowsMessage::NextDialogControl, 1, 0L);
   }
 
   void GotoDlgCtrl(HWND hWndCtrl) const {
-    WINCHECK(m_hwnd);
-    ::SendMessage(m_hwnd, WM_NEXTDLGCTL, (WPARAM)hWndCtrl, 1L);
+    SendMessage(WindowsMessage::NextDialogControl, (WPARAM)hWndCtrl, 1L);
   }
 
   BOOL ResizeClient(int Width, int Height, BOOL redraw = TRUE) {
@@ -5054,12 +5050,13 @@ public:
             (!(GetStyle() & WS_CHILD) && (GetMenu() != nullptr)), GetExStyle()))
       return FALSE;
 
-    UINT uFlags = SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE;
+    SwpFlags flags = { SwpFlag::NoZOrder,SwpFlag::NoMove, SwpFlag::NoActivate };
+
     if (!redraw)
-      uFlags |= SWP_NOREDRAW;
+        flags |= SwpFlag::NoReDraw;
 
     return SetWindowPos(nullptr, 0, 0, rcWnd.right - rcWnd.left,
-                        rcWnd.bottom - rcWnd.top, uFlags);
+                        rcWnd.bottom - rcWnd.top, flags);
   }
 
   BOOL SetWidth(int Width, BOOL redraw = TRUE) {
@@ -5160,18 +5157,17 @@ public:
     return Window(nullptr);
   }
 
-  void SendMessageToDescendants(UINT message, WPARAM wParam = 0,
-                                LPARAM lParam = 0, BOOL bDeep = TRUE) {
-    WINCHECK(m_hwnd);
-    for (HWND hWndChild = ::GetTopWindow(m_hwnd); hWndChild != nullptr;
-         hWndChild = ::GetNextWindow(hWndChild, GW_HWNDNEXT)) {
-      ::SendMessage(hWndChild, message, wParam, lParam);
+  void SendMessageToDescendants(WindowsMessage msg, WPARAM wParam = 0, LPARAM  lParam = 0 , BOOL bDeep = TRUE){
+      WINCHECK(m_hwnd);
+      for(HWND hWndChild = ::GetTopWindow(m_hwnd); hWndChild != nullptr;
+          hWndChild = ::GetNextWindow(hWndChild, GW_HWNDNEXT)){
+          ::SendMessage(hWndChild,static_cast<UINT>(msg),wParam,lParam);
 
-      if (bDeep && ::GetTopWindow(hWndChild) != nullptr) {
-        Window wnd(hWndChild);
-        wnd.SendMessageToDescendants(message, wParam, lParam, bDeep);
+          if(bDeep && ::GetTopWindow(hWndChild) != nullptr){
+              Window wnd(hWndChild);
+              wnd.SendMessageToDescendants(msg,wParam,lParam,bDeep);
+          }
       }
-    }
   }
 
   BOOL CenterWindow(HWND hWndCenter = nullptr) {
@@ -5464,7 +5460,7 @@ WindowImplRoot<TBase>::ReflectNotifications(HWND hWnd, UINT msg, WPARAM wParam,
       hchild = reinterpret_cast<HWND>(lParam);
       break;
     default:
-      hchild = ((TBase *)this)->GetDlgItem(HIWORD(wParam));
+      hchild = TBase::GetDlgItem(HIWORD(wParam));
       break;
     }
     break;
@@ -5475,7 +5471,7 @@ WindowImplRoot<TBase>::ReflectNotifications(HWND hWnd, UINT msg, WPARAM wParam,
   case WM_MEASUREITEM:
     if (wParam) // not from a menu
       hchild =
-          ((TBase *)this)->GetDlgItem(((LPMEASUREITEMSTRUCT)wParam)->CtlID);
+          TBase::GetDlgItem(((LPMEASUREITEMSTRUCT)wParam)->CtlID);
     break;
   case WM_COMPAREITEM:
     if (wParam) // not from a menu
@@ -5533,7 +5529,7 @@ WindowImplRoot<TBase>::ForwardNotifications(HWND hWnd, UINT uMsg, WPARAM wParam,
   case WM_CTLCOLORMSGBOX:
   case WM_CTLCOLORSCROLLBAR:
   case WM_CTLCOLORSTATIC:
-    lResult = ((TBase *)this)->GetParent().SendMessage(uMsg, wParam, lParam);
+    lResult = TBase::GetParent().SendMessage(uMsg, wParam, lParam);
     break;
   default:
     bHandled = FALSE;
@@ -5566,7 +5562,7 @@ BOOL WindowImplRoot<TBase>::DefaultReflectNotificationHandler(
   case OCM_CTLCOLORMSGBOX:
   case OCM_CTLCOLORSCROLLBAR:
   case OCM_CTLCOLORSTATIC:
-    lresult = ::DefWindowProc(((TBase *)this)->m_hwnd, msg - OCM__BASE, wParam,
+    lresult = ::DefWindowProc(TBase::m_hwnd, msg - OCM__BASE, wParam,
                               lParam);
     return TRUE;
   default:
@@ -5848,7 +5844,7 @@ public:
   StaticT(HWND hWnd = nullptr) : TBase(hWnd) {}
 
   StaticT<TBase> &operator=(HWND hWnd) {
-    ((TBase *)this)->m_hwnd = hWnd;
+    TBase::m_hwnd = hWnd;
     return *this;
   }
 
@@ -5864,49 +5860,49 @@ public:
   static LPCTSTR GetWndClassName() { return TEXT("STATIC"); }
 
   HICON GetIcon() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (HICON)::SendMessage(((TBase *)this)->m_hwnd, STM_GETICON, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (HICON)::SendMessage(TBase::m_hwnd, static_cast<UINT>(WindowsMessage::GetIcon), 0, 0L);
   }
 
   HICON SetIcon(HICON icon) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (HICON)::SendMessage(((TBase *)this)->m_hwnd, STM_SETICON,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (HICON)::SendMessage(TBase::m_hwnd, static_cast<UINT>(WindowsMessage::SetIcon),
                                 (WPARAM)icon, 0L);
   }
 
   HENHMETAFILE GetEnhMetaFile() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (HENHMETAFILE)::SendMessage(((TBase *)this)->m_hwnd, STM_GETIMAGE,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (HENHMETAFILE)::SendMessage(TBase::m_hwnd, STM_GETIMAGE,
                                        IMAGE_ENHMETAFILE, 0L);
   }
 
   HENHMETAFILE SetEnhMetaFile(HENHMETAFILE file) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (HENHMETAFILE)::SendMessage(((TBase *)this)->m_hwnd, STM_SETIMAGE,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (HENHMETAFILE)::SendMessage(TBase::m_hwnd, STM_SETIMAGE,
                                        IMAGE_ENHMETAFILE, (LPARAM)file);
   }
 
   BitmapHandle GetBitmap() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return BitmapHandle((HBITMAP)::SendMessage(((TBase *)this)->m_hwnd,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return BitmapHandle((HBITMAP)::SendMessage(TBase::m_hwnd,
                                                STM_GETIMAGE, IMAGE_BITMAP, 0L));
   }
 
   BitmapHandle SetBitmap(HBITMAP bitmap) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     return BitmapHandle((HBITMAP)::SendMessage(
-        ((TBase *)this)->m_hwnd, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)bitmap));
+        TBase::m_hwnd, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)bitmap));
   }
 
   HCURSOR GetCursor() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (HCURSOR)::SendMessage(((TBase *)this)->m_hwnd, STM_GETIMAGE,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (HCURSOR)::SendMessage(TBase::m_hwnd, STM_GETIMAGE,
                                   IMAGE_CURSOR, 0L);
   }
 
   HCURSOR SetCursor(HCURSOR cursor) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (HCURSOR)::SendMessage(((TBase *)this)->m_hwnd, STM_SETIMAGE,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (HCURSOR)::SendMessage(TBase::m_hwnd, STM_SETIMAGE,
                                   IMAGE_CURSOR, (LPARAM)cursor);
   }
 };
@@ -5919,7 +5915,7 @@ public:
   ButtonT(HWND hwnd = nullptr) : TBase(hwnd) {}
 
   ButtonT<TBase> &operator=(HWND hwnd) {
-    ((TBase *)this)->m_hwnd = hwnd;
+    TBase::m_hwnd = hwnd;
     return *this;
   }
 
@@ -5936,80 +5932,80 @@ public:
 
 
   DWORD GetStyle() const {
-    WINASSERT(((TBase *)this)->m_hwnd);
-    return (DWORD)::GetWindowLong(((TBase *)this)->m_hwnd, GWL_STYLE);
+    WINASSERT(TBase::m_hwnd);
+    return (DWORD)::GetWindowLong(TBase::m_hwnd, GWL_STYLE);
   }
 
   UINT GetState() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (UINT)::SendMessage(((TBase *)this)->m_hwnd, BM_GETSTATE, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (UINT)::SendMessage(TBase::m_hwnd, BM_GETSTATE, 0, 0L);
   }
 
   void SetState(BOOL Highlight) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, BM_SETSTATE, Highlight, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, BM_SETSTATE, Highlight, 0L);
   }
 
   int GetCheck() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, BM_GETCHECK, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, BM_GETCHECK, 0, 0L);
   }
 
   void SetCheck(int Check) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, BM_SETCHECK, Check, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, BM_SETCHECK, Check, 0L);
   }
 
   UINT GetButtonStyle() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (UINT)::GetWindowLong(((TBase *)this)->m_hwnd, GWL_STYLE) & 0xFFFF;
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (UINT)::GetWindowLong(TBase::m_hwnd, GWL_STYLE) & 0xFFFF;
   }
 
   void SetButtonStyle(UINT style, BOOL redraw = TRUE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, BM_SETSTYLE, style, (LPARAM)redraw);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, BM_SETSTYLE, style, (LPARAM)redraw);
   }
 
   HICON GetIcon() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (HICON)::SendMessage(((TBase *)this)->m_hwnd, BM_GETIMAGE,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (HICON)::SendMessage(TBase::m_hwnd, BM_GETIMAGE,
                                 IMAGE_ICON, 0L);
   }
 
   HICON SetIcon(HICON icon) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (HICON)::SendMessage(((TBase *)this)->m_hwnd, BM_SETIMAGE,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (HICON)::SendMessage(TBase::m_hwnd, BM_SETIMAGE,
                                 IMAGE_ICON, (LPARAM)icon);
   }
 
 #if (_WIN32_WINNT >= 0x0501)
   BOOL GetIdealSize(LPSIZE lpSize) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, BCM_GETIDEALSIZE, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, BCM_GETIDEALSIZE, 0,
                                (LPARAM)lpSize);
   }
 
   BOOL GetImageList(PBUTTON_IMAGELIST pButtonImagelist) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, BCM_GETIMAGELIST, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, BCM_GETIMAGELIST, 0,
                                (LPARAM)pButtonImagelist);
   }
 
   BOOL SetImageList(PBUTTON_IMAGELIST pButtonImagelist) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, BCM_SETIMAGELIST, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, BCM_SETIMAGELIST, 0,
                                (LPARAM)pButtonImagelist);
   }
 
   BOOL GetTextMargin(LPRECT lpRect) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, BCM_GETTEXTMARGIN, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, BCM_GETTEXTMARGIN, 0,
                                (LPARAM)lpRect);
   }
 
   BOOL SetTextMargin(LPRECT lpRect) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, BCM_SETTEXTMARGIN, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, BCM_SETTEXTMARGIN, 0,
                                (LPARAM)lpRect);
   }
 #endif
@@ -6019,62 +6015,62 @@ public:
 #ifndef BM_SETDONTCLICK
 #define BM_SETDONTCLICK 0x00F8
 #endif
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, BM_SETDONTCLICK, (WPARAM)bDontClick,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, BM_SETDONTCLICK, (WPARAM)bDontClick,
                   0L);
   }
 
   BOOL SetDropDownState(BOOL bDropDown) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & (BS_SPLITBUTTON | BS_DEFSPLITBUTTON)) != 0);
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, BCM_SETDROPDOWNSTATE,
+    return (BOOL)::SendMessage(TBase::m_hwnd, BCM_SETDROPDOWNSTATE,
                                (WPARAM)bDropDown, 0L);
   }
 
   BOOL GetSplitInfo(PBUTTON_SPLITINFO pSplitInfo) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & (BS_SPLITBUTTON | BS_DEFSPLITBUTTON)) != 0);
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, BCM_GETSPLITINFO, 0,
+    return (BOOL)::SendMessage(TBase::m_hwnd, BCM_GETSPLITINFO, 0,
                                (LPARAM)pSplitInfo);
   }
 
   BOOL SetSplitInfo(PBUTTON_SPLITINFO pSplitInfo) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & (BS_SPLITBUTTON | BS_DEFSPLITBUTTON)) != 0);
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, BCM_SETSPLITINFO, 0,
+    return (BOOL)::SendMessage(TBase::m_hwnd, BCM_SETSPLITINFO, 0,
                                (LPARAM)pSplitInfo);
   }
 
   int GetNoteLength() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & (BS_COMMANDLINK | BS_DEFCOMMANDLINK)) != 0);
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, BCM_GETNOTELENGTH, 0,
+    return (int)::SendMessage(TBase::m_hwnd, BCM_GETNOTELENGTH, 0,
                               0L);
   }
 
   BOOL GetNote(LPWSTR lpstrNoteText, int cchNoteText) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & (BS_COMMANDLINK | BS_DEFCOMMANDLINK)) != 0);
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, BCM_GETNOTE,
+    return (BOOL)::SendMessage(TBase::m_hwnd, BCM_GETNOTE,
                                cchNoteText, (LPARAM)lpstrNoteText);
   }
 
   BOOL SetNote(LPCWSTR lpstrNoteText) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & (BS_COMMANDLINK | BS_DEFCOMMANDLINK)) != 0);
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, BCM_SETNOTE, 0,
+    return (BOOL)::SendMessage(TBase::m_hwnd, BCM_SETNOTE, 0,
                                (LPARAM)lpstrNoteText);
   }
 
   LRESULT SetElevationRequiredState(BOOL bSet) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return ::SendMessage(((TBase *)this)->m_hwnd, BCM_SETSHIELD, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return ::SendMessage(TBase::m_hwnd, BCM_SETSHIELD, 0,
                          (LPARAM)bSet);
   }
 #endif
   void Click() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, BM_CLICK, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, BM_CLICK, 0, 0L);
   }
 };
 
@@ -6086,7 +6082,7 @@ public:
   ListBoxT(HWND hwnd = nullptr) : TBase(hwnd) {}
 
   ListBoxT<TBase> &operator=(HWND hwnd) {
-    ((TBase *)this)->m_hwnd = hwnd;
+    TBase::m_hwnd = hwnd;
     return *this;
   }
 
@@ -6102,60 +6098,60 @@ public:
   static LPCTSTR GetWndClassName() { return TEXT("LISTBOX"); }
 
   DWORD GetStyle() const {
-    WINASSERT(((TBase *)this)->m_hwnd);
-    return (DWORD)::GetWindowLong(((TBase *)this)->m_hwnd, GWL_STYLE);
+    WINASSERT(TBase::m_hwnd);
+    return (DWORD)::GetWindowLong(TBase::m_hwnd, GWL_STYLE);
   }
 
   int GetCount() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_GETCOUNT, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_GETCOUNT, 0, 0L);
   }
 
   int SetCount(int cItems) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT(((GetStyle() & LBS_NODATA) != 0) &&
               ((GetStyle() & LBS_HASSTRINGS) == 0));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_SETCOUNT, cItems, 0L);
+    return (int)::SendMessage(TBase::m_hwnd, LB_SETCOUNT, cItems, 0L);
   }
 
   int GetHorizontalExtent() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_GETHORIZONTALEXTENT,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_GETHORIZONTALEXTENT,
                               0, 0L);
   }
 
   void SetHorizontalExtent(int cxExtent) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, LB_SETHORIZONTALEXTENT, cxExtent,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, LB_SETHORIZONTALEXTENT, cxExtent,
                   0L);
   }
 
   int GetTopIndex() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_GETTOPINDEX, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_GETTOPINDEX, 0, 0L);
   }
 
   int SetTopIndex(int nIndex) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_SETTOPINDEX, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_SETTOPINDEX, nIndex,
                               0L);
   }
 
   LCID GetLocale() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (LCID)::SendMessage(((TBase *)this)->m_hwnd, LB_GETLOCALE, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (LCID)::SendMessage(TBase::m_hwnd, LB_GETLOCALE, 0, 0L);
   }
 
   LCID SetLocale(LCID nNewLocale) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (LCID)::SendMessage(((TBase *)this)->m_hwnd, LB_SETLOCALE,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (LCID)::SendMessage(TBase::m_hwnd, LB_SETLOCALE,
                                (WPARAM)nNewLocale, 0L);
   }
 
   DWORD GetListBoxInfo() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
 #if (_WIN32_WINNT >= 0x0501)
-    return (DWORD)::SendMessage(((TBase *)this)->m_hwnd, LB_GETLISTBOXINFO, 0,
+    return (DWORD)::SendMessage(TBase::m_hwnd, LB_GETLISTBOXINFO, 0,
                                 0L);
 #else
     return ::GetListBoxInfo(m_hwnd);
@@ -6163,221 +6159,221 @@ public:
   }
 
   int GetCurSel() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & (LBS_MULTIPLESEL | LBS_EXTENDEDSEL)) == 0);
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_GETCURSEL, 0, 0L);
+    return (int)::SendMessage(TBase::m_hwnd, LB_GETCURSEL, 0, 0L);
   }
 
   int SetCurSel(int nSelect) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & (LBS_MULTIPLESEL | LBS_EXTENDEDSEL)) == 0);
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_SETCURSEL, nSelect,
+    return (int)::SendMessage(TBase::m_hwnd, LB_SETCURSEL, nSelect,
                               0L);
   }
 
   int GetSel(int nIndex) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_GETSEL, nIndex, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_GETSEL, nIndex, 0L);
   }
 
   int SetSel(int nIndex, BOOL bSelect = TRUE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & (LBS_MULTIPLESEL | LBS_EXTENDEDSEL)) != 0);
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_SETSEL, bSelect,
+    return (int)::SendMessage(TBase::m_hwnd, LB_SETSEL, bSelect,
                               nIndex);
   }
 
   int GetSelCount() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & (LBS_MULTIPLESEL | LBS_EXTENDEDSEL)) != 0);
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_GETSELCOUNT, 0, 0L);
+    return (int)::SendMessage(TBase::m_hwnd, LB_GETSELCOUNT, 0, 0L);
   }
 
   int GetSelItems(int nMaxItems, LPINT rgIndex) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & (LBS_MULTIPLESEL | LBS_EXTENDEDSEL)) != 0);
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_GETSELITEMS,
+    return (int)::SendMessage(TBase::m_hwnd, LB_GETSELITEMS,
                               nMaxItems, (LPARAM)rgIndex);
   }
 
   int GetAnchorIndex() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & (LBS_MULTIPLESEL | LBS_EXTENDEDSEL)) != 0);
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_GETANCHORINDEX, 0,
+    return (int)::SendMessage(TBase::m_hwnd, LB_GETANCHORINDEX, 0,
                               0L);
   }
 
   void SetAnchorIndex(int nIndex) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & (LBS_MULTIPLESEL | LBS_EXTENDEDSEL)) != 0);
-    ::SendMessage(((TBase *)this)->m_hwnd, LB_SETANCHORINDEX, nIndex, 0L);
+    ::SendMessage(TBase::m_hwnd, LB_SETANCHORINDEX, nIndex, 0L);
   }
 
   int GetCaretIndex() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_GETCARETINDEX, 0, 0);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_GETCARETINDEX, 0, 0);
   }
 
   int SetCaretIndex(int nIndex, BOOL bScroll = TRUE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_SETCARETINDEX, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_SETCARETINDEX, nIndex,
                               MAKELONG(bScroll, 0));
   }
 
   DWORD_PTR GetItemData(int nIndex) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (DWORD_PTR)::SendMessage(((TBase *)this)->m_hwnd, LB_GETITEMDATA,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (DWORD_PTR)::SendMessage(TBase::m_hwnd, LB_GETITEMDATA,
                                     nIndex, 0L);
   }
 
   int SetItemData(int nIndex, DWORD_PTR dwItemData) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_SETITEMDATA, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_SETITEMDATA, nIndex,
                               (LPARAM)dwItemData);
   }
 
   void *GetItemDataPtr(int nIndex) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (void *)::SendMessage(((TBase *)this)->m_hwnd, LB_GETITEMDATA,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (void *)::SendMessage(TBase::m_hwnd, LB_GETITEMDATA,
                                  nIndex, 0L);
   }
 
   int SetItemDataPtr(int nIndex, void *pData) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     return SetItemData(nIndex, (DWORD_PTR)pData);
   }
 
   int GetItemRect(int nIndex, LPRECT lpRect) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_GETITEMRECT, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_GETITEMRECT, nIndex,
                               (LPARAM)lpRect);
   }
 
   int GetText(int nIndex, LPTSTR lpszBuffer) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_GETTEXT, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_GETTEXT, nIndex,
                               (LPARAM)lpszBuffer);
   }
 
   int GetTextLen(int nIndex) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_GETTEXTLEN, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_GETTEXTLEN, nIndex,
                               0L);
   }
 
   int GetItemHeight(int nIndex) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_GETITEMHEIGHT, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_GETITEMHEIGHT, nIndex,
                               0L);
   }
 
   int SetItemHeight(int nIndex, UINT cyItemHeight) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_SETITEMHEIGHT, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_SETITEMHEIGHT, nIndex,
                               MAKELONG(cyItemHeight, 0));
   }
 
   void SetColumnWidth(int cxWidth) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, LB_SETCOLUMNWIDTH, cxWidth, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, LB_SETCOLUMNWIDTH, cxWidth, 0L);
   }
 
   BOOL SetTabStops(int nTabStops, LPINT rgTabStops) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & LBS_USETABSTOPS) != 0);
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, LB_SETTABSTOPS,
+    return (BOOL)::SendMessage(TBase::m_hwnd, LB_SETTABSTOPS,
                                nTabStops, (LPARAM)rgTabStops);
   }
 
   BOOL SetTabStops() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & LBS_USETABSTOPS) != 0);
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, LB_SETTABSTOPS, 0, 0L);
+    return (BOOL)::SendMessage(TBase::m_hwnd, LB_SETTABSTOPS, 0, 0L);
   }
 
   BOOL SetTabStops(const int &cxEachStop) // takes an 'int'
   {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & LBS_USETABSTOPS) != 0);
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, LB_SETTABSTOPS, 1,
+    return (BOOL)::SendMessage(TBase::m_hwnd, LB_SETTABSTOPS, 1,
                                (LPARAM)(LPINT) & cxEachStop);
   }
 
   int InitStorage(int nItems, UINT nBytes) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_INITSTORAGE,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_INITSTORAGE,
                               (WPARAM)nItems, nBytes);
   }
 
   void ResetContent() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, LB_RESETCONTENT, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, LB_RESETCONTENT, 0, 0L);
   }
 
   UINT ItemFromPoint(POINT pt, BOOL &bOutside) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    DWORD dw = (DWORD)::SendMessage(((TBase *)this)->m_hwnd, LB_ITEMFROMPOINT,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    DWORD dw = (DWORD)::SendMessage(TBase::m_hwnd, LB_ITEMFROMPOINT,
                                     0, MAKELPARAM(pt.x, pt.y));
     bOutside = (BOOL)HIWORD(dw);
     return (UINT)LOWORD(dw);
   }
 
   int AddString(LPCTSTR lpszItem) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_ADDSTRING, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_ADDSTRING, 0,
                               (LPARAM)lpszItem);
   }
 
   int DeleteString(UINT nIndex) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_DELETESTRING, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_DELETESTRING, nIndex,
                               0L);
   }
 
   int InsertString(int nIndex, LPCTSTR lpszItem) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_INSERTSTRING, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_INSERTSTRING, nIndex,
                               (LPARAM)lpszItem);
   }
 
   int Dir(UINT attr, LPCTSTR lpszWildCard) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_DIR, attr,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_DIR, attr,
                               (LPARAM)lpszWildCard);
   }
 
   int AddFile(LPCTSTR lpstrFileName) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_ADDFILE, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_ADDFILE, 0,
                               (LPARAM)lpstrFileName);
   }
 
   int FindString(int nStartAfter, LPCTSTR lpszItem) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_FINDSTRING,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_FINDSTRING,
                               nStartAfter, (LPARAM)lpszItem);
   }
 
   int FindStringExact(int nIndexStart, LPCTSTR lpszFind) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_FINDSTRINGEXACT,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_FINDSTRINGEXACT,
                               nIndexStart, (LPARAM)lpszFind);
   }
 
   int SelectString(int nStartAfter, LPCTSTR lpszItem) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, LB_SELECTSTRING,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, LB_SELECTSTRING,
                               nStartAfter, (LPARAM)lpszItem);
   }
 
   int SelItemRange(BOOL bSelect, int nFirstItem, int nLastItem) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & (LBS_MULTIPLESEL | LBS_EXTENDEDSEL)) != 0);
     WINASSERT(nFirstItem <= nLastItem);
     return bSelect
-               ? (int)::SendMessage(((TBase *)this)->m_hwnd, LB_SELITEMRANGEEX,
+               ? (int)::SendMessage(TBase::m_hwnd, LB_SELITEMRANGEEX,
                                     nFirstItem, nLastItem)
-               : (int)::SendMessage(((TBase *)this)->m_hwnd, LB_SELITEMRANGEEX,
+               : (int)::SendMessage(TBase::m_hwnd, LB_SELITEMRANGEEX,
                                     nLastItem, nFirstItem);
   }
 };
@@ -6388,7 +6384,7 @@ template <typename TBase> class ComboBoxT : public TBase {
 
   ComboBoxT(HWND hWnd = NULL) : TBase(hWnd) {}
   ComboBoxT<TBase> &operator=(HWND hWnd) {
-    ((TBase *)this)->m_hwnd = hWnd;
+    TBase::m_hwnd = hWnd;
     return *this;
   }
 
@@ -6404,163 +6400,163 @@ template <typename TBase> class ComboBoxT : public TBase {
   static LPCTSTR GetWndClassName() { return TEXT("COMBOBOX"); }
 
   int GetCount() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_GETCOUNT, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_GETCOUNT, 0, 0L);
   }
 
   int GetCurSel() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_GETCURSEL, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_GETCURSEL, 0, 0L);
   }
 
   int SetCurSel(int nSelect) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_SETCURSEL, nSelect,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_SETCURSEL, nSelect,
                               0L);
   }
 
   LCID GetLocale() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (LCID)::SendMessage(((TBase *)this)->m_hwnd, CB_GETLOCALE, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (LCID)::SendMessage(TBase::m_hwnd, CB_GETLOCALE, 0, 0L);
   }
 
   LCID SetLocale(LCID nNewLocale) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (LCID)::SendMessage(((TBase *)this)->m_hwnd, CB_SETLOCALE,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (LCID)::SendMessage(TBase::m_hwnd, CB_SETLOCALE,
                                (WPARAM)nNewLocale, 0L);
   }
 
   int GetTopIndex() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_GETTOPINDEX, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_GETTOPINDEX, 0, 0L);
   }
 
   int SetTopIndex(int nIndex) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_SETTOPINDEX, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_SETTOPINDEX, nIndex,
                               0L);
   }
 
   UINT GetHorizontalExtent() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (UINT)::SendMessage(((TBase *)this)->m_hwnd, CB_GETHORIZONTALEXTENT,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (UINT)::SendMessage(TBase::m_hwnd, CB_GETHORIZONTALEXTENT,
                                0, 0L);
   }
 
   void SetHorizontalExtent(UINT nExtent) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, CB_SETHORIZONTALEXTENT, nExtent, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, CB_SETHORIZONTALEXTENT, nExtent, 0L);
   }
 
   int GetDroppedWidth() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_GETDROPPEDWIDTH, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_GETDROPPEDWIDTH, 0,
                               0L);
   }
 
   int SetDroppedWidth(UINT nWidth) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_SETDROPPEDWIDTH,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_SETDROPPEDWIDTH,
                               nWidth, 0L);
   }
 
 #if ((WINVER >= 0x0500))
   BOOL GetComboBoxInfo(PCOMBOBOXINFO pComboBoxInfo) const {
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, CB_GETCOMBOBOXINFO, 0,
+    return (BOOL)::SendMessage(TBase::m_hwnd, CB_GETCOMBOBOXINFO, 0,
                                (LPARAM)pComboBoxInfo);
   }
 #endif
 
   DWORD GetEditSel() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (DWORD)::SendMessage(((TBase *)this)->m_hwnd, CB_GETEDITSEL, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (DWORD)::SendMessage(TBase::m_hwnd, CB_GETEDITSEL, 0, 0L);
   }
 
   BOOL SetEditSel(int nStartChar, int nEndChar) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, CB_SETEDITSEL, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, CB_SETEDITSEL, 0,
                                MAKELONG(nStartChar, nEndChar));
   }
 
   DWORD_PTR GetItemData(int nIndex) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (DWORD_PTR)::SendMessage(((TBase *)this)->m_hwnd, CB_GETITEMDATA,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (DWORD_PTR)::SendMessage(TBase::m_hwnd, CB_GETITEMDATA,
                                     nIndex, 0L);
   }
 
   int SetItemData(int nIndex, DWORD_PTR dwItemData) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_SETITEMDATA, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_SETITEMDATA, nIndex,
                               (LPARAM)dwItemData);
   }
 
   void *GetItemDataPtr(int nIndex) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     return (void *)GetItemData(nIndex);
   }
 
   int SetItemDataPtr(int nIndex, void *pData) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     return SetItemData(nIndex, (DWORD_PTR)pData);
   }
 
   int GetLBText(int nIndex, LPTSTR lpszText) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_GETLBTEXT, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_GETLBTEXT, nIndex,
                               (LPARAM)lpszText);
   }
 
   int GetLBTextLen(int nIndex) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_GETLBTEXTLEN, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_GETLBTEXTLEN, nIndex,
                               0L);
   }
 
   int GetItemHeight(int nIndex) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_GETITEMHEIGHT, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_GETITEMHEIGHT, nIndex,
                               0L);
   }
 
   int SetItemHeight(int nIndex, UINT cyItemHeight) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_SETITEMHEIGHT, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_SETITEMHEIGHT, nIndex,
                               MAKELONG(cyItemHeight, 0));
   }
 
   BOOL GetExtendedUI() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, CB_GETEXTENDEDUI, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, CB_GETEXTENDEDUI, 0,
                                0L);
   }
 
   int SetExtendedUI(BOOL bExtended = TRUE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_SETEXTENDEDUI,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_SETEXTENDEDUI,
                               bExtended, 0L);
   }
 
   void GetDroppedControlRect(LPRECT lprect) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, CB_GETDROPPEDCONTROLRECT, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, CB_GETDROPPEDCONTROLRECT, 0,
                   (LPARAM)lprect);
   }
 
   BOOL GetDroppedState() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, CB_GETDROPPEDSTATE, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, CB_GETDROPPEDSTATE, 0,
                                0L);
   }
 
 #if (_WIN32_WINNT >= 0x0501)
   int GetMinVisible() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_GETMINVISIBLE, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_GETMINVISIBLE, 0, 0L);
   }
 
   BOOL SetMinVisible(int nMinVisible) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, CB_SETMINVISIBLE,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, CB_SETMINVISIBLE,
                                nMinVisible, 0L);
   }
 
@@ -6568,8 +6564,8 @@ template <typename TBase> class ComboBoxT : public TBase {
 #ifndef CB_GETCUEBANNER
     const UINT CB_GETCUEBANNER = (CBM_FIRST + 4);
 #endif
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, CB_GETCUEBANNER,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, CB_GETCUEBANNER,
                                (WPARAM)lpwText, cchText);
   }
 
@@ -6578,94 +6574,94 @@ template <typename TBase> class ComboBoxT : public TBase {
 #ifndef CB_SETCUEBANNER
     const UINT CB_SETCUEBANNER = (CBM_FIRST + 3);
 #endif
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, CB_SETCUEBANNER, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, CB_SETCUEBANNER, 0,
                                (LPARAM)lpcwText);
   }
 #endif
 
   int InitStorage(int nItems, UINT nBytes) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_INITSTORAGE,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_INITSTORAGE,
                               (WPARAM)nItems, nBytes);
   }
 
   void ResetContent() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, CB_RESETCONTENT, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, CB_RESETCONTENT, 0, 0L);
   }
 
   BOOL LimitText(int nMaxChars) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, CB_LIMITTEXT, nMaxChars,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, CB_LIMITTEXT, nMaxChars,
                                0L);
   }
 
   void ShowDropDown(BOOL bShowIt = TRUE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, CB_SHOWDROPDOWN, bShowIt, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, CB_SHOWDROPDOWN, bShowIt, 0L);
   }
 
   int AddString(LPCTSTR lpszString) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_ADDSTRING, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_ADDSTRING, 0,
                               (LPARAM)lpszString);
   }
 
   int DeleteString(UINT nIndex) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_DELETESTRING, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_DELETESTRING, nIndex,
                               0L);
   }
 
   int InsertString(int nIndex, LPCTSTR lpszString) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_INSERTSTRING, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_INSERTSTRING, nIndex,
                               (LPARAM)lpszString);
   }
 
   int Dir(UINT attr, LPCTSTR lpszWildCard) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_DIR, attr,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_DIR, attr,
                               (LPARAM)lpszWildCard);
   }
 
   int FindString(int nStartAfter, LPCTSTR lpszString) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_FINDSTRING,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_FINDSTRING,
                               nStartAfter, (LPARAM)lpszString);
   }
 
   int FindStringExact(int nIndexStart, LPCTSTR lpszFind) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_FINDSTRINGEXACT,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_FINDSTRINGEXACT,
                               nIndexStart, (LPARAM)lpszFind);
   }
 
   int SelectString(int nStartAfter, LPCTSTR lpszString) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, CB_SELECTSTRING,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, CB_SELECTSTRING,
                               nStartAfter, (LPARAM)lpszString);
   }
 
   void Clear() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, WM_CLEAR, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, WM_CLEAR, 0, 0L);
   }
 
   void Copy() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, WM_COPY, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, WM_COPY, 0, 0L);
   }
 
   void Cut() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, WM_CUT, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, WM_CUT, 0, 0L);
   }
 
   void Paste() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, WM_PASTE, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, WM_PASTE, 0, 0L);
   }
 };
 
@@ -6676,7 +6672,7 @@ template <typename TBase> class EditT : public TBase {
 public:
   EditT(HWND hWnd = NULL) : TBase(hWnd) {}
   EditT<TBase> &operator=(HWND hWnd) {
-    ((TBase *)this)->m_hwnd = hWnd;
+    TBase::m_hwnd = hWnd;
     return *this;
   }
 
@@ -6693,97 +6689,97 @@ public:
 
 
   DWORD GetStyle() const {
-    WINASSERT(((TBase *)this)->m_hwnd);
-    return (DWORD)::GetWindowLong(((TBase *)this)->m_hwnd, GWL_STYLE);
+    WINASSERT(TBase::m_hwnd);
+    return (DWORD)::GetWindowLong(TBase::m_hwnd, GWL_STYLE);
   }
 
   BOOL CanUndo() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, EM_CANUNDO, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, EM_CANUNDO, 0, 0L);
   }
 
   int GetLineCount() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, EM_GETLINECOUNT, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, EM_GETLINECOUNT, 0, 0L);
   }
 
   BOOL GetModify() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, EM_GETMODIFY, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, EM_GETMODIFY, 0, 0L);
   }
 
   void SetModify(BOOL bModified = TRUE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_SETMODIFY, bModified, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_SETMODIFY, bModified, 0L);
   }
 
   void GetRect(LPRECT lpRect) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_GETRECT, 0, (LPARAM)lpRect);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_GETRECT, 0, (LPARAM)lpRect);
   }
 
   DWORD GetSel() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (DWORD)::SendMessage(((TBase *)this)->m_hwnd, EM_GETSEL, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (DWORD)::SendMessage(TBase::m_hwnd, EM_GETSEL, 0, 0L);
   }
 
   void GetSel(int &nStartChar, int &nEndChar) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_GETSEL, (WPARAM)&nStartChar,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_GETSEL, (WPARAM)&nStartChar,
                   (LPARAM)&nEndChar);
   }
 
   HLOCAL GetHandle() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (HLOCAL)::SendMessage(((TBase *)this)->m_hwnd, EM_GETHANDLE, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (HLOCAL)::SendMessage(TBase::m_hwnd, EM_GETHANDLE, 0, 0L);
   }
 
   void SetHandle(HLOCAL hBuffer) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_SETHANDLE, (WPARAM)hBuffer, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_SETHANDLE, (WPARAM)hBuffer, 0L);
   }
 
   DWORD GetMargins() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (DWORD)::SendMessage(((TBase *)this)->m_hwnd, EM_GETMARGINS, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (DWORD)::SendMessage(TBase::m_hwnd, EM_GETMARGINS, 0, 0L);
   }
 
   void GetMargins(UINT &nLeft, UINT &nRight) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     DWORD dwRet =
-        (DWORD)::SendMessage(((TBase *)this)->m_hwnd, EM_GETMARGINS, 0, 0L);
+        (DWORD)::SendMessage(TBase::m_hwnd, EM_GETMARGINS, 0, 0L);
     nLeft = LOWORD(dwRet);
     nRight = HIWORD(dwRet);
   }
 
   void SetMargins(UINT nLeft, UINT nRight,
                   WORD wFlags = EC_LEFTMARGIN | EC_RIGHTMARGIN) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_SETMARGINS, wFlags,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_SETMARGINS, wFlags,
                   MAKELONG(nLeft, nRight));
   }
 
   UINT GetLimitText() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (UINT)::SendMessage(((TBase *)this)->m_hwnd, EM_GETLIMITTEXT, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (UINT)::SendMessage(TBase::m_hwnd, EM_GETLIMITTEXT, 0, 0L);
   }
 
   void SetLimitText(UINT nMax) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_SETLIMITTEXT, nMax, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_SETLIMITTEXT, nMax, 0L);
   }
 
   POINT PosFromChar(UINT nChar) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     DWORD dwRet =
-        (DWORD)::SendMessage(((TBase *)this)->m_hwnd, EM_POSFROMCHAR, nChar, 0);
+        (DWORD)::SendMessage(TBase::m_hwnd, EM_POSFROMCHAR, nChar, 0);
     POINT point = {GET_X_LPARAM(dwRet), GET_Y_LPARAM(dwRet)};
     return point;
   }
 
   int CharFromPos(POINT pt, int *pLine = NULL) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    DWORD dwRet = (DWORD)::SendMessage(((TBase *)this)->m_hwnd, EM_CHARFROMPOS,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    DWORD dwRet = (DWORD)::SendMessage(TBase::m_hwnd, EM_CHARFROMPOS,
                                        0, MAKELPARAM(pt.x, pt.y));
     if (pLine != NULL)
       *pLine = (int)(short) HIWORD(dwRet);
@@ -6791,151 +6787,151 @@ public:
   }
 
   int GetLine(int nIndex, LPTSTR lpszBuffer) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, EM_GETLINE, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, EM_GETLINE, nIndex,
                               (LPARAM)lpszBuffer);
   }
 
   int GetLine(int nIndex, LPTSTR lpszBuffer, int nMaxLength) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     *(LPWORD)lpszBuffer = (WORD)nMaxLength;
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, EM_GETLINE, nIndex,
+    return (int)::SendMessage(TBase::m_hwnd, EM_GETLINE, nIndex,
                               (LPARAM)lpszBuffer);
   }
 
   TCHAR GetPasswordChar() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (TCHAR)::SendMessage(((TBase *)this)->m_hwnd, EM_GETPASSWORDCHAR, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (TCHAR)::SendMessage(TBase::m_hwnd, EM_GETPASSWORDCHAR, 0,
                                 0L);
   }
 
   void SetPasswordChar(TCHAR ch) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_SETPASSWORDCHAR, ch, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_SETPASSWORDCHAR, ch, 0L);
   }
 
   EDITWORDBREAKPROC GetWordBreakProc() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (EDITWORDBREAKPROC)::SendMessage(((TBase *)this)->m_hwnd,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (EDITWORDBREAKPROC)::SendMessage(TBase::m_hwnd,
                                             EM_GETWORDBREAKPROC, 0, 0L);
   }
 
   void SetWordBreakProc(EDITWORDBREAKPROC ewbprc) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_SETWORDBREAKPROC, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_SETWORDBREAKPROC, 0,
                   (LPARAM)ewbprc);
   }
 
   int GetFirstVisibleLine() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, EM_GETFIRSTVISIBLELINE,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, EM_GETFIRSTVISIBLELINE,
                               0, 0L);
   }
 
   int GetThumb() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & ES_MULTILINE) != 0);
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, EM_GETTHUMB, 0, 0L);
+    return (int)::SendMessage(TBase::m_hwnd, EM_GETTHUMB, 0, 0L);
   }
 
   BOOL SetReadOnly(BOOL bReadOnly = TRUE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, EM_SETREADONLY,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, EM_SETREADONLY,
                                bReadOnly, 0L);
   }
 #if (WINVER >= 0x0500)
   UINT GetImeStatus(UINT uStatus) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (UINT)::SendMessage(((TBase *)this)->m_hwnd, EM_GETIMESTATUS,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (UINT)::SendMessage(TBase::m_hwnd, EM_GETIMESTATUS,
                                uStatus, 0L);
   }
 
   UINT SetImeStatus(UINT uStatus, UINT uData) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (UINT)::SendMessage(((TBase *)this)->m_hwnd, EM_SETIMESTATUS,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (UINT)::SendMessage(TBase::m_hwnd, EM_SETIMESTATUS,
                                uStatus, uData);
   }
 #endif
 #if (_WIN32_WINNT >= 0x0501)
   BOOL GetCueBannerText(LPCWSTR lpstrText, int cchText) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, EM_GETCUEBANNER,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, EM_GETCUEBANNER,
                                (WPARAM)lpstrText, cchText);
   }
 
   BOOL SetCueBannerText(LPCWSTR lpstrText, BOOL bKeepWithFocus = FALSE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, EM_SETCUEBANNER,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, EM_SETCUEBANNER,
                                (WPARAM)bKeepWithFocus, (LPARAM)(lpstrText));
   }
 #endif
   void EmptyUndoBuffer() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_EMPTYUNDOBUFFER, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_EMPTYUNDOBUFFER, 0, 0L);
   }
 
   BOOL FmtLines(BOOL bAddEOL) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, EM_FMTLINES, bAddEOL,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, EM_FMTLINES, bAddEOL,
                                0L);
   }
 
   void LimitText(int nChars = 0) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_LIMITTEXT, nChars, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_LIMITTEXT, nChars, 0L);
   }
 
   int LineFromChar(int nIndex = -1) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, EM_LINEFROMCHAR, nIndex,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, EM_LINEFROMCHAR, nIndex,
                               0L);
   }
 
   int LineIndex(int nLine = -1) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, EM_LINEINDEX, nLine, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, EM_LINEINDEX, nLine, 0L);
   }
 
   int LineLength(int nLine = -1) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (int)::SendMessage(((TBase *)this)->m_hwnd, EM_LINELENGTH, nLine,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (int)::SendMessage(TBase::m_hwnd, EM_LINELENGTH, nLine,
                               0L);
   }
 
   void LineScroll(int nLines, int nChars = 0) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_LINESCROLL, nChars, nLines);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_LINESCROLL, nChars, nLines);
   }
 
   void ReplaceSel(LPCTSTR lpszNewText, BOOL bCanUndo = FALSE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_REPLACESEL, (WPARAM)bCanUndo,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_REPLACESEL, (WPARAM)bCanUndo,
                   (LPARAM)lpszNewText);
   }
 
   void SetRect(LPCRECT lpRect) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_SETRECT, 0, (LPARAM)lpRect);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_SETRECT, 0, (LPARAM)lpRect);
   }
 
   void SetRectNP(LPCRECT lpRect) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_SETRECTNP, 0, (LPARAM)lpRect);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_SETRECTNP, 0, (LPARAM)lpRect);
   }
 
   void SetSel(DWORD dwSelection, BOOL bNoScroll = FALSE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_SETSEL, LOWORD(dwSelection),
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_SETSEL, LOWORD(dwSelection),
                   HIWORD(dwSelection));
     if (!bNoScroll)
-      ::SendMessage(((TBase *)this)->m_hwnd, EM_SCROLLCARET, 0, 0L);
+      ::SendMessage(TBase::m_hwnd, EM_SCROLLCARET, 0, 0L);
   }
 
   void SetSel(int nStartChar, int nEndChar, BOOL bNoScroll = FALSE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_SETSEL, nStartChar, nEndChar);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_SETSEL, nStartChar, nEndChar);
     if (!bNoScroll)
-      ::SendMessage(((TBase *)this)->m_hwnd, EM_SCROLLCARET, 0, 0L);
+      ::SendMessage(TBase::m_hwnd, EM_SCROLLCARET, 0, 0L);
   }
 
   void SetSelAll(BOOL bNoScroll = FALSE) { SetSel(0, -1, bNoScroll); }
@@ -6943,33 +6939,33 @@ public:
   void SetSelNone(BOOL bNoScroll = FALSE) { SetSel(-1, 0, bNoScroll); }
 
   BOOL SetTabStops(int nTabStops, LPINT rgTabStops) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, EM_SETTABSTOPS,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, EM_SETTABSTOPS,
                                nTabStops, (LPARAM)rgTabStops);
   }
 
   BOOL SetTabStops() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, EM_SETTABSTOPS, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, EM_SETTABSTOPS, 0, 0L);
   }
 
   BOOL SetTabStops(const int &cxEachStop) // takes an 'int'
   {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, EM_SETTABSTOPS, 1,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, EM_SETTABSTOPS, 1,
                                (LPARAM)(LPINT) & cxEachStop);
   }
 
   void ScrollCaret() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_SCROLLCARET, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_SCROLLCARET, 0, 0L);
   }
 
   int Scroll(int nScrollAction) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     WINASSERT((GetStyle() & ES_MULTILINE) != 0);
     LRESULT lRet =
-        ::SendMessage(((TBase *)this)->m_hwnd, EM_SCROLL, nScrollAction, 0L);
+        ::SendMessage(TBase::m_hwnd, EM_SCROLL, nScrollAction, 0L);
     if (!(BOOL)HIWORD(lRet))
       return -1; // failed
     return (int)(short) LOWORD(lRet);
@@ -6988,61 +6984,61 @@ public:
 
 #if (_WIN32_WINNT >= 0x0501)
   BOOL ShowBalloonTip(PEDITBALLOONTIP pEditBaloonTip) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, EM_SHOWBALLOONTIP, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, EM_SHOWBALLOONTIP, 0,
                                (LPARAM)pEditBaloonTip);
   }
 
   BOOL HideBalloonTip() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, EM_HIDEBALLOONTIP, 0,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, EM_HIDEBALLOONTIP, 0,
                                0L);
   }
 #endif
 
 #if (_WIN32_WINNT >= 0x0600)
   DWORD GetHilite() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (DWORD)::SendMessage(((TBase *)this)->m_hwnd, EM_GETHILITE, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (DWORD)::SendMessage(TBase::m_hwnd, EM_GETHILITE, 0, 0L);
   }
 
   void GetHilite(int &nStartChar, int &nEndChar) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
     DWORD dwRet =
-        (DWORD)::SendMessage(((TBase *)this)->m_hwnd, EM_GETHILITE, 0, 0L);
+        (DWORD)::SendMessage(TBase::m_hwnd, EM_GETHILITE, 0, 0L);
     nStartChar = (int)(short) LOWORD(dwRet);
     nEndChar = (int)(short) HIWORD(dwRet);
   }
 
   void SetHilite(int nStartChar, int nEndChar) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, EM_SETHILITE, nStartChar, nEndChar);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, EM_SETHILITE, nStartChar, nEndChar);
   }
 #endif
 
   BOOL Undo() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, EM_UNDO, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return (BOOL)::SendMessage(TBase::m_hwnd, EM_UNDO, 0, 0L);
   }
 
   void Clear() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, WM_CLEAR, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, WM_CLEAR, 0, 0L);
   }
 
   void Copy() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, WM_COPY, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, WM_COPY, 0, 0L);
   }
 
   void Cut() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, WM_CUT, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, WM_CUT, 0, 0L);
   }
 
   void Paste() {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SendMessage(((TBase *)this)->m_hwnd, WM_PASTE, 0, 0L);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SendMessage(TBase::m_hwnd, WM_PASTE, 0, 0L);
   }
 };
 
@@ -7052,7 +7048,7 @@ template <typename TBase> class ScrollBarT : public TBase {
 
   ScrollBarT(HWND hWnd = NULL) : TBase(hWnd) {}
   ScrollBarT<TBase> &operator=(HWND hWnd) {
-    ((TBase *)this)->m_hwnd = hWnd;
+    TBase::m_hwnd = hWnd;
     return *this;
   }
   HWND Create(HWND hwndParent, URECT rc = nullptr,
@@ -7067,41 +7063,41 @@ template <typename TBase> class ScrollBarT : public TBase {
   static LPCTSTR GetWndClassName() { return TEXT("SCROLLBAR"); }
 
   int GetScrollPos() const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return ::GetScrollPos(((TBase *)this)->m_hwnd, SB_CTL);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return ::GetScrollPos(TBase::m_hwnd, SB_CTL);
   }
 
   int SetScrollPos(int nPos, BOOL bRedraw = TRUE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return ::SetScrollPos(((TBase *)this)->m_hwnd, SB_CTL, nPos, bRedraw);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return ::SetScrollPos(TBase::m_hwnd, SB_CTL, nPos, bRedraw);
   }
 
   void GetScrollRange(LPINT lpMinPos, LPINT lpMaxPos) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::GetScrollRange(((TBase *)this)->m_hwnd, SB_CTL, lpMinPos, lpMaxPos);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::GetScrollRange(TBase::m_hwnd, SB_CTL, lpMinPos, lpMaxPos);
   }
 
   void SetScrollRange(int nMinPos, int nMaxPos, BOOL bRedraw = TRUE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::SetScrollRange(((TBase *)this)->m_hwnd, SB_CTL, nMinPos, nMaxPos,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::SetScrollRange(TBase::m_hwnd, SB_CTL, nMinPos, nMaxPos,
                      bRedraw);
   }
 
   BOOL GetScrollInfo(LPSCROLLINFO lpScrollInfo) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return ::GetScrollInfo(((TBase *)this)->m_hwnd, SB_CTL, lpScrollInfo);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return ::GetScrollInfo(TBase::m_hwnd, SB_CTL, lpScrollInfo);
   }
 
   int SetScrollInfo(LPSCROLLINFO lpScrollInfo, BOOL bRedraw = TRUE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return ::SetScrollInfo(((TBase *)this)->m_hwnd, SB_CTL, lpScrollInfo,
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return ::SetScrollInfo(TBase::m_hwnd, SB_CTL, lpScrollInfo,
                            bRedraw);
   }
   int GetScrollLimit() const {
     int nMin = 0, nMax = 0;
-    ::GetScrollRange(((TBase *)this)->m_hwnd, SB_CTL, &nMin, &nMax);
+    ::GetScrollRange(TBase::m_hwnd, SB_CTL, &nMin, &nMax);
     SCROLLINFO info = {sizeof(SCROLLINFO), SIF_PAGE};
-    if (::GetScrollInfo(((TBase *)this)->m_hwnd, SB_CTL, &info))
+    if (::GetScrollInfo(TBase::m_hwnd, SB_CTL, &info))
       nMax -= ((info.nPage - 1) > 0) ? (info.nPage - 1) : 0;
 
     return nMax;
@@ -7109,24 +7105,24 @@ template <typename TBase> class ScrollBarT : public TBase {
 
 #if (WINVER >= 0x0500)
   BOOL GetScrollBarInfo(PSCROLLBARINFO pScrollBarInfo) const {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
+    WINASSERT(::IsWindow(TBase::m_hwnd));
 #if (_WIN32_WINNT >= 0x0501)
-    return (BOOL)::SendMessage(((TBase *)this)->m_hwnd, SBM_GETSCROLLBARINFO, 0,
+    return (BOOL)::SendMessage(TBase::m_hwnd, SBM_GETSCROLLBARINFO, 0,
                                (LPARAM)pScrollBarInfo);
 #else
-    return ::GetScrollBarInfo(((TBase *)this)->m_hwnd, OBJID_CLIENT,
+    return ::GetScrollBarInfo(TBase::m_hwnd, OBJID_CLIENT,
                               pScrollBarInfo);
 #endif
   }
 #endif
   void ShowScrollBar(BOOL bShow = TRUE) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    ::ShowScrollBar(((TBase *)this)->m_hwnd, SB_CTL, bShow);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    ::ShowScrollBar(TBase::m_hwnd, SB_CTL, bShow);
   }
 
   BOOL EnableScrollBar(UINT nArrowFlags = ESB_ENABLE_BOTH) {
-    WINASSERT(::IsWindow(((TBase *)this)->m_hwnd));
-    return ::EnableScrollBar(((TBase *)this)->m_hwnd, SB_CTL, nArrowFlags);
+    WINASSERT(::IsWindow(TBase::m_hwnd));
+    return ::EnableScrollBar(TBase::m_hwnd, SB_CTL, nArrowFlags);
   }
 };
 
