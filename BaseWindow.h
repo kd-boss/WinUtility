@@ -3962,6 +3962,7 @@ enum class WindowsMessage : unsigned int {
     PenWInLast = WM_PENWINLAST ,
     CoalesceFirst = 0x390,
     CoalesceLast = 0x39F,
+#ifndef WIN32_LEAN_AND_MEAN
     DDE_First = WM_DDE_FIRST,
     DDE_Initiate = WM_DDE_INITIATE,
     DDE_Terminate = WM_DDE_TERMINATE,
@@ -3973,6 +3974,7 @@ enum class WindowsMessage : unsigned int {
     DDE_Poke = WM_DDE_POKE,
     DDE_Execute = WM_DDE_EXECUTE,
     DDE_Last = WM_DDE_LAST,
+#endif
     User = WM_USER,
     App = WM_APP
 };
@@ -5127,6 +5129,11 @@ public:
     return ::ShowWindowAsync(m_hwnd, static_cast<int>(type));
   }
 
+  int GetMappedRect(LPRECT rc){
+      GetWindowRect(rc);
+      return ::MapWindowPoints(HWND_DESKTOP,GetParent(),(LPPOINT)&rc,2);
+  }
+
   Window GetDecendantWindow(int nID) const {
     WINCHECK(m_hwnd);
     // GetDlgItem recursive (return first found)
@@ -5837,6 +5844,13 @@ public:
   }
 };
 
+enum class StaticMessages : UINT {
+    GetImage = STM_GETIMAGE,
+    SetImage = STM_SETIMAGE,
+    GetIcon = STM_GETICON,
+    SetIcon = STM_SETICON
+};
+
 // Standard-Controls.
 template <typename TBase> class StaticT : public TBase {
 
@@ -5872,42 +5886,92 @@ public:
 
   HENHMETAFILE GetEnhMetaFile() const {
     WINASSERT(::IsWindow(TBase::m_hwnd));
-    return (HENHMETAFILE)::SendMessage(TBase::m_hwnd, STM_GETIMAGE,
+    return (HENHMETAFILE)::SendMessage(TBase::m_hwnd, static_cast<UINT>(StaticMessages::GetImage),
                                        IMAGE_ENHMETAFILE, 0L);
   }
 
   HENHMETAFILE SetEnhMetaFile(HENHMETAFILE file) {
     WINASSERT(::IsWindow(TBase::m_hwnd));
-    return (HENHMETAFILE)::SendMessage(TBase::m_hwnd, STM_SETIMAGE,
+    return (HENHMETAFILE)::SendMessage(TBase::m_hwnd, static_cast<UINT>(StaticMessages::SetImage),
                                        IMAGE_ENHMETAFILE, (LPARAM)file);
   }
 
   BitmapHandle GetBitmap() const {
     WINASSERT(::IsWindow(TBase::m_hwnd));
     return BitmapHandle((HBITMAP)::SendMessage(TBase::m_hwnd,
-                                               STM_GETIMAGE, IMAGE_BITMAP, 0L));
+                                               static_cast<UINT>(StaticMessages::GetImage), IMAGE_BITMAP, 0L));
   }
 
   BitmapHandle SetBitmap(HBITMAP bitmap) {
     WINASSERT(::IsWindow(TBase::m_hwnd));
     return BitmapHandle((HBITMAP)::SendMessage(
-        TBase::m_hwnd, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)bitmap));
+        TBase::m_hwnd, static_cast<UINT>(StaticMessages::SetImage), IMAGE_BITMAP, (LPARAM)bitmap));
   }
 
   HCURSOR GetCursor() const {
     WINASSERT(::IsWindow(TBase::m_hwnd));
-    return (HCURSOR)::SendMessage(TBase::m_hwnd, STM_GETIMAGE,
+    return (HCURSOR)::SendMessage(TBase::m_hwnd, static_cast<UINT>(StaticMessages::GetImage),
                                   IMAGE_CURSOR, 0L);
   }
 
   HCURSOR SetCursor(HCURSOR cursor) {
     WINASSERT(::IsWindow(TBase::m_hwnd));
-    return (HCURSOR)::SendMessage(TBase::m_hwnd, STM_SETIMAGE,
+    return (HCURSOR)::SendMessage(TBase::m_hwnd, static_cast<UINT>(StaticMessages::SetImage),
                                   IMAGE_CURSOR, (LPARAM)cursor);
   }
 };
 
 typedef StaticT<Window> Static;
+
+enum class ButtonStyles : DWORD {
+    TriState = BS_3STATE,
+    AutoTriState = BS_AUTO3STATE,
+    AutoCheckBox = BS_AUTOCHECKBOX,
+    AutoRadioButton = BS_AUTORADIOBUTTON,
+    CheckBox = BS_CHECKBOX,
+    DefaultPushButton = BS_DEFPUSHBUTTON,
+    GroupBox = BS_GROUPBOX,
+    LeftText = BS_LEFTTEXT,
+    OwnderDraw = BS_OWNERDRAW,
+    PushButton = BS_PUSHBUTTON,
+    RadioButton = BS_RADIOBUTTON,
+    UserButton = BS_USERBUTTON,
+    Bitmap = BS_BITMAP,
+    Bottom = BS_BOTTOM,
+    Center = BS_CENTER,
+    Icon = BS_ICON,
+    Flat = BS_FLAT,
+    Left = BS_LEFT,
+    MultiLine = BS_MULTILINE,
+    Notify = BS_NOTIFY,
+    PushLike = BS_PUSHLIKE,
+    Right = BS_RIGHT,
+    RightButton = BS_RIGHTBUTTON,
+    Text = BS_TEXT,
+    Top = BS_TOP,
+    TypeMask = BS_TYPEMASK,
+    VCenter = BS_VCENTER,
+    SplitButton = BS_SPLITBUTTON,
+    DefaultSplitButton = BS_DEFSPLITBUTTON,
+    CommandLink = BS_COMMANDLINK,
+    DefaultCommandLink = BS_DEFCOMMANDLINK
+};
+
+class ButtonType {
+    DWORD m_type;
+public:
+    ButtonType(ButtonStyles style) : m_type(
+                                            static_cast<DWORD>(style)) {
+        m_type |= ControlTraits::GetStyle();
+    }
+    ButtonType(std::initializer_list<ButtonStyles> styles) : m_type(0){
+        m_type |= ControlTraits::GetStyle();
+        for(auto i = styles.begin(); i != styles.end(); i++){
+            m_type |= static_cast<DWORD>(*i);
+        }
+    }
+    operator DWORD() { return m_type; }
+};
 
 template <typename TBase> class ButtonT : public TBase {
 
@@ -5924,7 +5988,7 @@ public:
               DWORD dwExStyle = 0, UMenuOrID menu = nullptr,
               LPVOID lpCreateParam = nullptr) {
     return TBase::Create(GetWndClassName(), hWndParent, rc.Get(),
-                         windowName.Get(), dwStyle, dwExStyle, menu.Get(),
+                         windowName.Get(),dwStyle, dwExStyle, menu.Get(),
                          lpCreateParam);
   }
 
@@ -6075,6 +6139,28 @@ public:
 };
 
 typedef ButtonT<Window> Button;
+
+
+
+typedef ButtonT<Window> Button;
+
+template <typename TBase, typename Traits> class ButtonImpl : public TBase {
+public:
+    HWND Create(HWND hWndParent = nullptr,
+           Rect rc = {0,0,0,0},LPCTSTR lpText = nullptr,UMenuOrID id = nullptr){
+        DWORD style = Traits::GetStyle();
+        DWORD styleEx = Traits::GetStyleEx();
+        return TBase::Create(hWndParent,rc,lpText,style,styleEx,id);
+    }
+};
+
+
+typedef ButtonImpl<Button,WinTraits<WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX,0>> CheckBox;
+typedef ButtonImpl<Button,WinTraits<WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_AUTO3STATE,0>> TriCheckBox;
+typedef ButtonImpl<Button,WinTraits<WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_RADIOBUTTON,0>> RadioButton;
+typedef ButtonImpl<Button,WinTraits<WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_COMMANDLINK,0>> CommandLink;
+typedef ButtonImpl<Button,WinTraits<WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,0>> PushButton;
+
 
 template <typename TBase> class ListBoxT : public TBase {
 
@@ -6379,6 +6465,7 @@ public:
 };
 
 typedef ListBoxT<Window> ListBox;
+
 
 template <typename TBase> class ComboBoxT : public TBase {
 
@@ -7044,6 +7131,7 @@ public:
 
 typedef EditT<Window> Edit;
 
+
 template <typename TBase> class ScrollBarT : public TBase {
 
   ScrollBarT(HWND hWnd = NULL) : TBase(hWnd) {}
@@ -7129,6 +7217,188 @@ template <typename TBase> class ScrollBarT : public TBase {
 typedef ScrollBarT<Window> ScrollBar;
 //Standard-Controls
 
+enum class LayoutStyle : int {
+    Left,
+    Right,
+    Bottom,
+    Top,
+    Center,
+    CenterLeft,
+    CenterRight,
+    CenterBottom,
+    CenterTop,
+    BottomRight,
+    BottomLeft,
+    TopRight,
+    TopLeft
+};
+
+class LayoutManager {
+public:
+    struct LayoutEntry {
+        HWND win;
+        Rect rc;
+        LayoutStyle style;
+    };
+    LayoutEntry m_main;
+    std::vector<LayoutEntry> m_entries;
+
+    LayoutManager() {}
+
+    void SetMain(HWND hwnd,Rect& rc){
+        m_main.rc.CopyRect(rc);
+        m_main.win = Window(hwnd);
+        m_main.style = LayoutStyle::Center;
+    }
+
+    void AddEntry(HWND hwnd,Rect& rc, LayoutStyle style){
+        m_entries.emplace_back(LayoutEntry{Window(hwnd),rc,style});
+    }
+
+    void UpdateLayout(Rect& rc)
+    {
+        auto def = ::BeginDeferWindowPos(m_entries.size());
+        for(auto& e : m_entries){
+           switch(e.style)
+           {
+           case LayoutStyle::Left:
+              {
+               int bottomOffset = m_main.rc.Height() -  e.rc.Height();
+               def = ::DeferWindowPos(def,e.win,nullptr,e.rc.left,e.rc.top,
+                                e.rc.Width(),
+                                (int)rc.Height() - bottomOffset,
+                                SWP_NOZORDER | SWP_SHOWWINDOW);
+               if(def == nullptr) return;
+           continue;
+               }
+           case LayoutStyle::Top:
+             {
+               float wratio = (float)m_main.rc.Width() / e.rc.Width();
+               float hratio = (float)m_main.rc.Height() /  e.rc.Height();
+               def = ::DeferWindowPos(def,e.win,nullptr,e.rc.left,e.rc.top,
+                                (int)(rc.Width() * wratio),
+                                (int)(rc.Height() * hratio),
+                                SWP_NOZORDER | SWP_SHOWWINDOW);
+               if(def == nullptr) return;
+               continue;
+            }
+           case LayoutStyle::Right:
+            {
+               continue;
+            }
+           case LayoutStyle::Bottom:
+            {
+               continue;
+            }
+           case LayoutStyle::Center:
+           {
+
+               int xoffset = e.rc.left;
+               int rightoffset = m_main.rc.right - e.rc.right;
+               int newWidth = rc.right - rightoffset - xoffset;
+               int yoffset = m_main.rc.bottom - e.rc.bottom;
+               int newHeight = rc.bottom - yoffset - e.rc.top;
+               def = ::DeferWindowPos(def,e.win,nullptr,e.rc.left,
+                                                        e.rc.top,newWidth,newHeight,
+                                      SWP_NOZORDER | SWP_SHOWWINDOW);
+              if(def) continue;
+              else break;
+              continue;
+           }
+           case LayoutStyle::TopLeft:
+           {
+
+               int xoffset = m_main.rc.left - e.rc.left;
+               int yoffset = m_main.rc.top - e.rc.top;
+
+               def = ::DeferWindowPos(def,e.win,nullptr,rc.left + xoffset,
+                                                        rc.top + yoffset,e.rc.Width(),e.rc.Height(),
+                                      SWP_NOZORDER | SWP_SHOWWINDOW);
+              if(def) continue;
+              else break;
+           }
+           case LayoutStyle::TopRight:
+           {
+               int height = e.rc.Height() ;
+               int xoffset = m_main.rc.right - e.rc.right;
+               int yoffset = m_main.rc.top - e.rc.top;
+
+               def = ::DeferWindowPos(def,e.win,nullptr,rc.right - xoffset - e.rc.Width(),
+                                                        rc.bottom - yoffset - height,e.rc.Width(),height,
+                                      SWP_NOZORDER | SWP_SHOWWINDOW);
+              if(def) continue;
+              else break;
+              continue;
+           }
+           case LayoutStyle::BottomLeft:
+           {
+               int height = e.rc.Height() ;
+               int xoffset = m_main.rc.left - e.rc.left;
+               int yoffset = m_main.rc.bottom - e.rc.bottom;
+
+               def = ::DeferWindowPos(def,e.win,nullptr,rc.left + xoffset,
+                                                        rc.bottom - yoffset - height,e.rc.Width(),height,
+                                      SWP_NOZORDER | SWP_SHOWWINDOW);
+              if(def) continue;
+              else break;
+           }
+           case LayoutStyle::BottomRight:
+           {
+              int width = e.rc.Width() ;
+              int height = e.rc.Height() ;
+              int xoffset = m_main.rc.right - e.rc.right;
+              int yoffset = m_main.rc.bottom - e.rc.bottom;
+
+              def = ::DeferWindowPos(def,e.win,nullptr,rc.right - width - xoffset,
+                                                       rc.bottom - height - yoffset,width,height,
+                                     SWP_NOZORDER | SWP_SHOWWINDOW);
+              if(def) continue;
+              else break;
+           }
+           }
+           break;
+        }
+        ::EndDeferWindowPos(def);
+
+    }
+};
+
+class VerticalStackedLayout {
+std::vector<HWND> m_entries;
+public:
+    void AddEntry(HWND hwnd){
+        m_entries.emplace_back(hwnd);
+    }
+    void UpdateLayout(Rect& rc){
+        int NewHeight = rc.Height() / m_entries.size();
+        int remainder = rc.Height() % m_entries.size();
+        int curry = 0;
+        auto def = ::BeginDeferWindowPos(m_entries.size());
+        for(int i = 0; i < m_entries.size(); i++){
+            def = ::DeferWindowPos(def,m_entries[i],nullptr,0,curry + (i == 0? remainder : 0),rc.Width(),NewHeight,SWP_NOZORDER | SWP_SHOWWINDOW);
+            curry += NewHeight;
+        }
+        ::EndDeferWindowPos(def);
+    }
+};
+
+class HorizontalStackedLayout{
+    std::vector<HWND> m_entries;
+public:
+    void AddEntry(HWND hwnd){
+        m_entries.emplace_back(hwnd);
+    }
+
+    void UpdateLayout(Rect& rc){
+        int newWidth = rc.Width() / m_entries.size();
+        int currx  = 0;
+        auto def = ::BeginDeferWindowPos(m_entries.size());
+        for(int i = 0; i <  m_entries.size(); i++){
+            def = ::DeferWindowPos(def,m_entries[i],nullptr,currx,0,newWidth,rc.Height(),SWP_NOZORDER | SWP_SHOWWINDOW);
+        }
+        ::EndDeferWindowPos(def);
+    }
+};
 
 #define BEGIN_MSG_MAP()                                                        \
   BOOL bHandled = FALSE;                                                       \
@@ -7156,6 +7426,7 @@ typedef ScrollBarT<Window> ScrollBar;
   break;                                                                       \
   case msgMapId:
 
+// LRESULT OnHandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam,BOOL& handled)
 #define MESSAGE_HANDLER(msg, func)                                             \
   if (uMsg == msg) {                                                           \
     bHandled = TRUE;                                                           \
