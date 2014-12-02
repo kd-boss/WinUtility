@@ -5370,6 +5370,12 @@ public:
   _WndProcThunk thunk; // for x86 we need only to stack allocate it, which fails
                        // at runtime with msvc.
 #endif
+  WndProcThunk(){
+#ifdef __x86_64__
+    thunk = nullptr;
+#endif
+  }
+
   void Init(WNDPROC proc, void *pThis) {
 #ifdef __x86_64__
     thunk = (_WndProcThunk *)::VirtualAlloc(0, sizeof(_WndProcThunk),
@@ -5416,7 +5422,9 @@ public:
   ~WndProcThunk() {
 #ifdef __x86_64__
     if (thunk)
-      ::VirtualFree(thunk, 0, MEM_RELEASE);
+      if(!VirtualFree(thunk, sizeof(_WndProcThunk), MEM_DECOMMIT)){
+         ::MessageBox(nullptr,TEXT("Failed To deallocate winproc thunk"),TEXT("Error"),MB_OK | MB_ICONERROR);
+      }
 #endif
   }
 };
@@ -7374,9 +7382,12 @@ public:
         int remainder = rc.Height() % m_entries.size();
         int curry = 0;
         auto def = ::BeginDeferWindowPos(m_entries.size());
+        if(!def) return;
         for(int i = 0; i < m_entries.size(); i++){
             def = ::DeferWindowPos(def,m_entries[i],nullptr,0,curry + (i == 0? remainder : 0),rc.Width(),NewHeight,SWP_NOZORDER | SWP_SHOWWINDOW);
             curry += NewHeight;
+            if(def) continue;
+            else return;
         }
         ::EndDeferWindowPos(def);
     }
@@ -7431,7 +7442,7 @@ public:
   if (uMsg == msg) {                                                           \
     bHandled = TRUE;                                                           \
     lResult = func(uMsg, wParam, lParam, bHandled);                            \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 #ifndef COMMAND_HANDLERS
@@ -7441,7 +7452,7 @@ public:
     SetHandled();                                                              \
     func((UINT)HIWORD(wParam), (int)LOWORD(wParam), (HWND)lParam);             \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnCommandIDHandlerEX(UINT uNotifyCode, int nID, Window wndCtl)
@@ -7450,7 +7461,7 @@ public:
     SetHandled();                                                              \
     func((UINT)HIWORD(wParam), (int)LOWORD(wParam), (HWND)lParam);             \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnCommandCodeHandlerEX(UINT uNotifyCode, int nID, Window wndCtl)
@@ -7459,7 +7470,7 @@ public:
     SetHandled();                                                              \
     func((UINT)HIWORD(wParam), (int)LOWORD(wParam), (HWND)lParam);             \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnCommandRangeHandlerEX(UINT uNotifyCode, int nID, Window wndCtl)
@@ -7469,7 +7480,7 @@ public:
     SetHandled();                                                              \
     func((UINT)HIWORD(wParam), (int)LOWORD(wParam), (HWND)lParam);             \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnCommandRangeCodeHandlerEX(UINT uNotifyCode, int nID, Window wndCtl)
@@ -7479,7 +7490,7 @@ public:
     SetHandled();                                                              \
     func((UINT)HIWORD(wParam), (int)LOWORD(wParam), (HWND)lParam);             \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnReflectedCommandHandlerEX(UINT uNotifyCode, int nID, Window wndCtl)
@@ -7488,7 +7499,7 @@ public:
     SetHandled();                                                              \
     func((UINT)HIWORD(wParam), (int)LOWORD(wParam), (HWND)lParam);             \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnReflectedCommandIDHandlerEX(UINT uNotifyCode, int nID, Window
@@ -7498,7 +7509,7 @@ public:
     SetHandled();                                                              \
     func((UINT)HIWORD(wParam), (int)LOWORD(wParam), (HWND)lParam);             \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnReflectedCommandCodeHandlerEX(UINT uNotifyCode, int nID, Window
@@ -7508,7 +7519,7 @@ public:
     SetHandled();                                                              \
     func((UINT)HIWORD(wParam), (int)LOWORD(wParam), (HWND)lParam);             \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnReflectedCommandRangeHandlerEX(UINT uNotifyCode, int nID, Window
@@ -7519,7 +7530,7 @@ public:
     SetHandled();                                                              \
     func((UINT)HIWORD(wParam), (int)LOWORD(wParam), (HWND)lParam);             \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnReflectedCommandRangeCodeHandlerEX(UINT uNotifyCode, int nID, Window
@@ -7530,7 +7541,7 @@ public:
     SetHandled();                                                              \
     func((UINT)HIWORD(wParam), (int)LOWORD(wParam), (HWND)lParam);             \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 #endif
 
@@ -7542,7 +7553,7 @@ public:
       id == ((LPNMHDR)lParam)->idFrom) {                                       \
     SetHandled();                                                              \
     lResult = func((LPNMHDR)lParam);                                           \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnNotifyIDHandlerEX(LPNMHDR pnmh)
@@ -7550,7 +7561,7 @@ public:
   if (uMsg == WM_NOTIFY && id == ((LPNMHDR)lParam)->idFrom) {                  \
     SetHandled();                                                              \
     lResult = func((LPNMHDR)lParam);                                           \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnNotifyCodeHandlerEX(LPNMHDR pnmh)
@@ -7558,7 +7569,7 @@ public:
   if (uMsg == WM_NOTIFY && cd == ((LPNMHDR)lParam)->code) {                    \
     SetHandled();                                                              \
     lResult = func((LPNMHDR)lParam);                                           \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnNotifyRangeHandlerEX(LPNMHDR pnmh)
@@ -7567,7 +7578,7 @@ public:
       ((LPNMHDR)lParam)->idFrom <= idLast) {                                   \
     SetHandled();                                                              \
     lResult = func((LPNMHDR)lParam);                                           \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnNotifyRangeCodeHandlerEX(LPNMHDR pnmh)
@@ -7577,7 +7588,7 @@ public:
       ((LPNMHDR)lParam)->idFrom <= idLast) {                                   \
     SetHandled();                                                              \
     lResult = func((LPNMHDR)lParam);                                           \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnReflectedNotifyHandlerEX(LPNMHDR pnmh)
@@ -7586,7 +7597,7 @@ public:
       id == ((LPNMHDR)lParam)->idFrom) {                                       \
     SetHandled();                                                              \
     lResult = func((LPNMHDR)lParam);                                           \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnReflectedNotifyIDHandlerEX(LPNMHDR pnmh)
@@ -7594,7 +7605,7 @@ public:
   if (uMsg == OCM_NOTIFY && id == ((LPNMHDR)lParam)->idFrom) {                 \
     SetHandled();                                                              \
     lResult = func((LPNMHDR)lParam);                                           \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnReflectedNotifyCodeHandlerEX(LPNMHDR pnmh)
@@ -7602,7 +7613,7 @@ public:
   if (uMsg == OCM_NOTIFY && cd == ((LPNMHDR)lParam)->code) {                   \
     SetHandled();                                                              \
     lResult = func((LPNMHDR)lParam);                                           \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnReflectedNotifyRangeHandlerEX(LPNMHDR pnmh)
@@ -7611,7 +7622,7 @@ public:
       ((LPNMHDR)lParam)->idFrom <= idLast) {                                   \
     SetHandled();                                                              \
     lResult = func((LPNMHDR)lParam);                                           \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnReflectedNotifyRangeCodeHandlerEX(LPNMHDR pnmh)
@@ -7621,21 +7632,21 @@ public:
       ((LPNMHDR)lParam)->idFrom <= idLast) {                                   \
     SetHandled();                                                              \
     lResult = func((LPNMHDR)lParam);                                           \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 #define FORWARD_NOTIFICATIONS()                                                \
   {                                                                            \
     bHandled = TRUE;                                                           \
     lResult = ForwardNotifications(uMsg, wParam, lParam, bHandled);            \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 #define REFLECT_NOTIFICATIONS()                                                \
   {                                                                            \
     bHandled = TRUE;                                                           \
     lResult = ReflectNotifications(uMsg, wParam, lParam, bHandled);            \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 #endif
@@ -7676,7 +7687,7 @@ public:
   if (uMsg == WM_CREATE) {                                                     \
     SetHandled();                                                              \
     lResult = (LRESULT)func((LPCREATESTRUCT)lParam);                           \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // BOOL OnInitDialog(Window wndFocus, LPARAM lInitParam)
@@ -7684,7 +7695,7 @@ public:
   if (uMsg == WM_INITDIALOG) {                                                 \
     SetHandled();                                                              \
     lResult = (LRESULT)func((HWND)wParam, lParam);                             \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // BOOL OnCopyData(Window wnd, PCOPYDATASTRUCT pCopyDataStruct)
@@ -7692,7 +7703,7 @@ public:
   if (uMsg == WM_COPYDATA) {                                                   \
     SetHandled();                                                              \
     lResult = (LRESULT)func((HWND)wParam, (PCOPYDATASTRUCT)lParam);            \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnDestroy()
@@ -7701,7 +7712,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnMove(Point ptPos)
@@ -7710,7 +7721,7 @@ public:
     SetHandled();                                                              \
     func(Point(lParam));                                                       \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnSize(UINT nType, Size size)
@@ -7719,7 +7730,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Size(lParam));                                          \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnActivate(UINT nState, BOOL bMinimized, Window wndOther)
@@ -7728,7 +7739,7 @@ public:
     SetHandled();                                                              \
     func((UINT)LOWORD(wParam), (BOOL)HIWORD(wParam), (HWND)lParam);            \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnSetFocus(Window wndOld)
@@ -7737,7 +7748,7 @@ public:
     SetHandled();                                                              \
     func((HWND)wParam);                                                        \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnKillFocus(Window wndFocus)
@@ -7746,7 +7757,7 @@ public:
     SetHandled();                                                              \
     func((HWND)wParam);                                                        \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnEnable(BOOL bEnable)
@@ -7755,7 +7766,7 @@ public:
     SetHandled();                                                              \
     func((BOOL)wParam);                                                        \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnPaint(DC dc)
@@ -7764,7 +7775,7 @@ public:
     SetHandled();                                                              \
     func((HDC)wParam);                                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnClose()
@@ -7773,7 +7784,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // BOOL OnQueryEndSession(UINT nSource, UINT uLogOff)
@@ -7781,7 +7792,7 @@ public:
   if (uMsg == WM_QUERYENDSESSION) {                                            \
     SetHandled();                                                              \
     lResult = (LRESULT)func((UINT)wParam, (UINT)lParam);                       \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // BOOL OnQueryOpen()
@@ -7789,7 +7800,7 @@ public:
   if (uMsg == WM_QUERYOPEN) {                                                  \
     SetHandled();                                                              \
     lResult = (LRESULT)func();                                                 \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // BOOL OnEraseBkgnd(DCT<true> dc)
@@ -7797,7 +7808,7 @@ public:
   if (uMsg == WM_ERASEBKGND) {                                                 \
     SetHandled();                                                              \
     lResult = (LRESULT)func((HDC)wParam);                                      \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnSysColorChange()
@@ -7806,7 +7817,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnEndSession(BOOL bEnding, UINT uLogOff)
@@ -7815,7 +7826,7 @@ public:
     SetHandled();                                                              \
     func((BOOL)wParam, (UINT)lParam);                                          \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnShowWindow(BOOL bShow, UINT nStatus)
@@ -7824,7 +7835,7 @@ public:
     SetHandled();                                                              \
     func((BOOL)wParam, (int)lParam);                                           \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // HBRUSH OnCtlColorEdit(DCT<true> dc, CEdit edit)
@@ -7832,7 +7843,7 @@ public:
   if (uMsg == WM_CTLCOLOREDIT) {                                               \
     SetHandled();                                                              \
     lResult = (LRESULT)func((HDC)wParam, (HWND)lParam);                        \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // HBRUSH OnCtlColorListBox(DCT<true> dc, CListBox listBox)
@@ -7840,7 +7851,7 @@ public:
   if (uMsg == WM_CTLCOLORLISTBOX) {                                            \
     SetHandled();                                                              \
     lResult = (LRESULT)func((HDC)wParam, (HWND)lParam);                        \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // HBRUSH OnCtlColorBtn(DCT<true> dc, CButton button)
@@ -7848,7 +7859,7 @@ public:
   if (uMsg == WM_CTLCOLORBTN) {                                                \
     SetHandled();                                                              \
     lResult = (LRESULT)func((HDC)wParam, (HWND)lParam);                        \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // HBRUSH OnCtlColorDlg(DCT<true> dc, Window wnd)
@@ -7856,7 +7867,7 @@ public:
   if (uMsg == WM_CTLCOLORDLG) {                                                \
     SetHandled();                                                              \
     lResult = (LRESULT)func((HDC)wParam, (HWND)lParam);                        \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // HBRUSH OnCtlColorScrollBar(DCT<true> dc, CScrollBar scrollBar)
@@ -7864,7 +7875,7 @@ public:
   if (uMsg == WM_CTLCOLORSCROLLBAR) {                                          \
     SetHandled();                                                              \
     lResult = (LRESULT)func((HDC)wParam, (HWND)lParam);                        \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // HBRUSH OnCtlColorStatic(DCT<true> dc, CStatic wndStatic)
@@ -7872,7 +7883,7 @@ public:
   if (uMsg == WM_CTLCOLORSTATIC) {                                             \
     SetHandled();                                                              \
     lResult = (LRESULT)func((HDC)wParam, (HWND)lParam);                        \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnSettingChange(UINT uFlags, LPCTSTR lpszSection)
@@ -7881,7 +7892,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, (LPCTSTR)lParam);                                       \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnDevModeChange(LPCTSTR lpDeviceName)
@@ -7890,7 +7901,7 @@ public:
     SetHandled();                                                              \
     func((LPCTSTR)lParam);                                                     \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnActivateApp(BOOL bActive, DWORD dwThreadID)
@@ -7899,7 +7910,7 @@ public:
     SetHandled();                                                              \
     func((BOOL)wParam, (DWORD)lParam);                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnFontChange()
@@ -7908,7 +7919,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnTimeChange()
@@ -7917,7 +7928,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnCancelMode()
@@ -7926,7 +7937,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // BOOL OnSetCursor(Window wnd, UINT nHitTest, UINT message)
@@ -7935,7 +7946,7 @@ public:
     SetHandled();                                                              \
     lResult = (LRESULT)func((HWND)wParam, (UINT)LOWORD(lParam),                \
                             (UINT)HIWORD(lParam));                             \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // int OnMouseActivate(Window wndTopLevel, UINT nHitTest, UINT message)
@@ -7944,7 +7955,7 @@ public:
     SetHandled();                                                              \
     lResult = (LRESULT)func((HWND)wParam, (UINT)LOWORD(lParam),                \
                             (UINT)HIWORD(lParam));                             \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnChildActivate()
@@ -7953,7 +7964,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnGetMinMaxInfo(LPMINMAXINFO lpMMI)
@@ -7962,7 +7973,7 @@ public:
     SetHandled();                                                              \
     func((LPMINMAXINFO)lParam);                                                \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnIconEraseBkgnd(DCT<true> dc)
@@ -7971,7 +7982,7 @@ public:
     SetHandled();                                                              \
     func((HDC)wParam);                                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnSpoolerStatus(UINT nStatus, UINT nJobs)
@@ -7980,7 +7991,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, (UINT)LOWORD(lParam));                                  \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
@@ -7989,7 +8000,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, (LPDRAWITEMSTRUCT)lParam);                              \
     lResult = TRUE;                                                            \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct)
@@ -7998,7 +8009,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, (LPMEASUREITEMSTRUCT)lParam);                           \
     lResult = TRUE;                                                            \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnDeleteItem(int nIDCtl, LPDELETEITEMSTRUCT lpDeleteItemStruct)
@@ -8007,7 +8018,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, (LPDELETEITEMSTRUCT)lParam);                            \
     lResult = TRUE;                                                            \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // int OnCharToItem(UINT nChar, UINT nIndex, CListBox listBox)
@@ -8016,7 +8027,7 @@ public:
     SetHandled();                                                              \
     lResult = (LRESULT)func((UINT)LOWORD(wParam), (UINT)HIWORD(wParam),        \
                             (HWND)lParam);                                     \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // int OnVKeyToItem(UINT nKey, UINT nIndex, CListBox listBox)
@@ -8025,7 +8036,7 @@ public:
     SetHandled();                                                              \
     lResult = (LRESULT)func((UINT)LOWORD(wParam), (UINT)HIWORD(wParam),        \
                             (HWND)lParam);                                     \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // HCURSOR OnQueryDragIcon()
@@ -8033,7 +8044,7 @@ public:
   if (uMsg == WM_QUERYDRAGICON) {                                              \
     SetHandled();                                                              \
     lResult = (LRESULT)func();                                                 \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // int OnCompareItem(int nIDCtl, LPCOMPAREITEMSTRUCT lpCompareItemStruct)
@@ -8041,7 +8052,7 @@ public:
   if (uMsg == WM_COMPAREITEM) {                                                \
     SetHandled();                                                              \
     lResult = (LRESULT)func((UINT)wParam, (LPCOMPAREITEMSTRUCT)lParam);        \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnCompacting(UINT nCpuTime)
@@ -8050,7 +8061,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam);                                                        \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // BOOL OnNcCreate(LPCREATESTRUCT lpCreateStruct)
@@ -8058,7 +8069,7 @@ public:
   if (uMsg == WM_NCCREATE) {                                                   \
     SetHandled();                                                              \
     lResult = (LRESULT)func((LPCREATESTRUCT)lParam);                           \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNcDestroy()
@@ -8067,7 +8078,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnNcCalcSize(BOOL bCalcValidRects, LPARAM lParam)
@@ -8075,7 +8086,7 @@ public:
   if (uMsg == WM_NCCALCSIZE) {                                                 \
     SetHandled();                                                              \
     lResult = func((BOOL)wParam, lParam);                                      \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // UINT OnNcHitTest(Point point)
@@ -8083,7 +8094,7 @@ public:
   if (uMsg == WM_NCHITTEST) {                                                  \
     SetHandled();                                                              \
     lResult = (LRESULT)func(Point(lParam));                                    \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNcPaint(CRgnHandle rgn)
@@ -8092,7 +8103,7 @@ public:
     SetHandled();                                                              \
     func((HRGN)wParam);                                                        \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // BOOL OnNcActivate(BOOL bActive)
@@ -8100,7 +8111,7 @@ public:
   if (uMsg == WM_NCACTIVATE) {                                                 \
     SetHandled();                                                              \
     lResult = (LRESULT)func((BOOL)wParam);                                     \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // UINT OnGetDlgCode(LPMSG lpMsg)
@@ -8108,7 +8119,7 @@ public:
   if (uMsg == WM_GETDLGCODE) {                                                 \
     SetHandled();                                                              \
     lResult = (LRESULT)func((LPMSG)lParam);                                    \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNcMouseMove(UINT nHitTest, Point point)
@@ -8117,7 +8128,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNcLButtonDown(UINT nHitTest, Point point)
@@ -8126,7 +8137,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNcLButtonUp(UINT nHitTest, Point point)
@@ -8135,7 +8146,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNcLButtonDblClk(UINT nHitTest, Point point)
@@ -8144,7 +8155,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNcRButtonDown(UINT nHitTest, Point point)
@@ -8153,7 +8164,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNcRButtonUp(UINT nHitTest, Point point)
@@ -8162,7 +8173,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNcRButtonDblClk(UINT nHitTest, Point point)
@@ -8171,7 +8182,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNcMButtonDown(UINT nHitTest, Point point)
@@ -8180,7 +8191,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNcMButtonUp(UINT nHitTest, Point point)
@@ -8189,7 +8200,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNcMButtonDblClk(UINT nHitTest, Point point)
@@ -8198,7 +8209,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -8208,7 +8219,7 @@ public:
     func((TCHAR)wParam, (UINT)lParam & 0xFFFF,                                 \
          (UINT)((lParam & 0xFFFF0000) >> 16));                                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -8218,7 +8229,7 @@ public:
     func((TCHAR)wParam, (UINT)lParam & 0xFFFF,                                 \
          (UINT)((lParam & 0xFFFF0000) >> 16));                                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -8228,7 +8239,7 @@ public:
     func((TCHAR)wParam, (UINT)lParam & 0xFFFF,                                 \
          (UINT)((lParam & 0xFFFF0000) >> 16));                                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnDeadChar(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -8238,7 +8249,7 @@ public:
     func((TCHAR)wParam, (UINT)lParam & 0xFFFF,                                 \
          (UINT)((lParam & 0xFFFF0000) >> 16));                                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnSysKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -8248,7 +8259,7 @@ public:
     func((TCHAR)wParam, (UINT)lParam & 0xFFFF,                                 \
          (UINT)((lParam & 0xFFFF0000) >> 16));                                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnSysKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -8258,7 +8269,7 @@ public:
     func((TCHAR)wParam, (UINT)lParam & 0xFFFF,                                 \
          (UINT)((lParam & 0xFFFF0000) >> 16));                                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnSysChar(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -8268,7 +8279,7 @@ public:
     func((TCHAR)wParam, (UINT)lParam & 0xFFFF,                                 \
          (UINT)((lParam & 0xFFFF0000) >> 16));                                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnSysDeadChar(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -8278,7 +8289,7 @@ public:
     func((TCHAR)wParam, (UINT)lParam & 0xFFFF,                                 \
          (UINT)((lParam & 0xFFFF0000) >> 16));                                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnSysCommand(UINT nID, Point point)
@@ -8287,7 +8298,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnTCard(UINT idAction, DWORD dwActionData)
@@ -8296,7 +8307,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, (DWORD)lParam);                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnTimer(UINT_PTR nIDEvent)
@@ -8305,7 +8316,7 @@ public:
     SetHandled();                                                              \
     func((UINT_PTR)wParam);                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar pScrollBar)
@@ -8314,7 +8325,7 @@ public:
     SetHandled();                                                              \
     func((int)LOWORD(wParam), (short)HIWORD(wParam), (HWND)lParam);            \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar pScrollBar)
@@ -8323,7 +8334,7 @@ public:
     SetHandled();                                                              \
     func((int)LOWORD(wParam), (short)HIWORD(wParam), (HWND)lParam);            \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnInitMenu(CMenuHandle menu)
@@ -8332,7 +8343,7 @@ public:
     SetHandled();                                                              \
     func((HMENU)wParam);                                                       \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnInitMenuPopup(CMenuHandle menuPopup, UINT nIndex, BOOL bSysMenu)
@@ -8341,7 +8352,7 @@ public:
     SetHandled();                                                              \
     func((HMENU)wParam, (UINT)LOWORD(lParam), (BOOL)HIWORD(lParam));           \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnMenuSelect(UINT nItemID, UINT nFlags, CMenuHandle menu)
@@ -8350,7 +8361,7 @@ public:
     SetHandled();                                                              \
     func((UINT)LOWORD(wParam), (UINT)HIWORD(wParam), (HMENU)lParam);           \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnMenuChar(UINT nChar, UINT nFlags, CMenuHandle menu)
@@ -8359,7 +8370,7 @@ public:
     SetHandled();                                                              \
     lResult =                                                                  \
         func((TCHAR)LOWORD(wParam), (UINT)HIWORD(wParam), (HMENU)lParam);      \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnNotify(int idCtrl, LPNMHDR pnmh)
@@ -8367,7 +8378,7 @@ public:
   if (uMsg == WM_NOTIFY) {                                                     \
     SetHandled();                                                              \
     lResult = func((int)wParam, (LPNMHDR)lParam);                              \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnEnterIdle(UINT nWhy, Window wndWho)
@@ -8376,7 +8387,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, (HWND)lParam);                                          \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnMouseMove(UINT nFlags, Point point)
@@ -8385,7 +8396,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // BOOL OnMouseWheel(UINT nFlags, short zDelta, Point pt)
@@ -8394,7 +8405,7 @@ public:
     SetHandled();                                                              \
     lResult = (LRESULT)func((UINT)LOWORD(wParam), (short)HIWORD(wParam),       \
                             Point(lParam));                                    \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnLButtonDown(UINT nFlags, Point point)
@@ -8403,7 +8414,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnLButtonUp(UINT nFlags, Point point)
@@ -8412,7 +8423,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnLButtonDblClk(UINT nFlags, Point point)
@@ -8421,7 +8432,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnRButtonDown(UINT nFlags, Point point)
@@ -8430,7 +8441,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnRButtonUp(UINT nFlags, Point point)
@@ -8439,7 +8450,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnRButtonDblClk(UINT nFlags, Point point)
@@ -8448,7 +8459,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnMButtonDown(UINT nFlags, Point point)
@@ -8457,7 +8468,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnMButtonUp(UINT nFlags, Point point)
@@ -8466,7 +8477,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnMButtonDblClk(UINT nFlags, Point point)
@@ -8475,7 +8486,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnParentNotify(UINT message, UINT nChildID, LPARAM lParam)
@@ -8484,7 +8495,7 @@ public:
     SetHandled();                                                              \
     func((UINT)LOWORD(wParam), (UINT)HIWORD(wParam), lParam);                  \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnMDIActivate(Window wndActivate, Window wndDeactivate)
@@ -8493,7 +8504,7 @@ public:
     SetHandled();                                                              \
     func((HWND)wParam, (HWND)lParam);                                          \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnRenderFormat(UINT nFormat)
@@ -8502,7 +8513,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam);                                                        \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnRenderAllFormats()
@@ -8511,7 +8522,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnDestroyClipboard()
@@ -8520,7 +8531,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnDrawClipboard()
@@ -8529,7 +8540,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnPaintClipboard(Window wndViewer, const LPPAINTSTRUCT lpPaintStruct)
@@ -8539,7 +8550,7 @@ public:
     func((HWND)wParam, (const LPPAINTSTRUCT)::GlobalLock((HGLOBAL)lParam));    \
     ::GlobalUnlock((HGLOBAL)lParam);                                           \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnVScrollClipboard(Window wndViewer, UINT nSBCode, UINT nPos)
@@ -8548,7 +8559,7 @@ public:
     SetHandled();                                                              \
     func((HWND)wParam, (UINT)LOWORD(lParam), (UINT)HIWORD(lParam));            \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnContextMenu(Window wnd, Point point)
@@ -8557,7 +8568,7 @@ public:
     SetHandled();                                                              \
     func((HWND)wParam, Point(lParam));                                         \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnSizeClipboard(Window wndViewer, const LPRECT lpRect)
@@ -8567,7 +8578,7 @@ public:
     func((HWND)wParam, (const LPRECT)::GlobalLock((HGLOBAL)lParam));           \
     ::GlobalUnlock((HGLOBAL)lParam);                                           \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnAskCbFormatName(UINT nMaxCount, LPTSTR lpszString)
@@ -8576,7 +8587,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, (LPTSTR)lParam);                                        \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnChangeCbChain(Window wndRemove, Window wndAfter)
@@ -8585,7 +8596,7 @@ public:
     SetHandled();                                                              \
     func((HWND)wParam, (HWND)lParam);                                          \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnHScrollClipboard(Window wndViewer, UINT nSBCode, UINT nPos)
@@ -8594,7 +8605,7 @@ public:
     SetHandled();                                                              \
     func((HWND)wParam, (UINT)LOWORD(lParam), (UINT)HIWORD(lParam));            \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // BOOL OnQueryNewPalette()
@@ -8602,7 +8613,7 @@ public:
   if (uMsg == WM_QUERYNEWPALETTE) {                                            \
     SetHandled();                                                              \
     lResult = (LRESULT)func();                                                 \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnPaletteChanged(Window wndFocus)
@@ -8611,7 +8622,7 @@ public:
     SetHandled();                                                              \
     func((HWND)wParam);                                                        \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnPaletteIsChanging(Window wndPalChg)
@@ -8620,7 +8631,7 @@ public:
     SetHandled();                                                              \
     func((HWND)wParam);                                                        \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnDropFiles(HDROP hDropInfo)
@@ -8629,7 +8640,7 @@ public:
     SetHandled();                                                              \
     func((HDROP)wParam);                                                       \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnWindowPosChanging(LPWINDOWPOS lpWndPos)
@@ -8638,7 +8649,7 @@ public:
     SetHandled();                                                              \
     func((LPWINDOWPOS)lParam);                                                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnWindowPosChanged(LPWINDOWPOS lpWndPos)
@@ -8647,7 +8658,7 @@ public:
     SetHandled();                                                              \
     func((LPWINDOWPOS)lParam);                                                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnExitMenuLoop(BOOL fIsTrackPopupMenu)
@@ -8656,7 +8667,7 @@ public:
     SetHandled();                                                              \
     func((BOOL)wParam);                                                        \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnEnterMenuLoop(BOOL fIsTrackPopupMenu)
@@ -8665,7 +8676,7 @@ public:
     SetHandled();                                                              \
     func((BOOL)wParam);                                                        \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnStyleChanged(int nStyleType, LPSTYLESTRUCT lpStyleStruct)
@@ -8674,7 +8685,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, (LPSTYLESTRUCT)lParam);                                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnStyleChanging(int nStyleType, LPSTYLESTRUCT lpStyleStruct)
@@ -8683,7 +8694,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, (LPSTYLESTRUCT)lParam);                                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnSizing(UINT fwSide, LPRECT pRect)
@@ -8692,7 +8703,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, (LPRECT)lParam);                                        \
     lResult = TRUE;                                                            \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnMoving(UINT fwSide, LPRECT pRect)
@@ -8701,7 +8712,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, (LPRECT)lParam);                                        \
     lResult = TRUE;                                                            \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnCaptureChanged(Window wnd)
@@ -8710,7 +8721,7 @@ public:
     SetHandled();                                                              \
     func((HWND)lParam);                                                        \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // BOOL OnDeviceChange(UINT nEventType, DWORD_PTR dwData)
@@ -8718,7 +8729,7 @@ public:
   if (uMsg == WM_DEVICECHANGE) {                                               \
     SetHandled();                                                              \
     lResult = (LRESULT)func((UINT)wParam, (DWORD_PTR)lParam);                  \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnCommand(UINT uNotifyCode, int nID, Window wndCtl)
@@ -8727,7 +8738,7 @@ public:
     SetHandled();                                                              \
     func((UINT)HIWORD(wParam), (int)LOWORD(wParam), (HWND)lParam);             \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnDisplayChange(UINT uBitsPerPixel, Size sizeScreen)
@@ -8736,7 +8747,7 @@ public:
     SetHandled();                                                              \
     func((UINT)wParam, Size(lParam));                                          \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnEnterSizeMove()
@@ -8745,7 +8756,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnExitSizeMove()
@@ -8754,7 +8765,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // HERSULT OnGetFont()
@@ -8762,7 +8773,7 @@ public:
   if (uMsg == WM_GETFONT) {                                                    \
     SetHandled();                                                              \
     lResult = (LRESULT)func();                                                 \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnGetHotKey()
@@ -8770,7 +8781,7 @@ public:
   if (uMsg == WM_GETHOTKEY) {                                                  \
     SetHandled();                                                              \
     lResult = func();                                                          \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // HICON OnGetIcon()
@@ -8778,7 +8789,7 @@ public:
   if (uMsg == WM_GETICON) {                                                    \
     SetHandled();                                                              \
     lResult = (LRESULT)func((UINT)wParam);                                     \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // int OnGetText(int cchTextMax, LPTSTR lpszText)
@@ -8786,7 +8797,7 @@ public:
   if (uMsg == WM_GETTEXT) {                                                    \
     SetHandled();                                                              \
     lResult = (LRESULT)func((int)wParam, (LPTSTR)lParam);                      \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // int OnGetTextLength()
@@ -8794,7 +8805,7 @@ public:
   if (uMsg == WM_GETTEXTLENGTH) {                                              \
     SetHandled();                                                              \
     lResult = (LRESULT)func();                                                 \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnHelp(LPHELPINFO lpHelpInfo)
@@ -8803,7 +8814,7 @@ public:
     SetHandled();                                                              \
     func((LPHELPINFO)lParam);                                                  \
     lResult = TRUE;                                                            \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnHotKey(int nHotKeyID, UINT uModifiers, UINT uVirtKey)
@@ -8812,7 +8823,7 @@ public:
     SetHandled();                                                              \
     func((int)wParam, (UINT)LOWORD(lParam), (UINT)HIWORD(lParam));             \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnInputLangChange(DWORD dwCharSet, HKL hKbdLayout)
@@ -8821,7 +8832,7 @@ public:
     SetHandled();                                                              \
     func((DWORD)wParam, (HKL)lParam);                                          \
     lResult = TRUE;                                                            \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnInputLangChangeRequest(BOOL bSysCharSet, HKL hKbdLayout)
@@ -8830,7 +8841,7 @@ public:
     SetHandled();                                                              \
     func((BOOL)wParam, (HKL)lParam);                                           \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNextDlgCtl(BOOL bHandle, WPARAM wCtlFocus)
@@ -8839,7 +8850,7 @@ public:
     SetHandled();                                                              \
     func((BOOL)LOWORD(lParam), wParam);                                        \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNextMenu(int nVirtKey, LPMDINEXTMENU lpMdiNextMenu)
@@ -8848,7 +8859,7 @@ public:
     SetHandled();                                                              \
     func((int)wParam, (LPMDINEXTMENU)lParam);                                  \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // int OnNotifyFormat(Window wndFrom, int nCommand)
@@ -8856,7 +8867,7 @@ public:
   if (uMsg == WM_NOTIFYFORMAT) {                                               \
     SetHandled();                                                              \
     lResult = (LRESULT)func((HWND)wParam, (int)lParam);                        \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // BOOL OnPowerBroadcast(DWORD dwPowerEvent, DWORD_PTR dwData)
@@ -8864,7 +8875,7 @@ public:
   if (uMsg == WM_POWERBROADCAST) {                                             \
     SetHandled();                                                              \
     lResult = (LRESULT)func((DWORD)wParam, (DWORD_PTR)lParam);                 \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnPrint(DCT<true> dc, UINT uFlags)
@@ -8873,7 +8884,7 @@ public:
     SetHandled();                                                              \
     func((HDC)wParam, (UINT)lParam);                                           \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnPrintClient(DCT<true> dc, UINT uFlags)
@@ -8882,7 +8893,7 @@ public:
     SetHandled();                                                              \
     func((HDC)wParam, (UINT)lParam);                                           \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnRasDialEvent(RASCONNSTATE rasconnstate, DWORD dwError)
@@ -8891,7 +8902,7 @@ public:
     SetHandled();                                                              \
     func((RASCONNSTATE)wParam, (DWORD)lParam);                                 \
     lResult = TRUE;                                                            \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnSetFont(GDIFontHandle font, BOOL bRedraw)
@@ -8900,7 +8911,7 @@ public:
     SetHandled();                                                              \
     func((HFONT)wParam, (BOOL)LOWORD(lParam));                                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // int OnSetHotKey(int nVirtKey, UINT uFlags)
@@ -8909,7 +8920,7 @@ public:
     SetHandled();                                                              \
     lResult = (LRESULT)func((int)LOBYTE(LOWORD(wParam)),                       \
                             (UINT)HIBYTE(LOWORD(wParam)));                     \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // HICON OnSetIcon(UINT uType, HICON hIcon)
@@ -8917,7 +8928,7 @@ public:
   if (uMsg == WM_SETICON) {                                                    \
     SetHandled();                                                              \
     lResult = (LRESULT)func((UINT)wParam, (HICON)lParam);                      \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnSetRedraw(BOOL bRedraw)
@@ -8926,7 +8937,7 @@ public:
     SetHandled();                                                              \
     func((BOOL)wParam);                                                        \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // int OnSetText(LPCTSTR lpstrText)
@@ -8934,7 +8945,7 @@ public:
   if (uMsg == WM_SETTEXT) {                                                    \
     SetHandled();                                                              \
     lResult = (LRESULT)func((LPCTSTR)lParam);                                  \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnUserChanged()
@@ -8943,7 +8954,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnMouseHover(WPARAM wParam, Point ptPos)
@@ -8952,7 +8963,7 @@ public:
     SetHandled();                                                              \
     func(wParam, Point(lParam));                                               \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnMouseLeave()
@@ -8961,7 +8972,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 #endif
@@ -8974,7 +8985,7 @@ public:
     SetHandled();                                                              \
     func(wParam, (HMENU)lParam);                                               \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnMenuDrag(WPARAM wParam, CMenuHandle menu)
@@ -8982,7 +8993,7 @@ public:
   if (uMsg == WM_MENUDRAG) {                                                   \
     SetHandled();                                                              \
     lResult = func(wParam, (HMENU)lParam);                                     \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnMenuGetObject(PMENUGETOBJECTINFO info)
@@ -8990,7 +9001,7 @@ public:
   if (uMsg == WM_MENUGETOBJECT) {                                              \
     SetHandled();                                                              \
     lResult = func((PMENUGETOBJECTINFO)lParam);                                \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnUnInitMenuPopup(UINT nID, CMenuHandle menu)
@@ -8999,7 +9010,7 @@ public:
     SetHandled();                                                              \
     func((UINT)HIWORD(lParam), (HMENU)wParam);                                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnMenuCommand(WPARAM nIndex, CMenuHandle menu)
@@ -9008,7 +9019,7 @@ public:
     SetHandled();                                                              \
     func(wParam, (HMENU)lParam);                                               \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 #endif
@@ -9022,7 +9033,7 @@ public:
     lResult =                                                                  \
         (LRESULT)func((HWND)wParam, GET_APPCOMMAND_LPARAM(lParam),             \
                       GET_DEVICE_LPARAM(lParam), GET_KEYSTATE_LPARAM(lParam)); \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNCXButtonDown(int fwButton, short nHittest, Point ptPos)
@@ -9042,7 +9053,7 @@ public:
     func(GET_XBUTTON_WPARAM(wParam), GET_NCHITTEST_WPARAM(wParam),             \
          Point(lParam));                                                       \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnNCXButtonDblClk(int fwButton, short nHittest, Point ptPos)
@@ -9052,7 +9063,7 @@ public:
     func(GET_XBUTTON_WPARAM(wParam), GET_NCHITTEST_WPARAM(wParam),             \
          Point(lParam));                                                       \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnXButtonDown(int fwButton, int dwKeys, Point ptPos)
@@ -9062,7 +9073,7 @@ public:
     func(GET_XBUTTON_WPARAM(wParam), GET_KEYSTATE_WPARAM(wParam),              \
          Point(lParam));                                                       \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnXButtonUp(int fwButton, int dwKeys, Point ptPos)
@@ -9072,7 +9083,7 @@ public:
     func(GET_XBUTTON_WPARAM(wParam), GET_KEYSTATE_WPARAM(wParam),              \
          Point(lParam));                                                       \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnXButtonDblClk(int fwButton, int dwKeys, Point ptPos)
@@ -9082,7 +9093,7 @@ public:
     func(GET_XBUTTON_WPARAM(wParam), GET_KEYSTATE_WPARAM(wParam),              \
          Point(lParam));                                                       \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnChangeUIState(WORD nAction, WORD nState)
@@ -9091,7 +9102,7 @@ public:
     SetHandled();                                                              \
     func(LOWORD(wParam), HIWORD(wParam));                                      \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnUpdateUIState(WORD nAction, WORD nState)
@@ -9100,7 +9111,7 @@ public:
     SetHandled();                                                              \
     func(LOWORD(wParam), HIWORD(wParam));                                      \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // LRESULT OnQueryUIState()
@@ -9108,7 +9119,7 @@ public:
   if (uMsg == WM_QUERYUISTATE) {                                               \
     SetHandled();                                                              \
     lResult = func();                                                          \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 #endif
@@ -9121,7 +9132,7 @@ public:
     SetHandled();                                                              \
     func(GET_RAWINPUT_CODE_WPARAM(wParam), (HRAWINPUT)lParam);                 \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnUniChar(TCHAR nChar, UINT nRepCnt, UINT nFlags)
@@ -9132,7 +9143,7 @@ public:
          (UINT)((lParam & 0xFFFF0000) >> 16));                                 \
     if (bHandled) {                                                            \
       lResult = (wParam == UNICODE_NOCHAR) ? TRUE : FALSE;                     \
-      return bHandled;                                                         \
+      if(bHandled) return bHandled;                                                         \
     }                                                                          \
   }
 
@@ -9143,7 +9154,7 @@ public:
     SetHandled();                                                              \
     func(wParam, (PWTSSESSION_NOTIFICATION)lParam);                            \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 // void OnThemeChanged()
@@ -9152,7 +9163,7 @@ public:
     SetHandled();                                                              \
     func();                                                                    \
     lResult = 0;                                                               \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 #endif
@@ -9165,7 +9176,7 @@ public:
     SetHandled();                                                              \
     lResult = (LRESULT)func((UINT)LOWORD(wParam), (short)HIWORD(wParam),       \
                             Point(lParam));                                    \
-    return bHandled;                                                           \
+    if(bHandled) return bHandled;                                                           \
   }
 
 #endif
