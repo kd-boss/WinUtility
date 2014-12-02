@@ -5373,6 +5373,8 @@ public:
   WndProcThunk(){
 #ifdef __x86_64__
     thunk = nullptr;
+#else
+    memset(&thunk,0, sizeof(_WndProcThunk));
 #endif
   }
 
