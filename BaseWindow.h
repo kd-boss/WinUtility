@@ -24,7 +24,9 @@
 #include <exception>
 #include <stdlib.h>
 #include <assert.h>
-#include <comdef.h>
+//#include <comutil.h>
+//#include <comdef.h>
+
 #ifndef __HRESULT_FROM_WIN32
 #define __HRESULT_FROM_WIN32(x)                                                \
   ((HRESULT)(x) <= 0                                                           \
@@ -37,6 +39,7 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
 #endif
 
+#define __HR__
 #ifndef __HR__
 #define __HR__
 inline void HR(HRESULT hr) {
@@ -464,9 +467,7 @@ inline Point Rect::CenterPoint() const {
 }
 inline void Rect::SwapLeftRight() { SwapLeftRight(LPRECT(this)); }
 inline void WINAPI Rect::SwapLeftRight(LPRECT lpRect) {
-  LONG temp = lpRect->left;
-  lpRect->left = lpRect->right;
-  lpRect->right = temp;
+	std::swap(lpRect->left,lpRect->right);
 }
 inline Rect::operator LPRECT() { return this; }
 inline Rect::operator LPCRECT() { return this; }
@@ -3596,17 +3597,17 @@ public:
 };
 #endif
 
-#define DECLARE_WND_CLASS(WndClassName, style, bkgrnd)                         \
+#define DECLARE_WND_CLASS(WndClassName)                         \
   static WNDCLASSEX GetWinClassInfo() {                                        \
     static WNDCLASSEX wc = {sizeof(WNDCLASSEX),                                \
-                            style,                                             \
+                            CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS,                                             \
                             WindowProc,                                        \
                             0,                                                 \
                             0,                                                 \
                             HINST_THISCOMPONENT,                               \
                             (HICON)::LoadIcon(nullptr, IDI_WINLOGO),           \
                             (HCURSOR)::LoadCursor(nullptr, IDC_ARROW),         \
-                            (HBRUSH)(bkgrnd + 1),                              \
+                            (HBRUSH)(COLOR_WINDOW + 1),                              \
                             nullptr,                                           \
                             WndClassName,                                      \
                             nullptr};                                          \
@@ -4609,7 +4610,7 @@ public:
     this->SendMessage(WindowsMessage::Print, (WPARAM)hDC, dwFlags);
   }
 
-  void PrintClient(HDC hDC, DWORD dwFlags) {  
+  void PrintClient(HDC hDC, DWORD dwFlags) {
     this->SendMessage(WindowsMessage::PrintClient, (WPARAM)hDC, dwFlags);
   }
 
@@ -5332,7 +5333,88 @@ struct CriticalSectionLock {
   ~CriticalSectionLock() { m_t->UnLock(); }
 };
 
+class BaseModule{
+public:
+	UINT m_size;
+	HINSTANCE m_hInstance;
+	HINSTANCE m_hInstResource;
+	CriticalSection m_csResource;
+	std::vector<HINSTANCE> m_vecResources;
+	BaseModule() throw();
+	HINSTANCE GetModuleInstance() throw();
+	BOOL AddResourceInstance(HINSTANCE hInst) throw();
+	BOOL RemoveResourceInstance(HINSTANCE hInst) throw();
+	HINSTANCE GetHInstanceAt(int i) throw();
+	HINSTANCE GetResourceInstance() throw();
+	HINSTANCE SetResourceInstance(HINSTANCE hInst) throw();
+};
 
+inline BaseModule::BaseModule() throw() {
+	m_size = sizeof(BaseModule);
+        m_hInstance = m_hInstResource = HINST_THISCOMPONENT;
+}
+
+
+inline HINSTANCE BaseModule::GetModuleInstance() throw(){
+	return m_hInstance;
+}
+
+inline BOOL BaseModule::AddResourceInstance(HINSTANCE hInst)throw(){
+	try
+	{
+		m_vecResources.push_back(hInst);
+		return TRUE;
+	}
+	catch(std::exception e)
+	{
+		return FALSE;
+	}
+}
+
+inline BOOL BaseModule::RemoveResourceInstance(HINSTANCE hInst) throw(){
+	CriticalSectionLock lock(m_csResource);
+	try
+	{
+                m_vecResources.erase(
+			std::remove(m_vecResources.begin(),
+						m_vecResources.end(),
+						hInst),
+							m_vecResources.end());
+							return TRUE;
+	}
+    catch(std::exception e)
+	{
+		return FALSE;
+	}
+}
+
+inline HINSTANCE BaseModule::GetHInstanceAt(int i) throw(){
+	try
+	{
+		CriticalSectionLock lock(m_csResource);
+                if(m_vecResources.size() == 0){
+			return nullptr;
+		}
+                if(m_vecResources.size() >= i){
+			return nullptr;
+		}
+		return m_vecResources[i];
+	}
+        catch(std::exception /*e*/)
+        {
+            return nullptr;
+        }
+}
+
+inline HINSTANCE BaseModule::GetResourceInstance()throw(){
+	return m_hInstResource;
+}
+
+inline HINSTANCE BaseModule::SetResourceInstance(HINSTANCE hInst) throw() {
+          return static_cast<HINSTANCE>(InterlockedExchangePointer((void**)&m_hInstResource,hInst));
+}
+
+__attribute__((selectany)) BaseModule _BaseModule;
 __attribute__((selectany)) CriticalSection _wndCS;
 __attribute__((selectany)) std::vector<CreateWndData> _wndData;
 
@@ -5433,7 +5515,7 @@ class WindowImplRoot : public TBase, public MessageMap {
 public:
   WndProcThunk m_thunk;
   DWORD m_state;
-  enum { WINSTATE_DESTROYED = 0x00000001 };
+  enum { WINSTATE_DESTROYED = 0x1};
 
   WindowImplRoot() : m_state(0) {}
 
@@ -5634,8 +5716,8 @@ public:
       }
     }
     if (pThis->m_state == WindowImplRoot<TBase>::WINSTATE_DESTROYED) {
-      HWND hWndThis = pThis->m_hwnd;
-      pThis->m_hwnd = nullptr;
+      HWND hWndThis = pThis->Detach();
+      //pThis->m_hwnd = nullptr;
       pThis->OnFinalMessage(hWndThis);
     }
 
@@ -5781,8 +5863,8 @@ public:
   virtual void OnFinalMessage(HWND) {}
 };
 
-template <typename T, typename TBaseWindow, typename TWindowTraits>
-class BaseWindow : public BaseWindowImplT<TBaseWindow, TWindowTraits> {
+template <typename T, typename TBase, typename TWindowTraits>
+class BaseWindow : public BaseWindowImplT<TBase, TWindowTraits> {
 
 public:
   HWND Create(HWND hWndParent = nullptr, LPRECT rect = nullptr,
@@ -5794,7 +5876,7 @@ public:
 
     ATOM atom = this->RegisterClass();
     LPTSTR st = MAKEINTATOM(atom);
-    return BaseWindowImplT<TBaseWindow, TWindowTraits>::Create(
+    return BaseWindowImplT<TBase, TWindowTraits>::Create(
         hWndParent, rect, szWindowName, dwStyle, dwExStyle, MenuOrID, atom,
         lpCreateParam);
   }
@@ -5843,6 +5925,242 @@ public:
     WNDCLASSEX wcx = T::GetWinClassInfo();
     return ::RegisterClassEx(&wcx);
   }
+};
+
+
+template<typename TBase>
+class DialogImplBaseT : public BaseWindowImplT<TBase>
+{
+public:
+                DECLARE_WND_CLASS(NULL)
+		virtual ~DialogImplBaseT(){}
+		virtual DLGPROC GetDialogProc(){
+			return DialogProc;
+		}
+                virtual ATOM RegisterClass() override {
+                    WNDCLASSEX wcx = GetWinClassInfo();
+                    return ::RegisterClassEx(&wcx);
+                }
+                static INT_PTR CALLBACK WindowProc(
+				HWND hWnd,
+				UINT uMsg,
+				WPARAM wParam,
+				LPARAM lParam);
+	    static INT_PTR CALLBACK DialogProc(
+				HWND hWnd,
+				UINT uMsg,
+				WPARAM wParam,
+				LPARAM lParam);
+
+		BOOL MapDialogRect(LPRECT lpRect){
+                        WINASSERT(::IsWindow(((DialogImplBaseT<TBase> *)this)->m_hwnd));
+                        return ::MapDialogRect(((DialogImplBaseT<TBase> *)this)->m_hwnd,lpRect);
+		}
+		virtual void OnFinalMessage(HWND /*hWnd*/){
+			//if needed, override.
+		}
+		LRESULT DefWindowProc(){
+			return 0;
+		}
+
+		BOOL ExecuteDlgInit(int iDlgID){
+			bool Success = true;
+                        HINSTANCE hInst = HINST_THISCOMPONENT;
+			HRSRC hrsrc = ::FindResourceW(hInst,MAKEINTRESOURCE(iDlgID),(LPWSTR)MAKEINTRESOURCE(240));
+			if(hrsrc)
+			{
+				HGLOBAL resData = ::LoadResource(hInst,hrsrc);
+				if(resData)
+				{
+					UNALIGNED WORD* ptrDlgInit = (UNALIGNED WORD*)::LockResource(resData);
+					if(ptrDlgInit){
+						while(Success && NULL != ptrDlgInit){
+							WORD ID = *ptrDlgInit++;
+							WORD Msg = *ptrDlgInit++;
+							DWORD dwSize = *((UNALIGNED DWORD*&)ptrDlgInit)++;
+
+							//CB_ADDSTRING
+							if(0x403 == Msg){
+								auto text = reinterpret_cast<LPTSTR>(ptrDlgInit);
+                                                                if( -1 == ((Window*)this)->SendDlgItemMessage(ID,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(text)))
+								{
+									Success = false;
+								}
+							}
+							else if (0x1234 == Msg){
+								COMBOBOXEXITEM itm;
+								itm.mask = CBEIF_TEXT;
+								itm.iItem = -1;
+								itm.pszText = reinterpret_cast<LPTSTR>(ptrDlgInit);
+                                                                if(-1 == ((Window*)this)->SendDlgItemMessage(ID,CBEM_INSERTITEM,0,(LPARAM)&itm))
+								{
+									Success = false;
+								}
+							}
+							ptrDlgInit = (LPWORD)((LPBYTE)ptrDlgInit + dwSize);
+						}
+					}
+				}
+			}
+                        return Success;
+		}
+};
+
+template <class TBase>
+INT_PTR CALLBACK DialogImplBaseT<TBase>::WindowProc(
+	HWND hWnd,
+	UINT uMsg,
+	WPARAM wParam,
+	LPARAM lParam){
+		    auto ret =
+        find_if(_wndData.rbegin(), _wndData.rend(), [&](CreateWndData &dat) {
+          return dat.dwThreadId == ::GetCurrentThreadId();
+        });
+		if(ret != _wndData.rend()){
+                DialogImplBaseT<TBase> *pThis = (DialogImplBaseT<TBase>*)ret->pThis;
+		WINASSERT(pThis != nullptr);
+		if(!pThis) return 0;
+		pThis->m_hwnd = hWnd;
+		pThis->m_thunk.Init((WNDPROC)pThis->GetDialogProc(),pThis);
+		DLGPROC pProc = (DLGPROC)pThis->m_thunk.GetWNDPROC();
+                DLGPROC pOldProc = (DLGPROC)::SetWindowLongPtr(hWnd,DWLP_DLGPROC,(LONG_PTR)pProc);
+		return pProc(hWnd,uMsg,wParam,lParam);
+		} else return 0;
+}
+
+template <class TBase>
+INT_PTR CALLBACK DialogImplBaseT<TBase>::DialogProc(
+	HWND hWnd,
+	UINT uMsg,
+        WPARAM wParam,
+	LPARAM lParam)
+{
+                DialogImplBaseT<TBase> *pThis = (DialogImplBaseT<TBase>*)hWnd;
+		LPARAM lRes = 0;
+		HWND hThis = pThis->m_hwnd;
+		if(hThis)
+            pThis->m_state = 0x0;
+
+		BOOL bRet = pThis->HandleMessage(hThis, uMsg, wParam, lParam, lRes, 0);
+
+		if(bRet)
+		{
+			switch(uMsg)
+			{
+				case WM_COMPAREITEM:
+				case WM_VKEYTOITEM:
+				case WM_CHARTOITEM:
+				case WM_INITDIALOG:
+				case WM_QUERYDRAGICON:
+				case WM_CTLCOLORMSGBOX:
+				case WM_CTLCOLOREDIT:
+				case WM_CTLCOLORLISTBOX:
+				case WM_CTLCOLORBTN:
+				case WM_CTLCOLORDLG:
+				case WM_CTLCOLORSCROLLBAR:
+				case WM_CTLCOLORSTATIC:
+					// return directly
+					bRet = (BOOL)lRes;
+					break;
+				default:
+					// return in DWL_MSGRESULT
+					//Make sure the window was not destroyed before setting attributes.
+                    if(pThis->m_state != DialogImplBaseT<TBase>::WINSTATE_DESTROYED)
+					{
+						::SetWindowLongPtr(pThis->m_hwnd, DWLP_MSGRESULT, lRes);
+					}
+					break;
+
+			 }
+		}
+		else if(uMsg == WM_NCDESTROY)
+		{
+           pThis->m_state = DialogImplBaseT<TBase>::WINSTATE_DESTROYED;
+        /* unsubclass if necessary */
+#ifdef __x86_64__
+        if ((WNDPROC)pThis->oldProc != (WNDPROC)pThis->m_thunk.thunk &&
+            ((WNDPROC)::GetWindowLongPtr(pThis->m_hwnd, GWLP_WNDPROC) ==
+             (WNDPROC)(pThis->m_thunk.thunk))) {
+          ::SetWindowLongPtr(pThis->m_hwnd, GWLP_WNDPROC,
+                             (LONG_PTR)pThis->oldProc);
+          return lRes;
+        }
+#else
+        if (pThis->oldProc != (WNDPROC)&pThis->m_thunk.thunk &&
+            ((WNDPROC)::GetWindowLongPtr(pThis->m_hwnd, GWLP_WNDPROC) ==
+             (WNDPROC)&pThis->m_thunk.thunk)) {
+          ::SetWindowLongPtr(pThis->m_hwnd, GWLP_WNDPROC,
+                             (LONG_PTR)pThis->oldProc);
+          return lRes;
+        }
+#endif
+		}
+        if( pThis->m_state == DialogImplBaseT<TBase>::WINSTATE_DESTROYED)
+		{
+			HWND hwndThis = pThis->Detach();
+			pThis->m_state = 0;
+			pThis->OnFinalMessage(hwndThis);
+		}
+		return bRet;
+}
+
+typedef DialogImplBaseT<Window> DialogImlBase;
+
+template <class T, class TBase = Window>
+class BaseDialog : public DialogImplBaseT<TBase>
+{
+public:
+	//modal stuff
+	INT_PTR DoModal(
+	 HWND hWndParent = ::GetActiveWindow(),
+	 LPARAM dwInitParam = NULL)
+	 {
+                 HWND local = hWndParent;
+                 BOOL res = TRUE;
+		 if(res == FALSE)
+		 {
+			 SetLastError(ERROR_OUTOFMEMORY);
+			 return -1;
+		 }
+
+		_wndCS.Lock();
+		_wndData.push_back({this, ::GetCurrentThreadId()});
+		_wndCS.UnLock();
+
+                return ::DialogBoxParam(_BaseModule.GetResourceInstance(),MAKEINTRESOURCE(static_cast<T*>(this)->IDD),
+                hWndParent,T::WindowProc,dwInitParam);
+	 }
+
+	 BOOL EndDialog(int retCode){
+                 WINASSERT(((BaseWindowImplT<TBase>*)this)->IsWindow());
+                 return ::EndDialog(((BaseWindowImplT<TBase>*)this)->m_hwnd,retCode);
+	 }
+
+	 HWND Create(HWND hwndParent,LPARAM dwInitParam = 0){
+
+		_wndCS.Lock();
+		_wndData.push_back({this, ::GetCurrentThreadId()});
+		_wndCS.UnLock();
+
+                HWND hWnd = ::CreateDialogParam(_BaseModule.GetResourceInstance(),MAKEINTRESOURCE(static_cast<T*>(this)->IDD),
+                        hwndParent,T::WindowProc,dwInitParam);
+		WINASSERT(::IsWindow(hWnd));
+		return hWnd;
+	 }
+
+	 HWND Create(HWND hWndParent,
+				 RECT&,
+                                 LPARAM dwInitParam = 0){
+                                         return Create(hWndParent,dwInitParam);
+				 }
+
+	BOOL DestroyWindow(){
+                WINASSERT(((BaseWindowImplT<TBase>*)this)->IsWindow());
+                if(!::DestroyWindow(((BaseWindowImplT<TBase>*)this)->m_hwnd)){
+			return FALSE;
+		}
+		return TRUE;
+	}
 };
 
 enum class StaticMessages : UINT {
@@ -7220,7 +7538,6 @@ template <typename TBase> class ScrollBarT : public TBase {
 typedef ScrollBarT<Window> ScrollBar;
 
 
-//Standard-Controls
 
 enum class LayoutStyle : int {
     Left,
@@ -7367,8 +7684,6 @@ public:
 
     }
 };
-
-
 
 class VerticalStackedLayout {
 std::vector<HWND> m_entries;
@@ -8737,6 +9052,16 @@ public:
     return bHandled;                                                           \
   }
 
+// void OnPushbutton_Click(Window TheButton)
+#define PUSHBUTTON_CLICK(id,func)											   \
+    if (uMsg == WM_COMMAND && id == (UINT)LOWORD(wParam) &&					   \
+		BN_CLICKED == (UINT)HIWORD(wParam)){								   \
+    SetHandled();															   \
+    func((HWND)lParam);														   \
+    lResult = 0;															   \
+    return bHandled;														   \
+    }
+
 // void OnDisplayChange(UINT uBitsPerPixel, Size sizeScreen)
 #define MSG_WM_DISPLAYCHANGE(func)                                             \
   if (uMsg == WM_DISPLAYCHANGE) {                                              \
@@ -9178,3 +9503,4 @@ public:
 #endif
 
 #endif
+
