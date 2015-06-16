@@ -910,8 +910,9 @@ inline void WINTRACE(bool val, LPTSTR text)
     }
 }
 
-#ifndef GDISTUFF
+#ifndef GDISTUFF //gdi drawing classes.
 #define GDISTUFF
+
 #ifdef _INC_WINDOWSX
 #undef CopyRgn
 #undef CreateBrush
@@ -1222,13 +1223,7 @@ public:
             ::MulDiv(pt.y, 720,
                      ::GetDeviceCaps(
                          hDC1, LOGPIXELSY)); // 72 points/inch, 10 decipoints/point
-#else                                    // CE specific
-        // DP and LP are always the same on CE
-        LONG nDeciPoint =
-            ::MulDiv(abs(lfHeight), 720,
-                     ::GetDeviceCaps(
-                         hDC1, LOGPIXELSY)); // 72 points/inch, 10 decipoints/point
-#endif                                   // _WIN32_WCE
+
         if (hDC == nullptr)
             ::ReleaseDC(nullptr, hDC1);
 
@@ -4325,7 +4320,7 @@ public:
         return hEMF;
     }
 };
-
+#endif
 
 #define DECLARE_WND_CLASS(WndClassName)                         \
   static WNDCLASSEX GetWinClassInfo() {                                        \
@@ -7665,6 +7660,10 @@ public:
                                       IMAGE_CURSOR, (LPARAM)cursor);
     }
 };
+
+#ifndef BS_SPLITBUTTON
+#define BS_SPLITBUTTON = 0x0000000C
+#endif
 
 typedef StaticT<Window> Static;
 
@@ -16581,6 +16580,7 @@ typedef ComboBoxExT<Window>   ComboBoxControlEx;
 #define MCGIF_NAME                 0x00000004
 
 // Note: iRow of -1 refers to the row header and iCol of -1 refers to the col header.
+#if defined(__MINGW_MAJOR_VERSION) && __MINGW_MAJOR_VERSION < 4
 typedef struct tagMCGRIDINFO {
     UINT cbSize;
     DWORD dwPart;
@@ -16595,6 +16595,7 @@ typedef struct tagMCGRIDINFO {
     PWSTR pszName;
     size_t cchName;
 } MCGRIDINFO, *PMCGRIDINFO;
+#endif
 
 #define MCM_GETCALENDARGRIDINFO (MCM_FIRST + 24)
 #define MonthCal_GetCalendarGridInfo(hmc, pmcGridInfo) \
@@ -16863,7 +16864,7 @@ typedef MonthCalendarCtrlT<Window>   MonthCalendarControl;
 
 //defintions missing from comctrl.h in mingw v3.0
 #if (NTDDI_VERSION >= NTDDI_VISTA)
-
+#if defined(__MINGW_MAJOR_VERSION) && __MINGW_MAJOR_VERSION < 4
 typedef struct tagDATETIMEPICKERINFO
 {
     DWORD cbSize;
@@ -16878,7 +16879,7 @@ typedef struct tagDATETIMEPICKERINFO
     HWND hwndUD;
     HWND hwndDropDown;
 } DATETIMEPICKERINFO, *LPDATETIMEPICKERINFO;
-
+#endif
 #define DTM_GETMONTHCAL   (DTM_FIRST + 8)
 #define DTM_SETMCSTYLE    (DTM_FIRST + 11)
 #define DTM_GETMCSTYLE    (DTM_FIRST + 12)
@@ -17010,195 +17011,6 @@ public:
 };
 
 typedef DateTimePickerControlT<Window>   DateTimePickerControl;
-
-
-
-
-/* -- removed layout's until further improvements can be made.
-enum class LayoutStyle : int {
-    Left,
-    Right,
-    Bottom,
-    Top,
-    Center,
-    CenterLeft,
-    CenterRight,
-    CenterBottom,
-    CenterTop,
-    BottomRight,
-    BottomLeft,
-    TopRight,
-    TopLeft
-};
-
-
-class LayoutManager {
-public:
-    struct LayoutEntry {
-        HWND win;
-        Rect rc;
-        LayoutStyle style;
-    };
-    LayoutEntry m_main;
-    std::vector<LayoutEntry> m_entries;
-
-    LayoutManager() {}
-
-    void SetMain(HWND hwnd,Rect& rc){
-        m_main.rc.CopyRect(rc);
-        m_main.win = Window(hwnd);
-        m_main.style = LayoutStyle::Center;
-    }
-
-    void AddEntry(HWND hwnd,Rect& rc, LayoutStyle style){
-        m_entries.emplace_back(LayoutEntry{Window(hwnd),rc,style});
-    }
-
-    void UpdateLayout(Rect& rc)
-    {
-        auto def = ::BeginDeferWindowPos(m_entries.size());
-        for(auto& e : m_entries){
-           switch(e.style)
-           {
-           case LayoutStyle::Left:
-              {
-               int bottomOffset = m_main.rc.Height() -  e.rc.Height();
-               def = ::DeferWindowPos(def,e.win,nullptr,e.rc.left,e.rc.top,
-                                e.rc.Width(),
-                                (int)rc.Height() - bottomOffset,
-                                SWP_NOZORDER | SWP_SHOWWINDOW);
-               if(def == nullptr) return;
-           continue;
-               }
-           case LayoutStyle::Top:
-             {
-               float wratio = (float)m_main.rc.Width() / e.rc.Width();
-               float hratio = (float)m_main.rc.Height() /  e.rc.Height();
-               def = ::DeferWindowPos(def,e.win,nullptr,e.rc.left,e.rc.top,
-                                (int)(rc.Width() * wratio),
-                                (int)(rc.Height() * hratio),
-                                SWP_NOZORDER | SWP_SHOWWINDOW);
-               if(def == nullptr) return;
-               continue;
-            }
-           case LayoutStyle::Right:
-            {
-               continue;
-            }
-           case LayoutStyle::Bottom:
-            {
-               continue;
-            }
-           case LayoutStyle::Center:
-           {
-
-               int xoffset = e.rc.left;
-               int rightoffset = m_main.rc.right - e.rc.right;
-               int newWidth = rc.right - rightoffset - xoffset;
-               int yoffset = m_main.rc.bottom - e.rc.bottom;
-               int newHeight = rc.bottom - yoffset - e.rc.top;
-               def = ::DeferWindowPos(def,e.win,nullptr,e.rc.left,
-                                                        e.rc.top,newWidth,newHeight,
-                                      SWP_NOZORDER | SWP_SHOWWINDOW);
-              if(def) continue;
-              else break;
-              continue;
-           }
-           case LayoutStyle::TopLeft:
-           {
-
-               int xoffset = m_main.rc.left - e.rc.left;
-               int yoffset = m_main.rc.top - e.rc.top;
-
-               def = ::DeferWindowPos(def,e.win,nullptr,rc.left + xoffset,
-                                                        rc.top + yoffset,e.rc.Width(),e.rc.Height(),
-                                      SWP_NOZORDER | SWP_SHOWWINDOW);
-              if(def) continue;
-              else break;
-           }
-           case LayoutStyle::TopRight:
-           {
-               int height = e.rc.Height() ;
-               int xoffset = m_main.rc.right - e.rc.right;
-               int yoffset = m_main.rc.top - e.rc.top;
-
-               def = ::DeferWindowPos(def,e.win,nullptr,rc.right - xoffset - e.rc.Width(),
-                                                        rc.bottom - yoffset - height,e.rc.Width(),height,
-                                      SWP_NOZORDER | SWP_SHOWWINDOW);
-              if(def) continue;
-              else break;
-              continue;
-           }
-           case LayoutStyle::BottomLeft:
-           {
-               int height = e.rc.Height() ;
-               int xoffset = m_main.rc.left - e.rc.left;
-               int yoffset = m_main.rc.bottom - e.rc.bottom;
-
-               def = ::DeferWindowPos(def,e.win,nullptr,rc.left + xoffset,
-                                                        rc.bottom - yoffset - height,e.rc.Width(),height,
-                                      SWP_NOZORDER | SWP_SHOWWINDOW);
-              if(def) continue;
-              else break;
-           }
-           case LayoutStyle::BottomRight:
-           {
-              int width = e.rc.Width() ;
-              int height = e.rc.Height() ;
-              int xoffset = m_main.rc.right - e.rc.right;
-              int yoffset = m_main.rc.bottom - e.rc.bottom;
-
-              def = ::DeferWindowPos(def,e.win,nullptr,rc.right - width - xoffset,
-                                                       rc.bottom - height - yoffset,width,height,
-                                     SWP_NOZORDER | SWP_SHOWWINDOW);
-              if(def) continue;
-              else break;
-           }
-           }
-           break;
-        }
-        ::EndDeferWindowPos(def);
-
-    }
-};
-
-class VerticalStackedLayout {
-std::vector<HWND> m_entries;
-public:
-    void AddEntry(HWND hwnd){
-        m_entries.emplace_back(hwnd);
-    }
-    void UpdateLayout(Rect& rc){
-        int NewHeight = rc.Height() / m_entries.size();
-        int remainder = rc.Height() % m_entries.size();
-        int curry = 0;
-        auto def = ::BeginDeferWindowPos(m_entries.size());
-        for(int i = 0; i < m_entries.size(); i++){
-            def = ::DeferWindowPos(def,m_entries[i],nullptr,0,curry + (i == 0? remainder : 0),rc.Width(),NewHeight,SWP_NOZORDER | SWP_SHOWWINDOW);
-            curry += NewHeight;
-        }
-        ::EndDeferWindowPos(def);
-    }
-};
-
-class HorizontalStackedLayout{
-    std::vector<HWND> m_entries;
-public:
-    void AddEntry(HWND hwnd){
-        m_entries.emplace_back(hwnd);
-    }
-
-    void UpdateLayout(Rect& rc){
-        int newWidth = rc.Width() / m_entries.size();
-        int currx  = 0;
-        auto def = ::BeginDeferWindowPos(m_entries.size());
-        for(int i = 0; i <  m_entries.size(); i++){
-            def = ::DeferWindowPos(def,m_entries[i],nullptr,currx,0,newWidth,rc.Height(),SWP_NOZORDER | SWP_SHOWWINDOW);
-        }
-        ::EndDeferWindowPos(def);
-    }
-};
-*/
 
 #define BEGIN_MSG_MAP()                                                        \
   BOOL bHandled = FALSE;                                                       \
