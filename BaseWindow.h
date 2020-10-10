@@ -6704,7 +6704,7 @@ WindowImplRoot<TBase>::ReflectNotifications(HWND hWnd, UINT msg, WPARAM wParam,
         hchild = reinterpret_cast<HWND>(lParam);
         break;
     }
-    if (hchild == false)
+    if (hchild == nullptr)
     {
         bHandled = false;
         return 1;
@@ -7153,9 +7153,9 @@ public:
 #else
             WNDPROC pProc = (WNDPROC) & (pThis->m_thunk.thunk);
             pThis->oldProc =
-                (WNDPROC)::SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)pProc);
+                (WNDPROC)::SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)pProc);
 #endif
-            if(pProc != oldProc)
+            if(pProc != pThis->oldProc)
             {
                 //someone's subclassing me.
             }
@@ -8653,11 +8653,17 @@ public:
                              lpCreateParam);
     }
 
+	#ifndef UNICODE
     static LPCSTR GetWndClassName()
     {
         return TEXT("EDIT");
     }
-
+	#else
+	static LPCTSTR GetWndClassName()
+    {
+        return TEXT("EDIT");
+    }		
+	#endif
 
     DWORD GetStyle() const
     {
@@ -14860,9 +14866,9 @@ public:
         static LPCTSTR GetWndClassName()
         {
 #if (_RICHEDIT_VER >= 0x0500)
-                return MSFTEDIT_CLASS;
+                return TEXT(MSFTEDIT_CLASS);
 #else
-                return RICHEDIT_CLASS;
+                return TEXT(RICHEDIT_CLASS);
 #endif
         }
 
@@ -18863,7 +18869,6 @@ public:
         TBase* pT = static_cast<TBase*>(this);
         pT->SetSel(0,-1);
         pT->Clear();
-        return 0;
     }
 
     void OnEditCopy(UINT /*uNotifyCode*/, int /*nID*/, Window /*wndCtl*/)

@@ -6,13 +6,16 @@
     debug build - compile with :
         g++ wintest.cpp -std=c++11 -municode -mwindows  -static -g  wintest.exe
 */
+#define WINVER 0x0A00
+#define _WIN32_WINNT 0x0A00
 
 #include <utility/BaseWindow.h>
 #include <utility/ComPtr.h>
 
+
 class MyWindow : public BaseWindow<MyWindow, Window, FrameWinTraits> {
 public:
-  DECLARE_WND_CLASS(TEXT("TestWindow"), CS_HREDRAW | CS_VREDRAW,COLOR_WINDOW)
+  DECLARE_WND_CLASS(TEXT("TestWindow"))
 
   void OnClose() ;
   void OnLButtonDown(UINT nFlags,const Point& pt);
