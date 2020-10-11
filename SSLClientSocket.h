@@ -9,6 +9,12 @@
 #include <schannel.h>
 #include <security.h>
 
+#ifdef UNICODE
+#define SEC_TCHAR SEC_WCHAR
+#else
+#define SEC_TCHAR SEC_CHAR
+#endif
+
 class SSPISecurityFunctionTable {
   HMODULE g_hSecurity;
   PSecurityFunctionTable m_ptr;
@@ -79,7 +85,7 @@ public:
   operator HCERTSTORE() { return m_store; }
 };
 
-class SslClientSocket : public BaseWindow<ClientSocket, Window, NullTraits> {
+class SslClientSocket : BaseWindow<SslClientSocket, Window, nullptrTraits> {
   
   unsigned long iobuffminsize;
   SSPISecurityFunctionTable m_SSPI;
@@ -105,8 +111,9 @@ class SslClientSocket : public BaseWindow<ClientSocket, Window, NullTraits> {
   int m_iobufferidx;
   bool HanshakeNeeded;
 #ifdef UNICODE
-  PWSTR getServerName(std::tstring str) {
-    return const_cast<PWSTR>(str.c_str());
+  PWSTR getServerName(std::tstring& str) {
+	PWSTR value = const_cast<PWSTR>(str.c_str());
+    return value;
   }
 #else
   PWSTR getServerName(std::tstring str) {
@@ -178,7 +185,7 @@ class SslClientSocket : public BaseWindow<ClientSocket, Window, NullTraits> {
       if (pChainContext) {
         CertFreeCertificateChain(pChainContext);
       };
-#ifdef UNICODE
+#ifndef UNICODE
       if (pwszServerName) {
         LocalFree(pwszServerName);
       };
@@ -257,7 +264,7 @@ class SslClientSocket : public BaseWindow<ClientSocket, Window, NullTraits> {
     OutBufferDesc.ulVersion = SECBUFFER_VERSION;
 
     status = m_SSPI->InitializeSecurityContext(
-        &m_hcred, NULL, const_cast<SEC_WCHAR *>(m_host.c_str()), dwSSPIFlags, 0,
+        &m_hcred, NULL, const_cast<SEC_TCHAR *>(m_host.c_str()), dwSSPIFlags, 0,
         SECURITY_NATIVE_DREP, 0, 0, &m_hcontext, &OutBufferDesc,
         &dwSSPIOutFlags, &tsExpiry);
 
@@ -491,7 +498,7 @@ class SslClientSocket : public BaseWindow<ClientSocket, Window, NullTraits> {
   }
 
 public:
-  DECLARE_WND_CLASS(TEXT("SSLClientSocket"),CS_HREDRAW | CS_VREDRAW,COLOR_WINDOW)
+
   SOCKET GetSocket() { return m_socket; }
   PCTSTR ClassName() const { return TEXT("ClientSocket"); }
   std::function<void()> m_OnConnect;
@@ -504,7 +511,7 @@ public:
       : m_hcred{0, 0}, m_hcontext{0, 0}, m_socket{INVALID_SOCKET},
         MSG_SOCKET{::RegisterWindowMessage(TEXT("ClientSocket 1.0"))},
         m_addressFamily{fam}, m_socketType{type}, m_protocolType{proto},
-        m_result{nullptr}, m_RemoteCertContext{nullptr} {
+m_result{nullptr}, m_RemoteCertContext{nullptr} {
     dwSSPIFlags = ISC_REQ_SEQUENCE_DETECT | ISC_REQ_REPLAY_DETECT |
                   ISC_REQ_CONFIDENTIALITY | ISC_RET_EXTENDED_ERROR |
                   ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_STREAM;
@@ -513,15 +520,15 @@ public:
     m_iobufferidx = 0;
     m_iobuffer.resize(65536);
     ZeroMemory(&m_iobuffer[0], sizeof(unsigned char) * 1500);
-    m_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+       m_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (m_socket == INVALID_SOCKET)
       throw WSAException(WSAGetLastError());
 
-    if (!(Create(L"ClientSocket 1.0", HWND_MESSAGE))) {
+    if (!(Create(TEXT("SSLClientSocket"), HWND_MESSAGE))) {
       MessageBox(TEXT("Failed to create ClientSocket backing window"),
                  TEXT("Fatal Error"), MB_OK | MB_ICONEXCLAMATION);
       if (closesocket(m_socket) == SOCKET_ERROR)
-        throw WSAException(WSAGetLastError());
+        throw WSAException(WSAGetLastError());	
     }
 
     if (WSAAsyncSelect(m_socket, m_hwnd, MSG_SOCKET,
@@ -626,7 +633,7 @@ public:
       }
     }
   }
-
+	DECLARE_WND_CLASS(TEXT("SSLClientSocket"))
 	BEGIN_MSG_MAP()
 		MESSAGE_HANDLER(MSG_SOCKET,OnSocket)
 	END_MSG_MAP()
@@ -675,6 +682,7 @@ LRESULT OnSocket(UINT msg, WPARAM wParam, LPARAM lParam,BOOL) {
                 status = HandshakeStep();
               }
               if (status == SEC_E_OK) {
+				  HanshakeNeeded = false;
                 if (m_OnConnect)
                   m_OnConnect();
               }
@@ -712,7 +720,8 @@ LRESULT OnSocket(UINT msg, WPARAM wParam, LPARAM lParam,BOOL) {
 
       } break;
       case FD_CLOSE: {
-
+		  if(m_OnClose)
+			m_OnClose();
         break;
       }
       }

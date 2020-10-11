@@ -9,6 +9,8 @@
         g++ googlepull.cpp -std=c++11 -g -municode -luser32 -lSecur32 -lcrypt32
    -lws2_32 -o googlepull.exe
 */
+#define WINVER 0x0600
+#define _WIN32_WINNT 0x0600
 
 #define SECURITY_WIN32
 #include <utility\SSLClientSocket.h>
@@ -62,19 +64,26 @@ void OnConnect() {
   }
 }
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd,
+#ifndef UNICODE
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd,
                     INT nShow) {
+#else
+	int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd,
+                    INT nShow) {
+#endif
   try {
     sck.m_OnRecieve = OnRecieve;
     sck.m_OnConnect = OnConnect;
-    std::tstring server = L"google.com";
+    std::tstring server = TEXT("google.com");
     sck.Connect(server, 443);
     MSG msg;
     while (GetMessage(&msg, nullptr, 0, 0)) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     }
+	return 0;
   } catch (std::exception &e) {
     std::cout << e.what();
+	return -1;
   }
 }

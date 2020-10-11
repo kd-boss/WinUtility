@@ -93,7 +93,7 @@ Event: FD_WRITE
 Event: FD_ROUTING_INTERFACE_CHANGE
  */
 
-class ClientSocket : public BaseWindow<ClientSocket, Window, NullTraits> {
+class ClientSocket : public BaseWindow<ClientSocket, Window, nullptrTraits> {
   SOCKET m_socket;
   UINT MSG_SOCKET;
   AddressFamily m_addressFamily;
@@ -124,11 +124,11 @@ public:
     if (m_socket == INVALID_SOCKET)
       throw WSAException(WSAGetLastError());
 
-    if (!(Create(L"ClientSocket 1.0", HWND_MESSAGE))) {
+    if (!(Create(TEXT("ClientSocket"), HWND_MESSAGE))) {
       MessageBox(TEXT("Failed to create ClientSocket backing window"),
                  TEXT("Fatal Error"), MB_OK | MB_ICONEXCLAMATION);
       if (closesocket(m_socket) == SOCKET_ERROR)
-        throw WSAException(WSAGetLastError());
+        throw WSAException(WSAGetLastError());	
     }
 
     if (WSAAsyncSelect(m_socket, m_hwnd, MSG_SOCKET,
@@ -265,7 +265,7 @@ public:
     }
 	
 	
-	DECLARE_WND_CLASS(TEXT("ClientSocket"),CS_VREDRAW | CS_HREDRAW,COLOR_WINDOW)
+	DECLARE_WND_CLASS(TEXT("ClientSocket"))
 	BEGIN_MSG_MAP()
 		MESSAGE_HANDLER(MSG_SOCKET,OnSocket)
 	END_MSG_MAP()

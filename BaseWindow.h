@@ -7358,7 +7358,11 @@ public:
     {
         bool Success = true;
         HINSTANCE hInst = HINST_THISCOMPONENT;
-        HRSRC hrsrc = ::FindResourceW(hInst,MAKEINTRESOURCE(iDlgID),(LPWSTR)MAKEINTRESOURCE(240));
+		#ifndef UNICODE
+        HRSRC hrsrc = ::FindResource(hInst,MAKEINTRESOURCE(iDlgID),MAKEINTRESOURCE(240));
+		#else
+		HRSRC hrsrc = ::FindResourceW(hInst,MAKEINTRESOURCEW(iDlgID),(LPWSTR)MAKEINTRESOURCEW(240));	
+		#endif
         if(hrsrc)
         {
             HGLOBAL resData = ::LoadResource(hInst,hrsrc);
@@ -14136,8 +14140,8 @@ public:
 
         BOOL GetRect(LPRECT lpRect, BOOL bTextOnly) const;
         BOOL GetText(LPTSTR lpstrText, int nLen) const;
-#ifdef UNICODE
-        BOOL GetText(BSTR& bstrText) const;
+#ifdef _OLEAUTO_H_
+		BOOL GetText(BSTR& bstrText) const;
 #endif
 #ifdef __UTILSTRING__
         BOOL GetText(UtilString& strText) const;
