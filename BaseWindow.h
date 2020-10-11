@@ -46,12 +46,12 @@ typedef std::basic_stringstream<TCHAR> tstringstream;
 #ifdef UNICODE
 template <typename T> tstring to_tstring(T t)
 {
-    return to_wstring(t);
+    return std::to_wstring(t);
 }
 #else
 template <typename T> tstring to_tstring(T t)
 {
-    return to_string(t);
+    return std::to_string(t);
 }
 #endif
 }
@@ -113,6 +113,7 @@ inline void HR(HRESULT hr)
                 }
             }
         }
+		
         MessageBox(nullptr,m_pszMsg,TEXT("Error"),MB_OK | MB_ICONERROR);
         LocalFree(m_pszMsg); //cleanup
         ExitProcess(hr);

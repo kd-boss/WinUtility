@@ -180,6 +180,40 @@ auto trim(std::wstring const &s) -> std::wstring {
   return std::wstring{front, back.base()};
 }
 
+auto split(std::tstring const &s, std::vector<std::tstring> delims) -> std::vector<std::tstring> {
+	size_t last = 0; 
+	size_t next = 0; 
+	std::vector<string> ret;
+	std::string delimiter;
+	
+	if(delims.length > 1)
+	{
+		delimiter = *std::min_element(delims.begin(), delims.end(); [&](auto a, auto b)
+																		{
+																			return s.find(a, last) < s.find(b, last); 
+																		});
+	}
+	else
+	{
+		delimiter = delims[0];
+	}
+	while ((next = s.find(delimiter, last)) != string::npos) 
+	{   
+		ret.push_back(s.substr(last, next-last));   
+		last = next + 1; 
+		//find the next delimiter in the list of delimiters
+		if(delims.length > 1)
+		{
+			delimiter = *std::min_element(delims.begin(), delims.end(); [&](auto a, auto b)
+																		{
+																			return s.find(a, last) < s.find(b, last); 
+																		});
+		}
+	} 
+	
+	return ret;
+}
+
 /* struct MemMappedFile
 {
 
