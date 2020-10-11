@@ -1,10 +1,9 @@
 /*
-    WinTest, Small Demo application that creates a user interface window.
+    D2D1Test, Small Demo application that creates a user interface window rendered with Direct2D.
     release build - compile with :
-        g++ wintest.cpp -std=c++11 -municode -mwindows -static -s -O3 -o
-   wintest.exe
+        g++ D2D1Test.cpp -std=c++11 -municode -mwindows -static -s -O3 -o d2d1test.exe -ld2d1
     debug build - compile with :
-        g++ wintest.cpp -std=c++11 -municode -mwindows  -static -g  wintest.exe
+        g++ D2D1Test.cpp -std=c++11 -municode -mwindows  -static -g  d2d1test.exe -ld2d1
 */
 #define WINVER 0x0A00
 #define _WIN32_WINNT 0x0A00
@@ -20,7 +19,7 @@
 
 class MyWindow : public BaseWindow<MyWindow, Window, FrameWinTraits> {
 public:
-  DECLARE_WND_CLASS(TEXT("TestWindow"))
+  DECLARE_WND_CLASS(TEXT("D2D1Test"))
   ComPtr<ID2D1Factory> m_factory;
   ComPtr<ID2D1HwndRenderTarget> m_renderTarget;
   ComPtr<ID2D1SolidColorBrush> m_lightSlateGrayBrush;
@@ -32,7 +31,6 @@ public:
   D2D1_SIZE_F rtSize;
   
   void OnClose();
-  void OnLButtonDown(UINT nFlags,const Point& pt);
   void OnSize(UINT nType, Size size);
   void OnDisplayChange(UINT uBitsPerPixel, Size sizeScreen);
   void OnPaint(DC dc);
@@ -44,7 +42,6 @@ public:
   MSG_WM_SIZE(OnSize)
   MSG_WM_DISPLAYCHANGE(OnDisplayChange)
   MSG_WM_PAINT(OnPaint)
-  MSG_WM_LBUTTONDOWN(OnLButtonDown)
   END_MSG_MAP()
 };
 
@@ -58,15 +55,10 @@ void MyWindow::OnClose()
 
 int MyWindow::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
- CreateDeviceIndependentResources();
- return 0;
+	HR(CreateDeviceIndependentResources());
+	return 0;
 }
-void MyWindow::OnLButtonDown(UINT nFlags,const Point& pt){
-	/*	std::tstringstream str;
-		str << TEXT("Clicked At: ") << pt.x << TEXT(",") << pt.y;
-		MessageBox(str.str().c_str(),TEXT("Mouse Position"), MB_OK);
-	*/	
-}
+
 
 HRESULT MyWindow::CreateDeviceIndependentResources()
 {
@@ -197,7 +189,7 @@ void MyWindow::OnPaint(DC dc)
 
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPTSTR, int nShow) {
   MyWindow win;
-  win.Create(nullptr,&Window::rcDefault,TEXT("Test Win"));
+  win.Create(nullptr,&Window::rcDefault,TEXT("D2D1 Test"));
   win.ShowWindow(nShow);
   win.UpdateWindow();
 
