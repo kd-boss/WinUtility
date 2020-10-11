@@ -1,13 +1,15 @@
 /*
     Simple example demonstrating how to use my SslClientSocket class.
-    Downloads , displays, and saves the html from google's homepage as out.html.
+    Downloads and saves the html from google's homepage as out.html.
 
-    release build - compile with :
-        g++ googlepull.cpp -std=c++11 -s -O3 -municode -luser32 -lSecur32
+    release build - compile with:
+        g++ googlepull.cpp -std=c++11 -s -O3 -mwindows -municode -luser32 -lSecur32
    -lcrypt32 -lws2_32 -o googlepull.exe
     debug build - compile with :
-        g++ googlepull.cpp -std=c++11 -g -municode -luser32 -lSecur32 -lcrypt32
+        g++ googlepull.cpp -std=c++11 -g -mwindows -municode -luser32 -lSecur32 -lcrypt32
    -lws2_32 -o googlepull.exe
+   
+   also works without -municode for those who don't like to use unicode. 
 */
 #define WINVER 0x0600
 #define _WIN32_WINNT 0x0600
