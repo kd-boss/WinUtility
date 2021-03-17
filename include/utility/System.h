@@ -7,7 +7,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
-
+#include <stdexcept>
 
 
 //usefull system typedef's
@@ -77,6 +77,56 @@ namespace System {
 
 namespace System 
 {
+	
+class Utf8ConversionException : public std::runtime_error
+{
+uint32_t _errorCode;
+public:
+Utf8ConversionException(const char* message,uint32_t errorCode): std::runtime_error(message), _errorCode(errorCode)
+  { }
+
+  uint32_t ErrorCode() const
+  {
+    return _errorCode;
+  }
+};
+
+
+std::wstring to_wstring(std::string a)
+{
+	std::wstring ret;
+	if(a.empty())
+	{
+		return ret;
+	}
+	const DWORD kFlags = MB_ERR_INVALID_CHARS;
+	if(a.length() > static_cast<size_t>(std::numeric_limits<int>::max()))
+	{
+		throw std::overflow_error("Input string too long: size_t length doesn't fit into int.");
+	}
+	int inputLen = static_cast<int>(a.length());
+	int outLen = ::MultiByteToWideChar(CP_UTF8,kFlags,a.data(),inputLen,nullptr,0);
+	if(outLen == 0)
+	{
+		const DWORD error = ::GetLastError();
+		throw Utf8ConversionException("Cannot get result string length when converting from UTF-8 to UTF-16 (MultiByteToWideChar failed).",
+									  error);
+	
+	}
+	ret.resize(outLen);
+	outLen = ::MultiByteToWideChar(CP_UTF8,kFlags,a.data(),inputLen,&ret[0],ret.length());
+	if (outLen == 0)
+	{
+		// Conversion error: capture error code and throw
+		const DWORD error = ::GetLastError();
+		throw Utf8ConversionException(
+			"Cannot convert from UTF-8 to UTF-16 "\
+			"(MultiByteToWideChar failed).",
+			error);
+	}
+	return ret;
+}
+  
 	namespace Information{
 #ifdef UNICODE
 		typedef std::true_type isUnicode;

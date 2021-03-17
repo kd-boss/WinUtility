@@ -183,12 +183,12 @@ auto trim(std::wstring const &s) -> std::wstring {
 auto split(std::tstring const &s, std::vector<std::tstring> delims) -> std::vector<std::tstring> {
 	size_t last = 0; 
 	size_t next = 0; 
-	std::vector<string> ret;
-	std::string delimiter;
+	std::vector<std::tstring> ret;
+	std::tstring delimiter;
 	
-	if(delims.length > 1)
+	if(delims.size() > 1)
 	{
-		delimiter = *std::min_element(delims.begin(), delims.end(); [&](auto a, auto b)
+		delimiter = *std::min_element(delims.begin(), delims.end(), [&](auto a, auto b)
 																		{
 																			return s.find(a, last) < s.find(b, last); 
 																		});
@@ -197,14 +197,14 @@ auto split(std::tstring const &s, std::vector<std::tstring> delims) -> std::vect
 	{
 		delimiter = delims[0];
 	}
-	while ((next = s.find(delimiter, last)) != string::npos) 
+	while ((next = s.find(delimiter, last)) != std::string::npos) 
 	{   
 		ret.push_back(s.substr(last, next-last));   
 		last = next + 1; 
 		//find the next delimiter in the list of delimiters
-		if(delims.length > 1)
+		if(delims.size() > 1)
 		{
-			delimiter = *std::min_element(delims.begin(), delims.end(); [&](auto a, auto b)
+			delimiter = *std::min_element(delims.begin(), delims.end(), [&](auto a, auto b)
 																		{
 																			return s.find(a, last) < s.find(b, last); 
 																		});

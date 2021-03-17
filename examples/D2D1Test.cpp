@@ -13,9 +13,13 @@
 #include <dwrite.h>
 #include <wincodec.h>
 
+
 #include <utility/System.h>
 #include <utility/BaseWindow.h>
 #include <utility/ComPtr.h>
+#include <utility/System.Utility.h>
+
+
 
 class MyWindow : public BaseWindow<MyWindow, Window, FrameWinTraits> {
 public:
@@ -105,15 +109,23 @@ HRESULT MyWindow::CreateDeviceDependentResources()
 
 void MyWindow::OnSize(UINT nType, Size size)
 {
+	try
+	{
 	if (m_renderTarget)
 	{
 		// Note: This method can fail, but it's okay to ignore the
 		// error here, because the error will be returned again
 		// the next time EndDraw is called.
+		auto sz = m_renderTarget->GetSize();
 		HR(m_renderTarget->Resize(D2D1::SizeU(size.cx, size.cy)));
 		
 	}
 	rtSize = D2D1::SizeF(size.cx, size.cy);
+	}
+	catch(std::exception ex)
+	{
+		::MessageBoxW(NULL,System::to_wstring(ex.what()).c_str(), L"D2D1Test", MB_OK);
+	}
 }
 
 void MyWindow::OnDisplayChange(UINT uBitsPerPixel, Size sizeScreen)
