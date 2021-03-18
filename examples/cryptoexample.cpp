@@ -11,7 +11,9 @@ compile with g++ cryptoexample.cpp -static -std=c++11 -municode -lcrypt32 -lbcry
 #include <algorithm>
 #include <random>
 #include <iomanip>
+#include <utility/BaseWindow.h>
 #include <utility/System.Cryptography.h>
+
 
 int wWinMain(HINSTANCE, HINSTANCE, LPWSTR, INT)
 {

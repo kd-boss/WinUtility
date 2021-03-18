@@ -7,22 +7,24 @@
 #include <vector>
 #include <memory>
 
-struct sLocalFree {
-  void operator()(TCHAR **buff) { ::LocalFree((HLOCAL)*buff); }
-};
+
 
 class WSAException {
+PTSTR buffer;
 public:
   WSAException(DWORD val) : m_val(val) {}
   DWORD m_val;
-  std::unique_ptr<PTSTR, sLocalFree> what() {
-    PTSTR buffer;
+  
+  PTSTR what() {
+    
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
                       FORMAT_MESSAGE_IGNORE_INSERTS,
                   HINST_THISCOMPONENT, m_val, 0, buffer, 2, nullptr);
-    std::unique_ptr<PTSTR, sLocalFree> ptr;
-    ptr.reset(&buffer);
-    return ptr;
+    
+  }
+  ~WSAException()
+  {
+	  ::LocalFree(buffer);
   }
 };
 

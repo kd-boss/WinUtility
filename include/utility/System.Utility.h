@@ -180,6 +180,7 @@ auto trim(std::wstring const &s) -> std::wstring {
   return std::wstring{front, back.base()};
 }
 
+#ifdef __SYSTEM__
 auto split(std::tstring const &s, std::vector<std::tstring> delims) -> std::vector<std::tstring> {
 	size_t last = 0; 
 	size_t next = 0; 
@@ -214,6 +215,7 @@ auto split(std::tstring const &s, std::vector<std::tstring> delims) -> std::vect
 	return ret;
 }
 
+#endif
 /* struct MemMappedFile
 {
 

@@ -15,6 +15,7 @@
 #define SEC_TCHAR SEC_CHAR
 #endif
 
+
 class SSPISecurityFunctionTable {
   HMODULE g_hSecurity;
   PSecurityFunctionTable m_ptr;
@@ -197,11 +198,7 @@ class SslClientSocket : BaseWindow<SslClientSocket, Window, nullptrTraits> {
     if (pChainContext) {
       CertFreeCertificateChain(pChainContext);
     };
-#ifdef UNICODE
-    if (pwszServerName) {
-      LocalFree(pwszServerName);
-    };
-#endif
+
     if (PolicyStatus.dwError)
       return SEC_E_UNKNOWN_CREDENTIALS;
     else

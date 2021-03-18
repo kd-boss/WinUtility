@@ -29,7 +29,7 @@ public:
   HRESULT CreateDeviceIndependentResources();
   HRESULT CreateDeviceDependentResources();
   
-  D2D1_SIZE_F rtSize;
+  
   
   void OnClose();
   void OnLButtonDown(UINT nFlags,const Point& pt);
@@ -37,16 +37,23 @@ public:
   void OnDisplayChange(UINT uBitsPerPixel, Size sizeScreen);
   void OnPaint(DC dc);
   int OnCreate(LPCREATESTRUCT lpCreateStruct);
+  void OnMove(Point ptPos);
   
   BEGIN_MSG_MAP()
   MSG_WM_CREATE(OnCreate)
   MSG_WM_CLOSE(OnClose)
   MSG_WM_SIZE(OnSize)
   MSG_WM_DISPLAYCHANGE(OnDisplayChange)
+  MSG_WM_MOVE(OnMove)
   MSG_WM_PAINT(OnPaint)
   MSG_WM_LBUTTONDOWN(OnLButtonDown)
   END_MSG_MAP()
 };
+
+void MyWindow::OnMove(Point ptPos)
+{
+	Invalidate();
+}
 
 void MyWindow::OnClose()
 {
@@ -74,6 +81,7 @@ HRESULT MyWindow::CreateDeviceIndependentResources()
 	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED,m_factory.GetAddressOf());
 	return hr;
 }
+
 
 HRESULT MyWindow::CreateDeviceDependentResources()
 {
@@ -121,7 +129,7 @@ void MyWindow::OnSize(UINT nType, Size size)
 		HR(m_renderTarget->Resize(D2D1::SizeU(size.cx, size.cy)));
 		
 	}
-	rtSize = D2D1::SizeF(size.cx, size.cy);
+	
 }
 
 void MyWindow::OnDisplayChange(UINT uBitsPerPixel, Size sizeScreen)
@@ -139,7 +147,7 @@ void MyWindow::OnPaint(DC dc)
 		m_renderTarget->BeginDraw();
 		m_renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 		m_renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
-			
+		D2D1_SIZE_F rtSize = m_renderTarget->GetSize();
 		int width = static_cast<int>(rtSize.width);
 		int height = static_cast<int>(rtSize.height);
 

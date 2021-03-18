@@ -61,7 +61,10 @@ void OnConnect() {
                       "\r\n";
     std::vector<unsigned char> buff(get.begin(), get.end());
     sck.Send(buff);
-  } catch (std::exception &e) {
+  }  catch (WSAException &e) {
+    std::wcout << e.what();
+  }
+  catch (std::exception &e) {
     std::cout << e.what();
   }
 }
@@ -84,8 +87,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd,
       DispatchMessage(&msg);
     }
 	return 0;
-  } catch (std::exception &e) {
-    std::cout << e.what();
+  } catch (WSAException &e) {
+    std::wcout << e.what();
 	return -1;
   }
+  catch(std::exception &e) {
+	  std::cout << e.what();
+	  return -1;
+  }
+  
 }
