@@ -12,7 +12,7 @@
 class WSAException {
 PTSTR buffer;
 public:
-  WSAException(DWORD val) : m_val(val) {}
+  WSAException(DWORD val) : m_val(val),buffer(nullptr) {}  
   DWORD m_val;
   
   PTSTR what() {
@@ -24,6 +24,7 @@ public:
   }
   ~WSAException()
   {
+	  if(buffer)
 	  ::LocalFree(buffer);
   }
 };
