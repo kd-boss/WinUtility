@@ -14,205 +14,185 @@
 #include <dwrite.h>
 #include <wincodec.h>
 
-#include <utility/System.h>
 #include <utility/BaseWindow.h>
 #include <utility/ComPtr.h>
+#include <utility/System.h>
 
-class MyWindow : public BaseWindow<MyWindow, Window, FrameWinTraits> {
-public:
-  DECLARE_WND_CLASS(TEXT("TestWindow"))
-  ComPtr<ID2D1Factory> m_factory;
-  ComPtr<ID2D1HwndRenderTarget> m_renderTarget;
-  ComPtr<ID2D1SolidColorBrush> m_lightSlateGrayBrush;
-  ComPtr<ID2D1SolidColorBrush> m_cornFlowerBlueBrush;
-  
-  HRESULT CreateDeviceIndependentResources();
-  HRESULT CreateDeviceDependentResources();
-  
-  
-  
-  void OnClose();
-  void OnLButtonDown(UINT nFlags,const Point& pt);
-  void OnSize(UINT nType, Size size);
-  void OnDisplayChange(UINT uBitsPerPixel, Size sizeScreen);
-  void OnPaint(DC dc);
-  int OnCreate(LPCREATESTRUCT lpCreateStruct);
-  void OnMove(Point ptPos);
-  
-  BEGIN_MSG_MAP()
-  MSG_WM_CREATE(OnCreate)
-  MSG_WM_CLOSE(OnClose)
-  MSG_WM_SIZE(OnSize)
-  MSG_WM_DISPLAYCHANGE(OnDisplayChange)
-  MSG_WM_MOVE(OnMove)
-  MSG_WM_PAINT(OnPaint)
-  MSG_WM_LBUTTONDOWN(OnLButtonDown)
-  END_MSG_MAP()
+class MyWindow : public BaseWindow<MyWindow, Window, FrameWinTraits>
+{
+  public:
+    DECLARE_WND_CLASS(TEXT("TestWindow"))
+    ComPtr<ID2D1Factory> m_factory;
+    ComPtr<ID2D1HwndRenderTarget> m_renderTarget;
+    ComPtr<ID2D1SolidColorBrush> m_lightSlateGrayBrush;
+    ComPtr<ID2D1SolidColorBrush> m_cornFlowerBlueBrush;
+
+    HRESULT CreateDeviceIndependentResources();
+    HRESULT CreateDeviceDependentResources();
+
+    void OnClose();
+    void OnLButtonDown(UINT nFlags, const Point &pt);
+    void OnSize(UINT nType, Size size);
+    void OnDisplayChange(UINT uBitsPerPixel, Size sizeScreen);
+    void OnPaint(DC dc);
+    int OnCreate(LPCREATESTRUCT lpCreateStruct);
+    void OnMove(Point ptPos);
+
+    BEGIN_MSG_MAP()
+    MSG_WM_CREATE(OnCreate)
+    MSG_WM_CLOSE(OnClose)
+    MSG_WM_SIZE(OnSize)
+    MSG_WM_DISPLAYCHANGE(OnDisplayChange)
+    MSG_WM_MOVE(OnMove)
+    MSG_WM_PAINT(OnPaint)
+    MSG_WM_LBUTTONDOWN(OnLButtonDown)
+    END_MSG_MAP()
 };
 
 void MyWindow::OnMove(Point ptPos)
 {
-	Invalidate();
+    Invalidate();
 }
 
 void MyWindow::OnClose()
 {
-	m_lightSlateGrayBrush.Reset();
-	m_cornFlowerBlueBrush.Reset();
-	m_renderTarget.Reset();
-	PostQuitMessage(0);
+    m_lightSlateGrayBrush.Reset();
+    m_cornFlowerBlueBrush.Reset();
+    m_renderTarget.Reset();
+    PostQuitMessage(0);
 }
 
 int MyWindow::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
- CreateDeviceIndependentResources();
- return 0;
+    CreateDeviceIndependentResources();
+    return 0;
 }
-void MyWindow::OnLButtonDown(UINT nFlags,const Point& pt){
-	/*	std::tstringstream str;
-		str << TEXT("Clicked At: ") << pt.x << TEXT(",") << pt.y;
-		MessageBox(str.str().c_str(),TEXT("Mouse Position"), MB_OK);
-	*/	
+void MyWindow::OnLButtonDown(UINT nFlags, const Point &pt)
+{
+    /*	std::tstringstream str;
+        str << TEXT("Clicked At: ") << pt.x << TEXT(",") << pt.y;
+        MessageBox(str.str().c_str(),TEXT("Mouse Position"), MB_OK);
+    */
 }
 
 HRESULT MyWindow::CreateDeviceIndependentResources()
 {
-	HRESULT hr = S_OK;
-	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED,m_factory.GetAddressOf());
-	return hr;
+    HRESULT hr = S_OK;
+    hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, m_factory.GetAddressOf());
+    return hr;
 }
-
 
 HRESULT MyWindow::CreateDeviceDependentResources()
 {
-	
-	HRESULT hr = S_OK;
-	if(!m_renderTarget)
-	{
-		RECT rc;
-		GetClientRect(&rc);
-		D2D1_SIZE_U size = D2D1::SizeU(rc.right - rc.left, rc.bottom - rc.top);
-		try{
-			
-			
-		HR(m_factory->CreateHwndRenderTarget( D2D1::RenderTargetProperties(),
-					D2D1::HwndRenderTargetProperties(m_hwnd, size),
-					&m_renderTarget));
-					
-		HR(m_renderTarget->CreateSolidColorBrush(
-						D2D1::ColorF(D2D1::ColorF::LightSlateGray),
-						&m_lightSlateGrayBrush
-						));
-		
-		HR(m_renderTarget->CreateSolidColorBrush(
-						D2D1::ColorF(D2D1::ColorF::CornflowerBlue),
-						&m_cornFlowerBlueBrush
-						));
-		
-		m_renderTarget->SetDpi(96.0f , 96.0f );
-		}
-		catch(std::exception ex)
-		{
-			TRACE(ex.what());
-		}
-	}
-	return hr;
+
+    HRESULT hr = S_OK;
+    if (!m_renderTarget)
+    {
+        RECT rc;
+        GetClientRect(&rc);
+        D2D1_SIZE_U size = D2D1::SizeU(rc.right - rc.left, rc.bottom - rc.top);
+        try
+        {
+
+            HR(m_factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(),
+                                                 D2D1::HwndRenderTargetProperties(m_hwnd, size), &m_renderTarget));
+
+            HR(m_renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::LightSlateGray),
+                                                     &m_lightSlateGrayBrush));
+
+            HR(m_renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::CornflowerBlue),
+                                                     &m_cornFlowerBlueBrush));
+
+            m_renderTarget->SetDpi(96.0f, 96.0f);
+        }
+        catch (std::exception ex)
+        {
+            TRACE(ex.what());
+        }
+    }
+    return hr;
 }
 
 void MyWindow::OnSize(UINT nType, Size size)
 {
-	if (m_renderTarget)
-	{
-		// Note: This method can fail, but it's okay to ignore the
-		// error here, because the error will be returned again
-		// the next time EndDraw is called.
-		HR(m_renderTarget->Resize(D2D1::SizeU(size.cx, size.cy)));
-		
-	}
-	
+    if (m_renderTarget)
+    {
+        // Note: This method can fail, but it's okay to ignore the
+        // error here, because the error will be returned again
+        // the next time EndDraw is called.
+        HR(m_renderTarget->Resize(D2D1::SizeU(size.cx, size.cy)));
+    }
 }
 
 void MyWindow::OnDisplayChange(UINT uBitsPerPixel, Size sizeScreen)
 {
-	Invalidate(false);
+    Invalidate(false);
 }
 
 void MyWindow::OnPaint(DC dc)
 {
-	try
-	{
-		HRESULT hr = S_OK;
-		HR(CreateDeviceDependentResources());
-		
-		m_renderTarget->BeginDraw();
-		m_renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-		m_renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
-		D2D1_SIZE_F rtSize = m_renderTarget->GetSize();
-		int width = static_cast<int>(rtSize.width);
-		int height = static_cast<int>(rtSize.height);
+    try
+    {
+        HRESULT hr = S_OK;
+        HR(CreateDeviceDependentResources());
 
-		for (int x = 0; x < width; x += 10)
-		{
-			m_renderTarget->DrawLine(
-				D2D1::Point2F(static_cast<FLOAT>(x), 0.0f),
-				D2D1::Point2F(static_cast<FLOAT>(x), rtSize.height),
-				m_lightSlateGrayBrush.Get(),
-				0.5f
-				);
-		}
-		
-		for (int y = 0; y < height; y += 10)
-		{
-			m_renderTarget->DrawLine(
-				D2D1::Point2F(0.0f, static_cast<FLOAT>(y)),
-				D2D1::Point2F(rtSize.width, static_cast<FLOAT>(y)),
-				m_lightSlateGrayBrush.Get(),
-				0.5f
-				);
-		}
+        m_renderTarget->BeginDraw();
+        m_renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+        m_renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
+        D2D1_SIZE_F rtSize = m_renderTarget->GetSize();
+        int width = static_cast<int>(rtSize.width);
+        int height = static_cast<int>(rtSize.height);
 
-		D2D1_RECT_F rectangle1 = D2D1::RectF(
-					rtSize.width/2 - 50.0f,
-					rtSize.height/2 - 50.0f,
-					rtSize.width/2 + 50.0f,
-					rtSize.height/2 + 50.0f
-					);
+        for (int x = 0; x < width; x += 10)
+        {
+            m_renderTarget->DrawLine(D2D1::Point2F(static_cast<FLOAT>(x), 0.0f),
+                                     D2D1::Point2F(static_cast<FLOAT>(x), rtSize.height), m_lightSlateGrayBrush.Get(),
+                                     0.5f);
+        }
 
-		D2D1_RECT_F rectangle2 = D2D1::RectF(
-					rtSize.width/2 - 100.0f,
-					rtSize.height/2 - 100.0f,
-					rtSize.width/2 + 100.0f,
-					rtSize.height/2 + 100.0f
-					);  
-					
-		m_renderTarget->FillRectangle(&rectangle1, m_lightSlateGrayBrush.Get());
-		m_renderTarget->DrawRectangle(&rectangle2, m_cornFlowerBlueBrush.Get());
-		
-		hr = m_renderTarget->EndDraw();
-		
-		if(hr == D2DERR_RECREATE_TARGET)
-		{
-			m_lightSlateGrayBrush.Reset();
-			m_cornFlowerBlueBrush.Reset();
-			m_renderTarget.Reset();
-		}
-	}
-	catch(std::exception ex)
-	{
-		TRACE(ex.what());
-	}
+        for (int y = 0; y < height; y += 10)
+        {
+            m_renderTarget->DrawLine(D2D1::Point2F(0.0f, static_cast<FLOAT>(y)),
+                                     D2D1::Point2F(rtSize.width, static_cast<FLOAT>(y)), m_lightSlateGrayBrush.Get(),
+                                     0.5f);
+        }
+
+        D2D1_RECT_F rectangle1 = D2D1::RectF(rtSize.width / 2 - 50.0f, rtSize.height / 2 - 50.0f,
+                                             rtSize.width / 2 + 50.0f, rtSize.height / 2 + 50.0f);
+
+        D2D1_RECT_F rectangle2 = D2D1::RectF(rtSize.width / 2 - 100.0f, rtSize.height / 2 - 100.0f,
+                                             rtSize.width / 2 + 100.0f, rtSize.height / 2 + 100.0f);
+
+        m_renderTarget->FillRectangle(&rectangle1, m_lightSlateGrayBrush.Get());
+        m_renderTarget->DrawRectangle(&rectangle2, m_cornFlowerBlueBrush.Get());
+
+        hr = m_renderTarget->EndDraw();
+
+        if (hr == D2DERR_RECREATE_TARGET)
+        {
+            m_lightSlateGrayBrush.Reset();
+            m_cornFlowerBlueBrush.Reset();
+            m_renderTarget.Reset();
+        }
+    }
+    catch (std::exception ex)
+    {
+        TRACE(ex.what());
+    }
 }
 
-int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPTSTR, int nShow) {
-  MyWindow win;
-  win.Create(nullptr,&Window::rcDefault,TEXT("Test Win"));
-  win.ShowWindow(nShow);
-  win.UpdateWindow();
+int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPTSTR, int nShow)
+{
+    MyWindow win;
+    win.Create(nullptr, &Window::rcDefault, TEXT("Test Win"));
+    win.ShowWindow(nShow);
+    win.UpdateWindow();
 
-  MSG msg;
-  while (GetMessage(&msg, nullptr, 0, 0)) {
-    TranslateMessage(&msg);
-    DispatchMessage(&msg);
-  }
-  return msg.wParam;
+    MSG msg;
+    while (GetMessage(&msg, nullptr, 0, 0))
+    {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+    return msg.wParam;
 }

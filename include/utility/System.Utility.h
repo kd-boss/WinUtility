@@ -5,214 +5,252 @@
 #endif
 
 //#include <wrl.h>
+#include <algorithm>
+#include <cstddef>
 #include <ctype.h>
 #include <cwctype>
-#include <algorithm>
-#include <memory>
-#include <utility>
 #include <iterator>
+#include <memory>
 #include <type_traits>
-#include <cstddef>
+#include <utility>
 
 #ifdef __GNUC__
 #if __cplusplus <= 201103L
-namespace std {
-template <class T> struct _Unique_if { typedef unique_ptr<T> _Single_object; };
-
-template <class T> struct _Unique_if<T[]> {
-  typedef unique_ptr<T[]> _Unknown_bound;
+namespace std
+{
+template <class T> struct _Unique_if
+{
+    typedef unique_ptr<T> _Single_object;
 };
 
-template <class T, size_t N> struct _Unique_if<T[N]> {
-  typedef void _Known_bound;
+template <class T> struct _Unique_if<T[]>
+{
+    typedef unique_ptr<T[]> _Unknown_bound;
 };
 
-template <class T, class... Args>
-typename _Unique_if<T>::_Single_object make_unique(Args &&... args) {
-  return unique_ptr<T>(new T(std::forward<Args>(args)...));
+template <class T, size_t N> struct _Unique_if<T[N]>
+{
+    typedef void _Known_bound;
+};
+
+template <class T, class... Args> typename _Unique_if<T>::_Single_object make_unique(Args &&...args)
+{
+    return unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-template <class T>
-typename _Unique_if<T>::_Unknown_bound make_unique(size_t n) {
-  typedef typename remove_extent<T>::type U;
-  return unique_ptr<T>(new U[n]());
+template <class T> typename _Unique_if<T>::_Unknown_bound make_unique(size_t n)
+{
+    typedef typename remove_extent<T>::type U;
+    return unique_ptr<T>(new U[n]());
 }
 
-template <class T, class... Args>
-typename _Unique_if<T>::_Known_bound make_unique(Args &&...) = delete;
-}
+template <class T, class... Args> typename _Unique_if<T>::_Known_bound make_unique(Args &&...) = delete;
+} // namespace std
 #endif
 #endif
 
-namespace System {
-namespace Utility {
+namespace System
+{
+namespace Utility
+{
 
-template <typename Traits> class unique_handle {
-  typedef typename Traits::pointer pointer;
+template <typename Traits> class unique_handle
+{
+    typedef typename Traits::pointer pointer;
 
-  pointer m_value;
-  unique_handle(unique_handle const &);
-  auto operator=(unique_handle const &) -> unique_handle;
-  auto close() throw() -> void {
-    if (*this) {
-      Traits::close(m_value);
+    pointer m_value;
+    unique_handle(unique_handle const &);
+    auto operator=(unique_handle const &) -> unique_handle;
+    auto close() throw() -> void
+    {
+        if (*this)
+        {
+            Traits::close(m_value);
+        }
     }
-  }
 
-public:
-  unique_handle(unique_handle &&other) throw() : m_value{other.release()} {}
-
-  auto swap(unique_handle<Traits> &other) throw() -> void {
-    std::swap(m_value, other.m_value);
-  }
-
-  auto operator=(unique_handle &&other) throw() -> unique_handle {
-    if (this != &other) {
-      reset(other.release());
+  public:
+    unique_handle(unique_handle &&other) throw() : m_value{other.release()}
+    {
     }
-    return *this;
-  }
 
-  auto get() const throw() -> pointer { return m_value; }
-
-  auto release() throw() -> pointer {
-    auto value = m_value;
-    m_value = Traits::invalid();
-    return value;
-  }
-
-  auto reset(pointer value = Traits::invalid()) throw() -> bool {
-    if (m_value != value) {
-      close();
-      m_value = value;
+    auto swap(unique_handle<Traits> &other) throw() -> void
+    {
+        std::swap(m_value, other.m_value);
     }
-    return static_cast<bool>(*this);
-  }
 
-  explicit operator bool() const throw() {
-    return m_value != Traits::invalid();
-  }
+    auto operator=(unique_handle &&other) throw() -> unique_handle
+    {
+        if (this != &other)
+        {
+            reset(other.release());
+        }
+        return *this;
+    }
 
-  explicit unique_handle(pointer value = Traits::invalid()) throw()
-      : m_value{value} {}
+    auto get() const throw() -> pointer
+    {
+        return m_value;
+    }
 
-  ~unique_handle() throw() { close(); }
+    auto release() throw() -> pointer
+    {
+        auto value = m_value;
+        m_value = Traits::invalid();
+        return value;
+    }
+
+    auto reset(pointer value = Traits::invalid()) throw() -> bool
+    {
+        if (m_value != value)
+        {
+            close();
+            m_value = value;
+        }
+        return static_cast<bool>(*this);
+    }
+
+    explicit operator bool() const throw()
+    {
+        return m_value != Traits::invalid();
+    }
+
+    explicit unique_handle(pointer value = Traits::invalid()) throw() : m_value{value}
+    {
+    }
+
+    ~unique_handle() throw()
+    {
+        close();
+    }
 };
 
 template <typename Traits>
-auto operator==(unique_handle<Traits> const &left,
-                unique_handle<Traits> const &right) throw() -> bool {
-  return left.get() == right.get();
+auto operator==(unique_handle<Traits> const &left, unique_handle<Traits> const &right) throw() -> bool
+{
+    return left.get() == right.get();
 }
 
 template <typename Traits>
-auto operator!=(unique_handle<Traits> const &left,
-                unique_handle<Traits> const &right) throw() -> bool {
-  return left.get() < right.get();
+auto operator!=(unique_handle<Traits> const &left, unique_handle<Traits> const &right) throw() -> bool
+{
+    return left.get() < right.get();
 }
 
 template <typename Traits>
-auto operator>=(unique_handle<Traits> const &left,
-                unique_handle<Traits> const &right) throw() -> bool {
-  return left.get() >= right.get();
+auto operator>=(unique_handle<Traits> const &left, unique_handle<Traits> const &right) throw() -> bool
+{
+    return left.get() >= right.get();
 }
 
 template <typename Traits>
-auto operator>(unique_handle<Traits> const &left,
-               unique_handle<Traits> const &right) throw() -> bool {
-  return left.get() > right.get();
+auto operator>(unique_handle<Traits> const &left, unique_handle<Traits> const &right) throw() -> bool
+{
+    return left.get() > right.get();
 }
 
 template <typename Traits>
-auto operator<=(unique_handle<Traits> const &left,
-                unique_handle<Traits> const &right) throw() -> bool {
-  return left.get() <= right.get();
+auto operator<=(unique_handle<Traits> const &left, unique_handle<Traits> const &right) throw() -> bool
+{
+    return left.get() <= right.get();
 }
 
 template <typename Traits>
-auto operator<(unique_handle<Traits> const &left,
-               unique_handle<Traits> const &right) throw() -> bool {
-  return left.get() < right.get();
+auto operator<(unique_handle<Traits> const &left, unique_handle<Traits> const &right) throw() -> bool
+{
+    return left.get() < right.get();
 }
 
-template <typename Traits>
-auto swap(unique_handle<Traits> &left,
-          unique_handle<Traits> &right) throw() -> void {
-  left.swap(right);
+template <typename Traits> auto swap(unique_handle<Traits> &left, unique_handle<Traits> &right) throw() -> void
+{
+    left.swap(right);
 }
 
-struct null_handle_traits {
-  typedef HANDLE pointer;
-  static auto invalid() throw() -> pointer { return nullptr; }
-  static auto close(pointer value) throw() -> void {
-    // wrap in verify
-    CloseHandle(value);
-  }
+struct null_handle_traits
+{
+    typedef HANDLE pointer;
+    static auto invalid() throw() -> pointer
+    {
+        return nullptr;
+    }
+    static auto close(pointer value) throw() -> void
+    {
+        // wrap in verify
+        CloseHandle(value);
+    }
 };
 typedef unique_handle<null_handle_traits> null_handle;
-struct invalid_handle_traits {
-  typedef HANDLE pointer;
+struct invalid_handle_traits
+{
+    typedef HANDLE pointer;
 
-  static auto invalid() throw() -> pointer { return INVALID_HANDLE_VALUE; }
+    static auto invalid() throw() -> pointer
+    {
+        return INVALID_HANDLE_VALUE;
+    }
 
-  static auto close(pointer value) throw() -> void { CloseHandle(value); }
+    static auto close(pointer value) throw() -> void
+    {
+        CloseHandle(value);
+    }
 };
 typedef unique_handle<invalid_handle_traits> invalid_handle;
 
-struct map_view_deleter {
-  typedef char const *pointer;
+struct map_view_deleter
+{
+    typedef char const *pointer;
 
-  auto operator()(pointer value) const throw() -> void {
-    VERIFY(UnmapViewOfFile(value));
-  }
+    auto operator()(pointer value) const throw() -> void
+    {
+        VERIFY(UnmapViewOfFile(value));
+    }
 };
 
-auto trim(std::string const &s) -> std::string {
+auto trim(std::string const &s) -> std::string
+{
 
-  auto front = std::find_if_not(std::begin(s), std::end(s), isspace);
-  auto back = std::find_if_not(s.rbegin(), s.rend(), isspace);
-  return std::string{front, back.base()};
+    auto front = std::find_if_not(std::begin(s), std::end(s), isspace);
+    auto back = std::find_if_not(s.rbegin(), s.rend(), isspace);
+    return std::string{front, back.base()};
 }
 
-auto trim(std::wstring const &s) -> std::wstring {
-  auto front = std::find_if_not(std::begin(s), std::end(s), iswspace);
-  auto back = std::find_if_not(s.rbegin(), s.rend(), iswspace);
-  return std::wstring{front, back.base()};
+auto trim(std::wstring const &s) -> std::wstring
+{
+    auto front = std::find_if_not(std::begin(s), std::end(s), iswspace);
+    auto back = std::find_if_not(s.rbegin(), s.rend(), iswspace);
+    return std::wstring{front, back.base()};
 }
 
 #ifdef __SYSTEM__
-auto split(std::tstring const &s, std::vector<std::tstring> delims) -> std::vector<std::tstring> {
-	size_t last = 0; 
-	size_t next = 0; 
-	std::vector<std::tstring> ret;
-	std::tstring delimiter;
-	
-	if(delims.size() > 1)
-	{
-		delimiter = *std::min_element(delims.begin(), delims.end(), [&](auto a, auto b)
-																		{
-																			return s.find(a, last) < s.find(b, last); 
-																		});
-	}
-	else
-	{
-		delimiter = delims[0];
-	}
-	while ((next = s.find(delimiter, last)) != std::string::npos) 
-	{   
-		ret.push_back(s.substr(last, next-last));   
-		last = next + 1; 
-		//find the next delimiter in the list of delimiters
-		if(delims.size() > 1)
-		{
-			delimiter = *std::min_element(delims.begin(), delims.end(), [&](auto a, auto b)
-																		{
-																			return s.find(a, last) < s.find(b, last); 
-																		});
-		}
-	} 
-	
-	return ret;
+auto split(std::tstring const &s, std::vector<std::tstring> delims) -> std::vector<std::tstring>
+{
+    size_t last = 0;
+    size_t next = 0;
+    std::vector<std::tstring> ret;
+    std::tstring delimiter;
+
+    if (delims.size() > 1)
+    {
+        delimiter = *std::min_element(delims.begin(), delims.end(),
+                                      [&](auto a, auto b) { return s.find(a, last) < s.find(b, last); });
+    }
+    else
+    {
+        delimiter = delims[0];
+    }
+    while ((next = s.find(delimiter, last)) != std::string::npos)
+    {
+        ret.push_back(s.substr(last, next - last));
+        last = next + 1;
+        // find the next delimiter in the list of delimiters
+        if (delims.size() > 1)
+        {
+            delimiter = *std::min_element(delims.begin(), delims.end(),
+                                          [&](auto a, auto b) { return s.find(a, last) < s.find(b, last); });
+        }
+    }
+
+    return ret;
 }
 
 #endif
@@ -337,7 +375,7 @@ static_cast<unsigned>(m_size.QuadPart))
                 return m_size.QuadPart;
         }
 }; */
-};
-};
+}; // namespace Utility
+}; // namespace System
 
 #endif
