@@ -36,7 +36,7 @@ void OnRecieve(std::vector<unsigned char> Data) {
       std::cout << odat;
       return;
     } else if (A_contains_B(dat, "</html>")) {
-      std::string odat = dat.substr(0, dat.find("</html>") + 7);
+      std::string odat = dat.substr(0, dat.find("</html>") + 6);
       fs << odat;
       std::cout << odat;
       PostQuitMessage(0);
