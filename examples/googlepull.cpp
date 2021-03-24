@@ -22,14 +22,28 @@ WSAInitHandler hndler;
 SslClientSocket sck;
 std::fstream fs;
 
-bool A_contains_B(std::string a, std::string b)
+//syntatic sugar. 
+bool contains(std::string a, std::string b)
 {
-    return a.find(b) != std::string::npos;
+		return a.find(b) != std::string::npos;
 }
 
-void OnError(WSAException e)
+/*This is the best way to be notified of socket errors. C++ can't throw from a window procedure as it's in a different thread context than the main program. 
+  expections work only within the a single thread context, not across thread boundries. That once worked, but only on 32bit verions of Windows. 
+  As we no longer use 32 bit windows, this was the best solution I could think of, and in hindsight, it allows users to have their socket
+  error handeling all in one convienent spot. 
+*/
+ 
+void OnError(WSAException e) 
 {
-    std::wcout << e.what() << std::endl;
+	try
+	{
+		std::wcout << e.what() << std::endl;
+	}
+	catch(std::exception ex) //can operator<< throw? Yes. Will it throw? Probably never when inserting C style strings, but better to be safe than sorry. 
+	{
+		std::cout << ex.what() << std::endl;
+	}
 }
 
 void OnRecieve(std::vector<unsigned char> Data)
@@ -40,10 +54,16 @@ void OnRecieve(std::vector<unsigned char> Data)
 
         if (fs.is_open())
         {
-            
-            if (A_contains_B(dat, "</html>")) //then we're done receiving data, we got the whole page. 
+            if (contains(dat, "<!doctype html>")) //strip out the HTTP header. 
             {
-                std::string odat = dat.substr(0, dat.find("</html>") + 7);
+                std::string odat = dat.substr(dat.find("<!doctype html>"));
+                fs << odat;
+                std::cout << odat;
+                return;
+            }
+            else if (contains(dat, "</html>")) //then we're done receiving data, we got the whole page. 
+            {
+                std::string odat = dat.substr(0, dat.find("</html>") + 7); 
                 fs << odat;
                 std::cout << odat << std::endl;
                 fs.close();
@@ -100,7 +120,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd, 
 #endif
     try
     {
-        sck.m_OnRecieve = OnRecieve;
+		//assign the socket 'event's you wish to be notified of with your functions using the following signatures: 
+		//void OnConnect() occurs when the connection is established. 
+		//void OnClose()   occours when the socket is closed. This can be initatied by you, or the server you're connected to.
+		//void OnRecieve(std::vector<unsigned char>)  occours when the server has sent you data. 
+		//void onError(WSAException)  occurs when there's an exception with the socket api, events such as loss of network or socket time out's. 
+        sck.m_OnRecieve = OnRecieve; 
         sck.m_OnConnect = OnConnect;
         sck.m_OnClose = OnClose;
         sck.m_OnError = OnError;
@@ -114,7 +139,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd, 
         }
         return 0;
     }
-    catch (WSAException &e)
+    catch (std::exception &e)
     {
         std::wcout << e.what() << std::endl;
         return 0;
