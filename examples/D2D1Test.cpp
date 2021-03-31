@@ -15,8 +15,8 @@
 
 #include <utility/BaseWindow.h>
 #include <utility/ComPtr.h>
-#include <utility/System.Utility.h>
 #include <utility/System.h>
+#include <utility/System.Utility.h>
 
 class MyWindow : public BaseWindow<MyWindow, Window, FrameWinTraits>
 {
@@ -162,7 +162,8 @@ void MyWindow::OnPaint(DC dc)
         m_renderTarget->DrawRectangle(&rectangle2, m_cornFlowerBlueBrush.Get());
 
         hr = m_renderTarget->EndDraw();
-
+		ValidateRect();
+		
         if (hr == D2DERR_RECREATE_TARGET)
         {
             m_lightSlateGrayBrush.Reset();

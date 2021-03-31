@@ -22,7 +22,7 @@ WSAInitHandler hndler;
 SslClientSocket sck;
 std::fstream fs;
 
-bool A_contains_B(std::string a, std::string b)
+bool contains(std::string a, std::string b)
 {
     return a.find(b) != std::string::npos;
 }
@@ -40,12 +40,17 @@ void OnRecieve(std::vector<unsigned char> Data)
 
         if (fs.is_open())
         {
-            
-            if (A_contains_B(dat, "</html>")) //then we're done receiving data, we got the whole page. 
+            if (contains(dat,"<!doctype html>"))
+			{
+				std::string odat = dat.substr(dat.find("<!doctype html>"));
+				fs << odat;
+				std::cout << dat;
+			}
+            else if (contains(dat, "</html>")) //then we're done receiving data, we got the whole page. 
             {
                 std::string odat = dat.substr(0, dat.find("</html>") + 7);
                 fs << odat;
-                std::cout << odat << std::endl;
+                std::cout << dat << std::endl;
                 fs.close();
                 sck.Close();
             }
@@ -87,15 +92,23 @@ void OnConnect()
 
 void OnClose()
 {
-    std::cout << std::endl << "The out file is saved and closed, Exiting the application." << std::endl;
-    PostQuitMessage(0);
+	try
+	{
+		std::cout << std::endl << "The out file is saved and closed, Exiting the application." << std::endl;
+	}
+	catch(std::exception &e)
+	{
+		std::cout << e.what();
+	}
+	PostQuitMessage(0); //RETURNS void, no error codes. 
+		
 }
 
 #ifndef UNICODE
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, INT nShow)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, INT nShow) //ascii entry point
 {
 #else
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd, INT nShow)
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd, INT nShow) //unicode entry point
 {
 #endif
     try
