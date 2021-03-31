@@ -4212,26 +4212,26 @@ class EnhMetaFileDC : public DC
         return WndClassName;                                                                                           \
     }
 
-#define DECLARE_WND_CLASS_1(WndClassName)                                                                              \
+#define DECLARE_WND_CLASS_1(ID_WNDCLASS, ID_SMALL)                                                                              \
     static WNDCLASSEX GetWinClassInfo()                                                                                \
     {                                                                                                                  \
         static WNDCLASSEX wc = {sizeof(WNDCLASSEX),                                                                    \
-                                CS_HREDRAW | CS_VREDRAW,                                                               \
+                                CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS,                                                               \
                                 WindowProc,                                                                            \
                                 0,                                                                                     \
                                 0,                                                                                     \
                                 HINST_THISCOMPONENT,                                                                   \
-                                (HICON)::LoadIcon(nullptr, IDI_APPLICATION),                                           \
+                                (HICON)::LoadIcon(nullptr, IDI_WINLOGO),                                           \
                                 (HCURSOR)::LoadCursor(nullptr, IDC_ARROW),                                             \
                                 (HBRUSH)(COLOR_WINDOW + 1),                                                            \
-                                nullptr,                                                                               \
-                                WndClassName,                                                                          \
-                                nullptr};                                                                              \
+                                MAKEINTRESOURCE(ID_WNDCLASS),                                                                               \
+                                MAKEINTRESOURCE(ID_WNDCLASS),                                                                          \
+                                LoadIcon(HINST_THISCOMPONENT,MAKEINTRESOURCE(ID_SMALL))};                                                                              \
         return wc;                                                                                                     \
     }                                                                                                                  \
     static LPTSTR GetWinClassName()                                                                                    \
     {                                                                                                                  \
-        return WndClassName;                                                                                           \
+        return MAKEINTRESOURCE(ID_WNDCLASS);                                                                                           \
     }
 
 enum class AnimateType : DWORD
@@ -7198,7 +7198,7 @@ template <class T, class TBase = Window> class BaseDialog : public DialogBaseImp
 {
   public:
     // modal stuff
-    INT_PTR DoModal(HWND hWndParent = ::GetActiveWindow(), LPARAM dwInitParam = nullptr)
+    INT_PTR DoModal(HWND hWndParent = ::GetActiveWindow(), LPARAM dwInitParam = 0)
     {
         HWND local = hWndParent;
         BOOL res = TRUE;
@@ -7215,6 +7215,7 @@ template <class T, class TBase = Window> class BaseDialog : public DialogBaseImp
         return ::DialogBoxParam(_BaseModule.GetResourceInstance(), MAKEINTRESOURCE(static_cast<T *>(this)->IDD),
                                 hWndParent, T::WindowProc, dwInitParam);
     }
+	
 
     BOOL EndDialog(int retCode)
     {
@@ -7249,6 +7250,8 @@ template <class T, class TBase = Window> class BaseDialog : public DialogBaseImp
         }
         return TRUE;
     }
+	
+
 };
 
 enum class StaticMessages : UINT
