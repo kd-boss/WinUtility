@@ -50,7 +50,7 @@ class MyWindow : public BaseWindow<MyWindow, Window, FrameWinTraits>
 	COMMAND_ID_HANDLER_EX(IDM_EXIT, OnExit)
     MSG_WM_CREATE(OnCreate)
     MSG_WM_CLOSE(OnClose)
-    MSG_WM_LBUTTONDOWN(OnLButtonDown)
+    MSG_WM_LBUTTONDBLCLK(OnLButtonDown)
     END_MSG_MAP()
 };
 
