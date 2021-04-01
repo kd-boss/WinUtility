@@ -8,71 +8,36 @@
         g++ wintest.cpp wintestrc.o -municode -mwindows -g -o wintest.exe
 */
 
-#define WINVER 0x0A00
-#define _WIN32_WINNT 0x0A00
+#include "wintest.h"
 
-#include <utility/System.h>
-#include <utility/BaseWindow.h>
-#include "Resource.h"
-
-class MyAboutDialog : public BaseDialog<MyAboutDialog>
-{
-public:
-	UINT IDD = IDD_ABOUTBOX; //to use the base dialog class, specify the IDD. 
-	
-	void OnOk(UINT uNotifyCode, int nID, Window wndCtl);
-	void OnClose();
-
-	BEGIN_MSG_MAP()
-	COMMAND_ID_HANDLER_EX(IDOK,OnOk) //Dialog messages use the COMMAND_ID_HANDLER_EX, this is for all the dialog controls. 
-	MSG_WM_CLOSE(OnClose)
-	END_MSG_MAP()
-};
-
-
-class MyWindow : public BaseWindow<MyWindow, Window, FrameWinTraits>
-{
-  MyAboutDialog about;
-  public:
-    //wind class delceration uses the resource ID for your project, and the small icon as it is typically different.
-	//if you just name everything IDC_PROJECT name use it in the small icon place as well. 
-	DECLARE_WND_CLASS_1(IDC_WINTEST,IDI_SMALL)                                                      
-   
-
-
-    void OnClose();
-    void OnLButtonDown(UINT nFlags, const Point &pt);
-    int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	void OnAbout(UINT uNotifyCode, int nID, Window wndCtl);
-	void OnExit(UINT uNotifyCode, int nID, Window wndCtl);
-	
-    BEGIN_MSG_MAP()
-	COMMAND_ID_HANDLER_EX(IDM_ABOUT, OnAbout)
-	COMMAND_ID_HANDLER_EX(IDM_EXIT, OnExit)
-    MSG_WM_CREATE(OnCreate)
-    MSG_WM_CLOSE(OnClose)
-    MSG_WM_LBUTTONDBLCLK(OnLButtonDown)
-    END_MSG_MAP()
-};
 
 void MyAboutDialog::OnClose()
 {
-	this->EndDialog(IDCANCEL);
+	EndDialog(IDCLOSE);
+	Detach();
 }
 
 void MyAboutDialog::OnOk(UINT uNotifyCode, int nID, Window wndCtl)
 {
-	this->EndDialog(nID);
+	EndDialog(nID);
 }
 
 void MyWindow::OnExit(UINT uNotifyCode, int nID, Window wndCtl)
 {
-		OnClose();
+	OnClose();
 }
 
 void MyWindow::OnAbout(UINT uNotifyCode, int nID, Window wndCtl)
 {		
-	about.DoModal();
+	
+	if(!about)
+	{
+		if(about.DoModal() == IDOK)
+		{
+			MessageBox::Show(TEXT("OK pressed!"), TEXT("WinTest"),MessageBoxButtons::Ok, MessageBoxIcon::Information);
+		}
+	}
+	
 }
 
 void MyWindow::OnClose()
@@ -90,13 +55,13 @@ void MyWindow::OnLButtonDown(UINT nFlags, const Point &pt)
 {
     	std::tstringstream str;
         str << TEXT("Clicked At: ") << pt.x << TEXT(",") << pt.y;
-        MessageBox(str.str().c_str(),TEXT("Mouse Position"), MB_OK);   
+        MessageBox::Show(str.str().c_str(), TEXT("WinTest"),MessageBoxButtons::Ok , MessageBoxIcon::Information);   
 }
 
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPTSTR, int nShow)
 {
     MyWindow win;
-    win.Create(nullptr, &Window::rcDefault, TEXT("Test Win"));
+    win.Create(nullptr, &Window::rcDefault, TEXT("Test Window"));
     win.ShowWindow(nShow);
     win.UpdateWindow();
 	
