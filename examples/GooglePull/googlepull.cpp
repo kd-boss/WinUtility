@@ -58,14 +58,14 @@ void OnRecieve(std::vector<unsigned char> Data)
             {
                 std::string odat = dat.substr(dat.find("<!doctype html>"));
                 fs << odat;
-                std::cout << odat;
+                std::cout << dat;
                 return;
             }
             else if (contains(dat, "</html>")) //then we're done receiving data, we got the whole page. 
             {
                 std::string odat = dat.substr(0, dat.find("</html>") + 7); 
                 fs << odat;
-                std::cout << odat << std::endl;
+                std::cout << dat << std::endl;
                 fs.close();
                 sck.Close();
             }

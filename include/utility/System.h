@@ -79,6 +79,15 @@ inline void TRACE(CHAR const *const format, ...)
 #endif
 #endif
 
+namespace std
+{
+#ifdef UNICODE
+typedef std::wstring tstring;
+#else
+typedef std::string tstring;
+#endif
+}
+
 namespace System
 {
 

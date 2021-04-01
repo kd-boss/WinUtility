@@ -10,8 +10,9 @@ compile with g++ cryptoexample.cpp -static -std=c++11 -municode -lcrypt32 -lbcry
 #include <iostream>
 #include <random>
 #include <string>
-#include <utility/BaseWindow.h>
 #include <utility/System.Cryptography.h>
+#include <utility/BaseWindow.h>
+
 
 int wWinMain(HINSTANCE, HINSTANCE, LPWSTR, INT)
 {
