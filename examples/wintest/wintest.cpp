@@ -24,9 +24,14 @@ public:
 	{
 		this->EndDialog(nID);
 	}
+	void OnClose()
+	{
+		this->EndDialog(IDCANCEL);
+	}
 	
 	BEGIN_MSG_MAP()
 	COMMAND_ID_HANDLER_EX(IDOK,OnOk) //Dialog messages use the COMMAND_ID_HANDLER_EX, this is for all the dialog controls. 
+	MSG_WM_CLOSE(OnClose)
 	END_MSG_MAP()
 };
 
