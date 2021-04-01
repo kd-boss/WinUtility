@@ -1,21 +1,9 @@
-//Microsoft Visual C++ generated resource script.
-//
 #include "resource.h"
-
-#define APSTUDIO_READONLY_SYMBOLS
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE resource.
-//
-
-#define APSTUDIO_HIDDEN_SYMBOLS
 #include "windows.h"
-#undef APSTUDIO_HIDDEN_SYMBOLS
-/////////////////////////////////////////////////////////////////////////////
-#undef APSTUDIO_READONLY_SYMBOLS
 
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-LANGUAGE 9, 1
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "wintest.manifest"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -26,7 +14,7 @@ LANGUAGE 9, 1
 // remains consistent on all systems.
 
 IDI_WINTEST       ICON         "wintest.ico"
-IDI_SMALL               ICON         "small.ico"
+IDI_SMALL         ICON         "small.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -34,16 +22,16 @@ IDI_SMALL               ICON         "small.ico"
 //
 
 IDC_WINTEST MENU
-BEGIN
+{
     POPUP "&File"
-    BEGIN
+    {
         MENUITEM "E&xit",                IDM_EXIT
-    END
+    }
     POPUP "&Help"
-    BEGIN
+    {
         MENUITEM "&About ...",           IDM_ABOUT
-    END
-END
+    }
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -52,10 +40,11 @@ END
 //
 
 IDC_WINTEST ACCELERATORS
-BEGIN
+{
     "?",            IDM_ABOUT,              ASCII,  ALT
     "/",            IDM_ABOUT,              ASCII,  ALT
-END
+	"x",			IDM_EXIT, 				ASCII,  ALT
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -63,60 +52,40 @@ END
 // Dialog
 //
 
-IDD_ABOUTBOX DIALOGEX 0, 0, 170, 62
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 90
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About wintest"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    ICON            IDR_MAINFRAME,IDC_STATIC,14,14,21,20
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+{
+    ICON            IDI_SMALL,IDC_STATIC,14,14,21,20
     LTEXT           "wintest, Version 1.0",IDC_STATIC,42,14,114,8,SS_NOPREFIX
-    LTEXT           "Copyright (c) 2021",IDC_STATIC,42,26,114,8
-    DEFPUSHBUTTON   "OK",IDOK,113,41,50,14,WS_GROUP
-END
+    LTEXT           "Copyright MIT Liscense",IDC_STATIC,42,26,114,8
+	LTEXT			"An example application for the WinUtility Libary", IDC_STATIC, 7,48,160,8
+    DEFPUSHBUTTON   "O&K",IDOK,113,66,50,14,WS_GROUP
+}
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO
-BEGIN
-    IDD_ABOUTBOX, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 163
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 55
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-1 TEXTINCLUDE
-BEGIN
+1 TEXTINCLUDE 
+{
     "resource.h\0"
-END
+}
 
-2 TEXTINCLUDE
-BEGIN
+2 TEXTINCLUDE 
+{
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
     "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
     "#include ""windows.h""\r\n"
     "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
     "\0"
-END
+}
 
-3 TEXTINCLUDE
-BEGIN
+3 TEXTINCLUDE 
+{
     "\r\n"
     "\0"
-END
+}
 
-#endif    // APSTUDIO_INVOKED
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -124,21 +93,41 @@ END
 //
 
 STRINGTABLE
-BEGIN
+{
    IDC_WINTEST   "WINTEST"
    IDS_APP_TITLE       "wintest"
-END
+}
 
+// Executable version information.
+VS_VERSION_INFO    VERSIONINFO
+FILEVERSION        1,0,0,0
+PRODUCTVERSION     1,0,0,0
+FILEFLAGSMASK      VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS        VS_FF_DEBUG | VS_FF_PRERELEASE
+#else
+  FILEFLAGS        0
 #endif
-/////////////////////////////////////////////////////////////////////////////
-
-
-
-#ifndef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE resource.
-//
-
-/////////////////////////////////////////////////////////////////////////////
-#endif    // not APSTUDIO_INVOKED
+FILEOS             VOS_NT_WINDOWS32
+FILETYPE           VFT_APP
+FILESUBTYPE        VFT2_UNKNOWN
+{
+  BLOCK "StringFileInfo"
+  {
+    BLOCK "040904E4"
+    {
+      VALUE "CompanyName", "kd.boss@gmail.com"
+      VALUE "FileDescription", "Win32 Test application"
+      VALUE "FileVersion", "1.0.0.0"
+      VALUE "InternalName", "WINTEST"
+      VALUE "LegalCopyright", "MIT"
+      VALUE "OriginalFilename", "wintest.exe"
+      VALUE "ProductName", "Win32 Test application"
+      VALUE "ProductVersion", "1.0.0.0"
+    }
+  }
+  BLOCK "VarFileInfo"
+  {
+	VALUE "Translation", 0x409, 1252
+  }
+}
