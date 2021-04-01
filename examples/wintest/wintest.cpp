@@ -20,15 +20,9 @@ class MyAboutDialog : public BaseDialog<MyAboutDialog>
 public:
 	UINT IDD = IDD_ABOUTBOX; //to use the base dialog class, specify the IDD. 
 	
-	void OnOk(UINT uNotifyCode, int nID, Window wndCtl)
-	{
-		this->EndDialog(nID);
-	}
-	void OnClose()
-	{
-		this->EndDialog(IDCANCEL);
-	}
-	
+	void OnOk(UINT uNotifyCode, int nID, Window wndCtl);
+	void OnClose();
+
 	BEGIN_MSG_MAP()
 	COMMAND_ID_HANDLER_EX(IDOK,OnOk) //Dialog messages use the COMMAND_ID_HANDLER_EX, this is for all the dialog controls. 
 	MSG_WM_CLOSE(OnClose)
@@ -40,6 +34,8 @@ class MyWindow : public BaseWindow<MyWindow, Window, FrameWinTraits>
 {
   MyAboutDialog about;
   public:
+    //wind class delceration uses the resource ID for your project, and the small icon as it is typically different.
+	//if you just name everything IDC_PROJECT name use it in the small icon place as well. 
 	DECLARE_WND_CLASS_1(IDC_WINTEST,IDI_SMALL)                                                      
    
 
@@ -59,6 +55,16 @@ class MyWindow : public BaseWindow<MyWindow, Window, FrameWinTraits>
     END_MSG_MAP()
 };
 
+void MyAboutDialog::OnClose()
+{
+	this->EndDialog(IDCANCEL);
+}
+
+void MyAboutDialog::OnOk(UINT uNotifyCode, int nID, Window wndCtl)
+{
+	this->EndDialog(nID);
+}
+
 void MyWindow::OnExit(UINT uNotifyCode, int nID, Window wndCtl)
 {
 		OnClose();
@@ -76,8 +82,10 @@ void MyWindow::OnClose()
 
 int MyWindow::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
+	//additional window initalization would go here. 
     return 0;
 }
+
 void MyWindow::OnLButtonDown(UINT nFlags, const Point &pt)
 {
     	std::tstringstream str;
