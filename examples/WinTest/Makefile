@@ -5,7 +5,7 @@ BUILD = ./obj
 
 	
 objects = $(BUILD)/wintestres.o
-CFLAGS = -mwindows -municode -s -O3
+CFLAGS = -mwindows -municode -s -O3 -lcomctl32
 
 wintest.exe : $(objects)
 	g++ wintest.cpp $(objects) $(CFLAGS) -o wintest.exe 
