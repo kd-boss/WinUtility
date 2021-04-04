@@ -25,7 +25,7 @@ class MyWindow : public BaseWindow<MyWindow, Window, FrameWinTraits>
 {
   MyAboutDialog about;
   public:
-    //wnd class delceration uses the resource ID for your project, and the small icon as it differnt from the large icon.
+    //wnd class delceration uses the resource ID for your project, and the small icon as it different from the large icon.
 	//Name your large icon IDC_(projectname), and your small icon IDI_SMALL or something that fits your needs, just not the same
 	//thing as the large icon. Provide your main projct id and small icon id to the DECLARE_WND_CLASS_1 macro and the preprocessor
 	//will create the approperate functions needed by the library for you. 
