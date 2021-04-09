@@ -12,7 +12,7 @@
 
 BOOL MyAboutDialog::OnInitDialog(Window wndFocus, LPARAM lInitParam)
 {
-	this->CenterWindow((HWND)lInitParam);
+	return CenterWindow();
 }
 
 void MyAboutDialog::OnClose()
@@ -36,7 +36,7 @@ void MyWindow::OnAbout(UINT uNotifyCode, int nID, Window wndCtl)
 
 	if(!about)
 	{
-		if(about.DoModal((HWND)*this) == IDOK)
+		if(about.DoModal() == IDOK)
 		{
 			MessageBox::Show(TEXT("OK pressed!"), TEXT("WinTest"),MessageBoxButtons::Ok, MessageBoxIcon::Information);
 		}
