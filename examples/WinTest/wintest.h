@@ -13,8 +13,11 @@ public:
 	
 	void OnOk(UINT uNotifyCode, int nID, Window wndCtl);
 	void OnClose();
-
+	int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	BOOL OnInitDialog(Window wndFocus, LPARAM lInitParam);
+	
 	BEGIN_MSG_MAP()
+	MSG_WM_INITDIALOG(OnInitDialog)
 	COMMAND_ID_HANDLER_EX(IDOK,OnOk) //Dialog messages use the COMMAND_ID_HANDLER_EX, this is for all the dialog controls. 
 	MSG_WM_CLOSE(OnClose)
 	END_MSG_MAP()

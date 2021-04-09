@@ -5,10 +5,11 @@ BUILD = ./obj
 
 	
 objects = $(BUILD)/wintestres.o
-CFLAGS = -mwindows -municode -s -O3 -lcomctl32
+CFLAGS = -fno-rtti -mwindows -municode -s -O2 -lcomctl32
+CXX = clang++
 
 wintest.exe : $(objects)
-	g++ wintest.cpp $(objects) $(CFLAGS) -o wintest.exe 
+	$(CXX) wintest.cpp $(objects) $(CFLAGS) -o wintest.exe 
 
 $(objects): wintestres.rc | $(if $(BUILD), mkdir)
 	$(RC) -i wintestres.rc -o $(BUILD)/wintestres.o

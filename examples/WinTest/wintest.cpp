@@ -10,6 +10,10 @@
 
 #include "wintest.h"
 
+BOOL MyAboutDialog::OnInitDialog(Window wndFocus, LPARAM lInitParam)
+{
+	this->CenterWindow((HWND)lInitParam);
+}
 
 void MyAboutDialog::OnClose()
 {
@@ -32,7 +36,7 @@ void MyWindow::OnAbout(UINT uNotifyCode, int nID, Window wndCtl)
 
 	if(!about)
 	{
-		if(about.DoModal() == IDOK)
+		if(about.DoModal((HWND)*this) == IDOK)
 		{
 			MessageBox::Show(TEXT("OK pressed!"), TEXT("WinTest"),MessageBoxButtons::Ok, MessageBoxIcon::Information);
 		}

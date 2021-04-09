@@ -6010,12 +6010,14 @@ class Window
             ::GetClientRect(hWndCenter, &rcCenter);
             ::MapWindowPoints(hWndCenter, hWndParent, (POINT *)&rcCenter, 2);
         }
-
+		
+		this->GetClientRect(&rcDlg);
+		
         int DlgWidth = rcDlg.right - rcDlg.left;
         int DlgHeight = rcDlg.bottom - rcDlg.top;
 
-        int xLeft = (rcCenter.left + rcCenter.right) / 2 - DlgWidth / 2;
-        int yTop = (rcCenter.top + rcCenter.bottom) / 2 - DlgHeight / 2;
+        int xLeft = ((rcCenter.right / 2) - (DlgWidth / 2));
+        int yTop = ((rcCenter.bottom / 2 ) - (DlgHeight / 2));
 
         if (xLeft + DlgWidth > rcArea.right)
             xLeft = rcArea.right - DlgWidth;
