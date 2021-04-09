@@ -4639,9 +4639,9 @@ class SwpFlags
     {
         return m_uint;
     }
-    operator|=(SwpFlag flag)
+    UINT operator |= (SwpFlag flag)
     {
-        m_uint |= static_cast<UINT>(flag);
+        return m_uint |= static_cast<UINT>(flag);
     }
 };
 
@@ -6958,10 +6958,10 @@ template <class TBase, class TWinTraits> class ContainedWindowT : public TBase
         _wndData.push_back({this, ::GetCurrentThreadId()});
         _wndCS.UnLock();
 
-        if (MenuOrID.Get() = nullptr && (dwStyle & WS_CHILD))
-            MenuOrID.Get() = (HMENU)(UINT_PTR)this;
+        if (MenuOrID.Get() == nullptr && (dwStyle & WS_CHILD))
+            MenuOrID = (HMENU)(UINT_PTR)this;
         if (rect.Get() == nullptr)
-            rect.Get() = &TBase::rcDefault;
+            rect = &TBase::rcDefault;
 
         dwStyle = TWinTraits::GetWndStyle(dwStyle);
         dwExStyle = TWinTraits::GetWndExStyle(dwExStyle);
@@ -6977,7 +6977,7 @@ template <class TBase, class TWinTraits> class ContainedWindowT : public TBase
                 LPCTSTR szWindowName = nullptr, DWORD dwStyle = 0, DWORD dwExStyle = 0, UMenuOrID MenuOrID = 0U,
                 LPVOID lpCreateParam = nullptr)
     {
-        m_className = lpszClassName;
+        m_className = const_cast<LPTSTR>(lpszClassName);
         m_pfnSuperWndProc = ::DefWindowProc;
         m_pObject = pObject;
         m_dwMsgMapID = dwMsgMapID;
@@ -7220,7 +7220,8 @@ template <class T, class TBase = Window> class BaseDialog : public DialogBaseImp
     BOOL EndDialog(int retCode)
     {
         WINASSERT(((BaseWindowImplT<TBase> *)this)->IsWindow());
-        return ::EndDialog(((BaseWindowImplT<TBase> *)this)->m_hwnd, retCode);
+		BOOL ret = ::EndDialog(((BaseWindowImplT<TBase> *)this)->m_hwnd, retCode);	
+        return ret;
     }
 
     HWND Create(HWND hwndParent, LPARAM dwInitParam = 0)
@@ -8871,7 +8872,7 @@ template <bool managed> class ImageListT
     BOOL Create(UStringOrID bitmap, int cx, int Grow, COLORREF Mask)
     {
         WINASSERT(m_hImageList == nullptr);
-        m_hImageList = ImageList_LoadBitmap(_BaseModule.GetModuleInstance(), bitmap.m_lpstr, cx, Grow, Mask);
+        m_hImageList = ImageList_LoadBitmap(_BaseModule.GetModuleInstance(), bitmap.Get(), cx, Grow, Mask);
         return m_hImageList != nullptr;
     }
 
@@ -8880,7 +8881,7 @@ template <bool managed> class ImageListT
     {
         WINASSERT(m_hImageList == nullptr);
         m_hImageList =
-            ImageList_LoadImage(_BaseModule.GetModuleInstance(), image.m_lpstr, cx, Grow, Mask, uType, uFlags);
+            ImageList_LoadImage(_BaseModule.GetModuleInstance(), image.Get(), cx, Grow, Mask, uType, uFlags);
         return m_hImageList != nullptr;
     }
 
@@ -9346,7 +9347,7 @@ template <class TBase> class ToolTipControlT : public TBase
         // the toolrect and toolid must both be zero or both valid
         WINASSERT((lpRectTool != NULL && nIDTool != 0) || (lpRectTool == NULL && nIDTool == 0));
 
-        ToolInfo ti(0, hWnd, nIDTool, (LPRECT)lpRectTool, (LPTSTR)text.m_lpstr);
+        ToolInfo ti(0, hWnd, nIDTool, (LPRECT)lpRectTool, (LPTSTR)text.Get());
         return (BOOL)::SendMessage(TBase::m_hwnd, TTM_ADDTOOL, 0, ti);
     }
 
@@ -9407,7 +9408,7 @@ template <class TBase> class ToolTipControlT : public TBase
         WINASSERT(::IsWindow(TBase::m_hwnd));
         WINASSERT(hWnd != NULL);
 
-        ToolInfo ti(0, hWnd, nIDTool, NULL, (LPTSTR)text.m_lpstr);
+        ToolInfo ti(0, hWnd, nIDTool, NULL, (LPTSTR)text.Get());
         ::SendMessage(TBase::m_hwnd, TTM_UPDATETIPTEXT, 0, ti);
     }
 
@@ -14301,7 +14302,7 @@ template <class TBase> class AnimateControlT : public TBase
     BOOL Open(UStringOrID FileName)
     {
         WINASSERT(::IsWindow(TBase::m_hwnd));
-        return (BOOL)::SendMessage(TBase::m_hwnd, ACM_OPEN, 0, (LPARAM)FileName.m_lpstr);
+        return (BOOL)::SendMessage(TBase::m_hwnd, ACM_OPEN, 0, (LPARAM)FileName.Get());
     }
 
     BOOL Play(UINT nFrom, UINT nTo, UINT nRep)
@@ -16516,7 +16517,6 @@ typedef DateTimePickerControlT<Window> DateTimePickerControl;
     }                                                                                                                  \
                                                                                                                        \
     BOOL HandleMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT &lResult, DWORD dwMapID = 0)        \
-        override                                                                                                       \
     {                                                                                                                  \
                                                                                                                        \
         (hWnd);                                                                                                        \
