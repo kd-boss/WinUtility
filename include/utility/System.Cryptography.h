@@ -4,9 +4,7 @@
 #ifndef __SYSTEM__
 #include "System.h"
 #endif
-#ifndef __SYSTEM_UTILITY__
-#include "System.Utility.h"
-#endif
+
 
 #ifndef __GNUG__
 #pragma comment(lib, "bcrypt.lib")

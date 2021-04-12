@@ -34,30 +34,7 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
 #endif
 
-namespace std
-{
-typedef std::basic_string<TCHAR> tstring;
-typedef std::basic_stringstream<TCHAR> tstringstream;
-#ifdef UNICODE
-template <typename T> tstring to_tstring(T t)
-{
-    return std::to_wstring(t);
-}
-#else
-template <typename T> tstring to_tstring(T t)
-{
-    return std::to_string(t);
-}
-#endif
-} // namespace std
-
-#ifndef _tcslen(x)
-#if UNICODE
-#define _tcslen(x) wcslen(x)
-#else
-#define _tcslen(x) strlen(x)
-#endif
-#endif
+#include<utility/System.h>
 
 #ifndef __HR__
 #define __HR__

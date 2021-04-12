@@ -554,7 +554,7 @@ class SslClientSocket : BaseWindow<SslClientSocket, Window, nullptrTraits>
         status = SEC_I_CONTINUE_NEEDED;
         m_iobufferidx = 0;
         m_iobuffer.resize(65536);
-        ZeroMemory(&m_iobuffer[0], sizeof(unsigned char) * 1500);
+        ZeroMemory(&m_iobuffer[0], sizeof(unsigned char) * 65536);
         m_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (m_socket == INVALID_SOCKET)
             if (m_OnError)
