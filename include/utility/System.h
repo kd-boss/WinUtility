@@ -13,6 +13,7 @@
 #include <iostream>
 #include <ktmw32.h>
 #include <cstring>
+#include <tuple>
 
 // usefull debugging macro's
 #if __cplusplus < 201103L
@@ -88,8 +89,8 @@ inline void TRACE(CHAR const *const format, ...)
 
 namespace System
 {
-std::wstring to_wstring(std::string a);
-std::string to_string(std::wstring a);	
+std::wstring to_wstring(std::string);
+std::string to_string(std::wstring);	
 
 
 namespace Information
@@ -227,6 +228,14 @@ struct  Win10_1709 : std::integral_constant<long, NTDDI_WIN10_RS3>		{};
 struct  Win10_1803 : std::integral_constant<long, NTDDI_WIN10_RS4>		{};
 struct  Win10_1809 : std::integral_constant<long, NTDDI_WIN10_RS5>		{};
 struct  Win10_1903 : std::integral_constant<long, NTDDI_WIN10_19H1>     {};
+struct  Win10 : std::integral_constant<long, NTDDI_WIN10> {};
+struct  Win10_TH2 : std::integral_constant<long, NTDDI_WIN10_TH2> {};
+struct  Win10_RS1 : std::integral_constant<long, NTDDI_WIN10_RS1> {};
+struct  Win10_RS2 : std::integral_constant<long, NTDDI_WIN10_RS2> {};
+struct  Win10_RS3 : std::integral_constant<long, NTDDI_WIN10_RS3> {};
+struct  Win10_RS4 : std::integral_constant<long, NTDDI_WIN10_RS4> {};
+struct  Win10_RS5 : std::integral_constant<long, NTDDI_WIN10_RS5> {};
+struct  Win10_19H1 : std::integral_constant<long, NTDDI_WIN10_19H1> {};
 
 struct 	Win2k:  std::integral_constant<long, _WIN32_WINNT_WIN2K> 	    {};
 struct 	WinServer03:  std::integral_constant<long, NTDDI_WS03> 			{};
@@ -493,6 +502,7 @@ public:
 		::QueryPerformanceCounter(&startTime);
 	}
 
+
 	LARGE_INTEGER GetElapsedMicroSeconds() noexcept
 	{
 		::QueryPerformanceCounter(&EndTime);
@@ -509,9 +519,9 @@ template <typename Traits> class unique_handle
     typedef typename Traits::pointer pointer;
 
     pointer m_value;
-    unique_handle(unique_handle const &);
-    auto operator=(unique_handle const &) -> unique_handle;
-    auto close() throw() -> void
+    unique_handle<Traits>(unique_handle<Traits> const &) = delete;
+	unique_handle<Traits> operator=(unique_handle<Traits> const &) = delete;
+    void close() throw()
     {
         if (*this)
         {
@@ -520,7 +530,7 @@ template <typename Traits> class unique_handle
     }
 
   public:
-    unique_handle(unique_handle &&other) throw() : m_value{other.release()}
+    unique_handle<Traits>(unique_handle<Traits>&&other) throw() : m_value{other.release()}
     {
     }
 
@@ -528,8 +538,9 @@ template <typename Traits> class unique_handle
     {
         std::swap(m_value, other.m_value);
     }
-
-    auto operator=(unique_handle &&other) throw() -> unique_handle
+	
+	
+	unique_handle<Traits> operator=(unique_handle<Traits> &&other)
     {
         if (this != &other)
         {
@@ -565,7 +576,8 @@ template <typename Traits> class unique_handle
         return m_value != Traits::invalid();
     }
 
-    explicit unique_handle(pointer value = Traits::invalid()) throw() : m_value{value}
+
+    explicit unique_handle<Traits>(pointer value = Traits::invalid()) throw() : m_value{value}
     {
     }
 
@@ -576,42 +588,43 @@ template <typename Traits> class unique_handle
 };
 
 template <typename Traits>
-auto operator==(unique_handle<Traits> const &left, unique_handle<Traits> const &right) throw() -> bool
+bool operator==(unique_handle<Traits> const &left, unique_handle<Traits> const &right) noexcept 
 {
     return left.get() == right.get();
 }
 
 template <typename Traits>
-auto operator!=(unique_handle<Traits> const &left, unique_handle<Traits> const &right) throw() -> bool
+bool operator!=(unique_handle<Traits> const &left, unique_handle<Traits> const &right) noexcept
 {
     return left.get() < right.get();
 }
 
 template <typename Traits>
-auto operator>=(unique_handle<Traits> const &left, unique_handle<Traits> const &right) throw() -> bool
+bool operator>=(unique_handle<Traits> const &left, unique_handle<Traits> const &right) noexcept
 {
     return left.get() >= right.get();
 }
 
 template <typename Traits>
-auto operator>(unique_handle<Traits> const &left, unique_handle<Traits> const &right) throw() -> bool
+bool operator>(unique_handle<Traits> const &left, unique_handle<Traits> const &right) noexcept
 {
     return left.get() > right.get();
 }
 
 template <typename Traits>
-auto operator<=(unique_handle<Traits> const &left, unique_handle<Traits> const &right) throw() -> bool
+bool operator<=(unique_handle<Traits> const &left, unique_handle<Traits> const &right) noexcept
 {
     return left.get() <= right.get();
 }
 
 template <typename Traits>
-auto operator<(unique_handle<Traits> const &left, unique_handle<Traits> const &right) throw() -> bool
+bool operator<(unique_handle<Traits> const &left, unique_handle<Traits> const &right) noexcept
 {
     return left.get() < right.get();
 }
 
-template <typename Traits> auto swap(unique_handle<Traits> &left, unique_handle<Traits> &right) throw() -> void
+template <typename Traits> 
+void swap(unique_handle<Traits> &left, unique_handle<Traits> &right) noexcept
 {
     left.swap(right);
 }
@@ -619,17 +632,17 @@ template <typename Traits> auto swap(unique_handle<Traits> &left, unique_handle<
 struct null_handle_traits
 {
     typedef HANDLE pointer;
-    static auto invalid() throw() -> pointer
+    pointer invalid() noexcept
     {
         return nullptr;
     }
-    static auto close(pointer value) throw() -> void
-    {
-        // wrap in verify
-        CloseHandle(value);
+    static void close(pointer value) noexcept
+    {      
+        VERIFY(CloseHandle(value));
     }
 };
 typedef unique_handle<null_handle_traits> null_handle;
+
 struct invalid_handle_traits
 {
     typedef HANDLE pointer;
@@ -1085,7 +1098,7 @@ public:
 		return data;
 	}
 	
-	void SetKeyValue(std::tstring subKeyName, std::tstring valueName, DWORD dataType, const std::vector<byte>& data)
+	void SetValue(std::tstring subKeyName, std::tstring valueName, DWORD dataType, const std::vector<byte>& data)
 	{
 		auto retCode = ::RegSetKeyValue(m_key,
 									    subKeyName.c_str(),
@@ -1099,7 +1112,7 @@ public:
 		}
 	}
 
-	void DeleteKeyValue(std::tstring valueName)
+	void DeleteValue(std::tstring valueName)
 	{
 		auto retCode = ::RegDeleteValue(m_key,
 										valueName.c_str());
@@ -1160,7 +1173,7 @@ public:
 		
 	}
 	
-	std::vector<std::tstring> GetSubKeys()
+	std::vector<std::pair<std::tstring,SYSTEMTIME>> GetSubKeys()
 	{
 		DWORD keyCount{};
 		DWORD maxValueNameLen{};
@@ -1182,43 +1195,97 @@ public:
 			throw SystemException{retCode,__FILE__, __LINE__};
 		}
 		maxValueNameLen++; //for terminating 0. 
-		std::vector<std::tstring> ret;
+		std::vector<std::pair<std::tstring, SYSTEMTIME>> ret;
+		
 		for(DWORD index = 0; index < keyCount; index++)
 		{
 			std::tstring name;
 			name.resize(maxValueNameLen);
 			DWORD retNamelen = maxValueNameLen;
-			retCode = ::RegEnumKey(m_key, index, &name[0], retNamelen);
+			FILETIME ft;
+			SYSTEMTIME stUTC, stLocal;
+			retCode = ::RegEnumKeyEx(m_key, index, &name[0], &retNamelen,nullptr,nullptr, nullptr,&ft);
 			if(retCode != ERROR_SUCCESS)
 			{
 				throw SystemException(retCode, __FILE__, __LINE__);
 			}
+
+			::FileTimeToSystemTime(&ft, &stUTC);
+			::SystemTimeToTzSpecificLocalTime(nullptr, &stUTC, &stLocal);
 			name = name.c_str();
-			ret.push_back(name);
+			ret.emplace_back(std::make_pair(name,stLocal));
 		}
 		return ret;
 	}
 
-	RegistryKey CreateKey(HKEY hKeyParent, const std::tstring& keyName, const std::tstring& keyClass, DWORD options, REGSAM access, SECURITY_ATTRIBUTES* securityAttributes, DWORD* disposition)
+	RegistryKey CreateSubKey(const std::tstring& keyName, const std::tstring& keyClass, DWORD options, REGSAM access, SECURITY_ATTRIBUTES* securityAttributes)
 	{
 		HKEY hKey = nullptr;
 		LONG retCode = ::RegCreateKeyEx(
-        hKeyParent,
-        keyName.c_str(),
-        0,          // reserved
-        const_cast<LPTSTR>(keyClass.c_str()),
-        options,
-        access,
-        securityAttributes,
-        &hKey,
-        disposition
-		);
+										 m_key,
+										 keyName.c_str(),
+										 0,          // reserved
+										 const_cast<LPTSTR>(keyClass.c_str()),
+										 options,
+										 access,
+										 securityAttributes,
+										 &hKey,
+										 nullptr
+										);
 		if (retCode != ERROR_SUCCESS)
 		{
 			throw SystemException{retCode,__FILE__, __LINE__};
-		}			
+		}
+		
 		return RegistryKey{ hKey };
 	}
+#if defined(_M_X64) || defined(__x86_64__)
+	typename std::enable_if<System::Information::is64Bit::value>::type DeleteKey()
+	{		
+		//delete it's subkeys and values recusively. 
+		auto retCode = ::RegDeleteTree(m_key, nullptr);
+		if (retCode != ERROR_SUCCESS)
+		{
+			throw SystemException{ retCode,__FILE__, __LINE__ };
+		}					
+
+	}
+#else
+	typename std::enable_if<!System::Information::is64Bit::value>::type DeleteKey()
+	{
+		//delete it's subkeys and values recusively. 
+		auto retCode = ::RegDeleteTree(m_key, nullptr);
+		if (retCode != ERROR_SUCCESS)
+		{
+			throw SystemException{ retCode,__FILE__, __LINE__ };
+		}
+
+	}
+#endif
+#if defined(_M_X64) || defined(__x86_64__)
+
+	void DeleteSubKey(std::tstring subKeyName)
+	{
+		//delete it's subkeys and values recusively. 
+		auto retCode = ::RegDeleteTree(m_key, subKeyName.c_str());
+		if (retCode != ERROR_SUCCESS)
+		{
+			throw SystemException{ retCode,__FILE__, __LINE__ };
+		}
+
+	}
+#else
+	void DeleteSubKey(std::tstring subKeyName)
+	{
+		//delete it's subkeys and values recusively. 
+		auto retCode = ::RegDeleteTree(m_key, subKeyName.c_str());
+		if (retCode != ERROR_SUCCESS)
+		{
+			throw SystemException{ retCode,__FILE__, __LINE__ };
+		}
+
+	}
+#endif
 	
 	RegistryKey(HKEY hKeyParent, const std::tstring& keyName, REGSAM access)
 	{
@@ -1265,9 +1332,9 @@ public:
 		return RegistryKey {hRet};
 	}
 
-	void CopyTree(std::tstring subKey, RegistryKey& key)
+	void CopyTree(std::tstring subKey, RegistryKey& keyDest)
 	{
-		DWORD retCode = ::RegCopyTree(m_key,subKey.c_str(),key.Get());
+		DWORD retCode = ::RegCopyTree(m_key,subKey.c_str(),keyDest.Get());
 		if(retCode != ERROR_SUCCESS)
 		{
 			throw SystemException{retCode, __FILE__,__LINE__};
