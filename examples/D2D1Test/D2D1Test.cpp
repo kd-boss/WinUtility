@@ -1,10 +1,3 @@
-/*
-    D2D1Test, Small Demo application that creates a user interface window rendered with Direct2D.
-    release build - compile with :
-        g++ D2D1Test.cpp -municode -mwindows -static -s -O3 -o d2d1test.exe -ld2d1
-    debug build - compile with :
-        g++ D2D1Test.cpp -municode -mwindows  -static -g  d2d1test.exe -ld2d1
-*/
 #define WINVER 0x0A00
 #define _WIN32_WINNT 0x0A00
 
