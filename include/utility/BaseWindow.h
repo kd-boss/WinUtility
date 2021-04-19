@@ -34,7 +34,16 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
 #endif
 
-#include<utility/System.h>
+#ifndef __SYSTEM__
+#warning "This header requres that utility/System.h be included first, and that WINVER be set. See microsoft's page about using the windows headers."
+#endif
+#ifndef _tcslen(x)
+#if UNICODE
+#define _tcslen(x) wcslen(x)
+#else
+#define _tcslen(x) strlen(x)
+#endif
+#endif
 
 #ifndef __HR__
 #define __HR__
