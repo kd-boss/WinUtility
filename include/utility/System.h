@@ -14,6 +14,7 @@
 #include <ktmw32.h>
 #include <cstring>
 #include <tuple>
+#include <numeric>
 
 // usefull debugging macro's
 #if __cplusplus < 201103L
@@ -288,7 +289,7 @@ template <class T, class... Args> typename _Unique_if<T>::_Known_bound make_uniq
 
 
 #ifdef UNICODE
-	typedef std::wstring tstring;
+	typedef ::std::wstring tstring;
 	template<typename T>
 	tstring to_tstring(T t)
 	{
@@ -309,7 +310,7 @@ template <class T, class... Args> typename _Unique_if<T>::_Known_bound make_uniq
 	
 	typedef std::wstringstream tstringstream;
 #else
-	typedef std::string tstring;
+	typedef ::std::string tstring;
 	template<typename T>
 	tstring to_tstring(T t)
 	{
@@ -874,6 +875,21 @@ public:
 class RegistryKey
 {	
 	HKEY m_key;
+
+	void SetValue(std::tstring subKeyName, std::tstring valueName, DWORD dataType, const std::vector<byte>& data)
+	{
+		auto retCode = ::RegSetKeyValue(m_key,
+			subKeyName.c_str(),
+			valueName.c_str(),
+			dataType,
+			&data[0],
+			data.size());
+		if (retCode != ERROR_SUCCESS)
+		{
+			throw SystemException{ retCode, __FILE__, __LINE__ };
+		}
+	}
+
 public:
 	RegistryKey() noexcept  = default;
 	
@@ -1070,7 +1086,7 @@ public:
 			m_key,
 			subKey.c_str(),
 			value.c_str(),
-			RRF_RT_REG_BINARY,
+			REG_BINARY,
 			nullptr,
 			nullptr,
 			&dataSize);
@@ -1086,7 +1102,7 @@ public:
         m_key,
         subKey.c_str(),
         value.c_str(),
-        RRF_RT_REG_BINARY,
+        REG_BINARY,
         nullptr,
         &data[0],
         &dataSize);
@@ -1098,21 +1114,9 @@ public:
 		return data;
 	}
 	
-	void SetValue(std::tstring subKeyName, std::tstring valueName, DWORD dataType, const std::vector<byte>& data)
-	{
-		auto retCode = ::RegSetKeyValue(m_key,
-									    subKeyName.c_str(),
-										valueName.c_str(),
-										dataType,
-										&data[0],
-										data.size());
-		if(retCode != ERROR_SUCCESS)
-		{
-			throw SystemException{retCode, __FILE__, __LINE__};
-		}
-	}
 
-	void DeleteValue(std::tstring valueName)
+
+	void DeleteValue(const std::tstring& valueName)
 	{
 		auto retCode = ::RegDeleteValue(m_key,
 										valueName.c_str());
@@ -1120,6 +1124,56 @@ public:
 		{
 			throw SystemException{retCode, __FILE__, __LINE__};
 		}
+	}
+
+
+	void SetStringValue(std::tstring valueName, const std::tstring& valueData)
+	{
+		std::vector<byte> data;
+		data.resize((valueData.size() * (sizeof(TCHAR) / sizeof(byte))) + 1);
+		memcpy(&data[0], &valueData[0], data.size());
+		SetValue(TEXT(""), valueName, REG_SZ, data);
+	}
+
+	void SetBinaryValue(std::tstring valueName, const std::vector<byte>& data)
+	{
+		SetValue(TEXT(""), valueName, REG_BINARY, data);
+	}
+	
+	void SetDWORDValue(std::tstring valueName, const DWORD& value)
+	{
+		std::vector<byte> data;
+		data.resize(sizeof(DWORD));
+		memcpy( &data[0], &value, data.size());
+		SetValue(TEXT(""), valueName, REG_DWORD, data);
+	}
+
+	//This is ; delimited path information, type REG_EXPAND_SZ because it can contain special folder names, like %USERPROFILE%. 
+	void SetPathValue(std::tstring valueName, const std::tstring& pathData)
+	{
+		std::vector<byte> data;
+		data.resize((pathData.size() * (sizeof(TCHAR) / sizeof(byte))) + 1);
+		memcpy(&data[0], &pathData[0], data.size());
+		SetValue(TEXT(""), valueName, REG_EXPAND_SZ, data);
+	}
+	
+	void SetMultiStringValue(std::tstring valueName, const std::vector<std::tstring>& multiData)
+	{
+		size_t totalChars = std::accumulate(multiData.begin(), multiData.end(), 0, [](auto a, auto b) { return a + b.size(); });
+		std::vector<byte> data;
+		auto nullterminators = (multiData.size() + 1) ; //each of the strings + 1 extra to mark the end.
+		totalChars += nullterminators;
+		auto totalCharsInBytes = totalChars * (sizeof(TCHAR) / sizeof(byte)); //maybe 1, maybe 2. 
+		data.resize(totalCharsInBytes);
+		size_t pos = 0;
+		for (auto a : multiData)
+		{
+			size_t inBytes = (a.size() * sizeof(TCHAR));
+			memcpy(&data[pos], &a[0], inBytes);
+			pos += inBytes + sizeof(TCHAR); //+1 for the null terminator. 
+		}
+
+		SetValue(TEXT(""), valueName, REG_MULTI_SZ, data);
 	}
 
 	std::vector<std::pair<std::tstring, DWORD>> GetValuesInfo()
@@ -1199,12 +1253,12 @@ public:
 		
 		for(DWORD index = 0; index < keyCount; index++)
 		{
-			std::tstring name;
-			name.resize(maxValueNameLen);
+			std::tstring stname;
+			stname.resize(maxValueNameLen);
 			DWORD retNamelen = maxValueNameLen;
 			FILETIME ft;
 			SYSTEMTIME stUTC, stLocal;
-			retCode = ::RegEnumKeyEx(m_key, index, &name[0], &retNamelen,nullptr,nullptr, nullptr,&ft);
+			retCode = ::RegEnumKeyEx(m_key, index, &stname[0], &retNamelen,nullptr,nullptr, nullptr,&ft);
 			if(retCode != ERROR_SUCCESS)
 			{
 				throw SystemException(retCode, __FILE__, __LINE__);
@@ -1212,7 +1266,7 @@ public:
 
 			::FileTimeToSystemTime(&ft, &stUTC);
 			::SystemTimeToTzSpecificLocalTime(nullptr, &stUTC, &stLocal);
-			name = name.c_str();
+			auto name = stname.c_str();
 			ret.emplace_back(std::make_pair(name,stLocal));
 		}
 		return ret;
