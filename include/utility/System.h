@@ -1126,8 +1126,15 @@ public:
 		}
 	}
 
+	void SetQWORD(std::tstring valueName, ULONGLONG value)
+	{
+		std::vector<byte> data;
+		data.resize(sizeof(ULONGLONG));
+		memcpy(&data[0],&value,data.size());
+		SetValue(TEXT(""),valueName,REG_QWORD, data);
+	}
 
-	void SetStringValue(std::tstring valueName, const std::tstring& valueData)
+	void SetString(std::tstring valueName, const std::tstring& valueData)
 	{
 		std::vector<byte> data;
 		data.resize((valueData.size() * (sizeof(TCHAR) / sizeof(byte))) + 1);
@@ -1135,12 +1142,12 @@ public:
 		SetValue(TEXT(""), valueName, REG_SZ, data);
 	}
 
-	void SetBinaryValue(std::tstring valueName, const std::vector<byte>& data)
+	void SetBinary(std::tstring valueName, const std::vector<byte>& data)
 	{
 		SetValue(TEXT(""), valueName, REG_BINARY, data);
 	}
 	
-	void SetDWORDValue(std::tstring valueName, const DWORD& value)
+	void SetDWORD(std::tstring valueName, const DWORD& value)
 	{
 		std::vector<byte> data;
 		data.resize(sizeof(DWORD));
@@ -1149,7 +1156,7 @@ public:
 	}
 
 	//This is ; delimited path information, type REG_EXPAND_SZ because it can contain special folder names, like %USERPROFILE%. 
-	void SetPathValue(std::tstring valueName, const std::tstring& pathData)
+	void SetPath(std::tstring valueName, const std::tstring& pathData)
 	{
 		std::vector<byte> data;
 		data.resize((pathData.size() * (sizeof(TCHAR) / sizeof(byte))) + 1);
@@ -1157,7 +1164,7 @@ public:
 		SetValue(TEXT(""), valueName, REG_EXPAND_SZ, data);
 	}
 	
-	void SetMultiStringValue(std::tstring valueName, const std::vector<std::tstring>& multiData)
+	void SetMultiString(std::tstring valueName, const std::vector<std::tstring>& multiData)
 	{
 		size_t totalChars = std::accumulate(multiData.begin(), multiData.end(), 0, [](auto a, auto b) { return a + b.size(); });
 		std::vector<byte> data;
