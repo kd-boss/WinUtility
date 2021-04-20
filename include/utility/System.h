@@ -1137,7 +1137,9 @@ public:
 	void SetString(std::tstring valueName, const std::tstring& valueData)
 	{
 		std::vector<byte> data;
-		data.resize((valueData.size() + 1) * (sizeof(TCHAR) / sizeof(byte)));
+		auto totalCharacters = (valueData.size() + 1);
+		auto charSizeinBytes = (sizeof(TCHAR) / sizeof(byte);
+		data.resize(totalCharacters * charSizeinBytes);
 		memcpy(&data[0], &valueData[0], data.size());
 		SetValue(TEXT(""), valueName, REG_SZ, data);
 	}
