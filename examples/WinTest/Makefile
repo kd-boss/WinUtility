@@ -6,7 +6,7 @@ BUILD = ./obj
 	
 objects = $(BUILD)/wintestres.o
 CFLAGS = -fno-rtti -mwindows -municode -s -O2 -lcomctl32
-CXX = clang++
+CXX = g++
 
 wintest.exe : $(objects)
 	$(CXX) wintest.cpp $(objects) $(CFLAGS) -o wintest.exe 
