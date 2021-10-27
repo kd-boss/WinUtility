@@ -559,7 +559,7 @@ template <typename T> class SymmetricImpl
     ~SymmetricImpl(void)
     {
         m_Key.reset();
-        m_pbKeyObject = ByteVector();
+        m_pbKeyObject = std::vector<byte>();
     }
 
     DWORD GetKeySize()
@@ -597,7 +597,7 @@ template <typename T> class SymmetricImpl
     void SetKey(std::string Key)
     {
         Hash::CBCryptMD5 hash;
-        hash.AddDataToHash(StringToByteVector(Key));
+        hash.AddDataToHash(std::vector<byte>(Key.begin(), Key.end()));
         auto ret = hash.Finalise();
         BCRYPT_KEY_HANDLE handle = nullptr;
         NTSTATUS stat = -1;

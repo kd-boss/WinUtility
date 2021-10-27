@@ -15,6 +15,7 @@
 #include <cstring>
 #include <tuple>
 #include <numeric>
+#include <limits>
 
 // usefull debugging macro's
 #if __cplusplus < 201103L

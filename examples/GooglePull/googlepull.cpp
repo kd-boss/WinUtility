@@ -16,6 +16,7 @@
 
 #define SECURITY_WIN32
 #include <fstream>
+#include <utility\System.h>
 #include <utility\SSLClientSocket.h>
 
 WSAInitHandler hndler;

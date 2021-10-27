@@ -19,8 +19,9 @@ mkdir:
 	
 .PHONY : clean
 clean:
-	rm wintest.exe 
 	rm -rf $(BUILD)
+	rm wintest.exe 
+	
 
 
 

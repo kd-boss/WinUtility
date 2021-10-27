@@ -5,11 +5,10 @@
 #include <d2d1helper.h>
 #include <dwrite.h>
 #include <wincodec.h>
-
+#include <utility/System.h>
 #include <utility/BaseWindow.h>
 #include <utility/ComPtr.h>
-#include <utility/System.h>
-#include <utility/System.Utility.h>
+
 
 class MyWindow : public BaseWindow<MyWindow, Window, FrameWinTraits>
 {

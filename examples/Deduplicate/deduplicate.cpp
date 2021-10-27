@@ -87,7 +87,7 @@ deduplicate C:\Users\JohnDoe\Documents
 
 Corner Cases:
 If a <directory> has any spaces in it (ex: %HOMEPATH%\My Documents) surround it with double quotes.
-But do not end <directory> with a '\' when doing so, if you must end <directory> with a '\', use 2 insted
+But do not end <directory> with a '\' when doing so, if you must end <directory> with a '\', use 2
 ex:
 deluplicate "C:\Some Dir\\" )~";
     std::cout << message << std::endl;
