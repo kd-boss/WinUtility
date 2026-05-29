@@ -34,10 +34,10 @@ the output of this utility on any system folders or installed program locations.
 #include <map>
 
 // My Utility library
-#include <utility/System.Cryptography.h>
+#include <WinUtility/System.Cryptography.h>
 
 // boost headers
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 template <typename T> bool increment_stub(T &t)
 {
@@ -48,7 +48,7 @@ template <typename T> bool increment_stub(T &t)
     }
     catch (std::exception &e)
     {
-        t.no_push();
+       
         std::cout << e.what() << std::endl;
         return false;
     }
@@ -63,9 +63,7 @@ template <typename T> void increment(T &t, T &u)
     }
 }
 
-// drag in boost.
-using namespace boost;
-using namespace boost::filesystem;
+
 
 void PrintUsage()
 {
@@ -108,25 +106,25 @@ int main(int argc, char *argv[])
         std::map<std::string, std::string> uniques;
         std::fstream outfile;
         std::fstream hashes;
-        filesystem::recursive_directory_iterator it, end;
+        std::filesystem::recursive_directory_iterator it, end;
         std::vector<unsigned char> buffer;
         std::size_t iread;
         std::pair<std::map<std::string, std::string>::iterator, bool> res;
         std::string hash;
-        System::ByteVector ret;
+        std::vector<byte> ret;
 
         // initiate persistent variables.
         buffer.resize(2 * 1024 * 1024); // 2MB
         outfile.open("de-dupe.bat", std::ios_base::out);
         hashes.open("re-dupe.bat", std::ios_base::out);
-        it = filesystem::recursive_directory_iterator(argv[1]);
+        it = std::filesystem::recursive_directory_iterator(argv[1]);
 
         while (it != end)
         {
             try // every one of these operations -can- throw. Handle it all within the loop to keep prevent halting
                 // until the file system iterator is at the end.
             {
-                if (filesystem::is_regular_file(it->path()))
+                if (std::filesystem::is_regular_file(it->path()))
                 {
                     // construct our temporaries.
                     System::Crypto::Hash::CBCryptSHA256 crypt;
@@ -138,7 +136,7 @@ int main(int argc, char *argv[])
                     // read whole file, in 2MB chunks, adding the chunks to the incremental hash.
                     while ((iread = file.readsome(reinterpret_cast<char *>(&buffer[0]), buffer.size())))
                     {
-                        crypt.AddDataToHash(System::ByteVector(&buffer[0], &buffer[iread - 1]));
+                        crypt.AddDataToHash(std::vector<byte>(&buffer[0], &buffer[iread - 1]));
                     }
 
                     // obtain the completed SHA256

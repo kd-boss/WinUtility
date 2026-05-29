@@ -1,0 +1,152 @@
+#include "Resource.h"
+#include "windows.h"
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "colors2.manifest"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+
+IDI_COLORS2       ICON         "colors2.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDC_COLORS2 MENU
+{
+    POPUP "&File"
+    {
+        MENUITEM "E&xit",                IDM_EXIT
+    }
+    POPUP "&Help"
+    {
+        MENUITEM "&About ...",           IDM_ABOUT
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDC_COLORS2 ACCELERATORS
+{
+    "?",            IDM_ABOUT,              ASCII,  ALT
+    "/",            IDM_ABOUT,              ASCII,  ALT
+	"x",			IDM_EXIT, 				ASCII,  ALT
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 90
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About colors2"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+{
+    ICON            IDI_COLORS2,IDC_STATIC,14,14,21,20
+    LTEXT           "colors2, Version 1.0",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "Copyright MIT Liscense",IDC_STATIC,42,26,114,8
+	LTEXT			"An example application for the WinUtility Libary", IDC_STATIC, 7,48,160,8
+    DEFPUSHBUTTON   "O&K",IDOK,113,66,50,14,WS_GROUP
+}
+
+
+
+
+COLORSCRDLG DIALOG 16, 16, 120, 141
+STYLE DS_MODALFRAM | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "Color Scroll Scrollbars"
+FONT 8, "Consolas", 0 , 0, 0x1
+BEGIN
+    CTEXT   "&Red", IDC_STATIC, 8, 8, 24, 8, NOT WS_GROUP
+    CTEXT   "0", 13, 8, 124, 24, 8, NOT WS_GROUP
+    SCROLLBAR 10, 8, 20, 24, 100, SBS_VERT | WS_TABSTOP
+    CTEXT   "&Green", IDC_STATIC, 48, 8, 24, 8, NOT WS_GROUP
+    SCROLLBAR 11, 48, 20, 24, 100, SBS_VERT | WS_TABSTOP
+    CTEXT   "0",14,48,124,24,8, NOT WS_GROUP
+    CTEXT   "&Blue", IDC_STATIC, 89, 8, 24, 8, NOT WS_GROUP
+    SCROLLBAR   12, 89, 20, 24, 100, SBS_VERT | WS_TABSTOP
+    CTEXT   "0", 15, 89, 124, 24, 9, NOT WS_GROUP
+END
+
+1 TEXTINCLUDE 
+{
+    "resource.h\0"
+}
+
+2 TEXTINCLUDE 
+{
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+}
+
+3 TEXTINCLUDE 
+{
+    "\r\n"
+    "\0"
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+{
+   IDC_COLORS2   "COLORS2"
+   IDS_APP_TITLE       "COLORS2"
+}
+
+// Executable version information.
+VS_VERSION_INFO    VERSIONINFO
+FILEVERSION        1,0,0,0
+PRODUCTVERSION     1,0,0,0
+FILEFLAGSMASK      VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS        VS_FF_DEBUG | VS_FF_PRERELEASE
+#else
+  FILEFLAGS        0
+#endif
+FILEOS             VOS_NT_WINDOWS32
+FILETYPE           VFT_APP
+FILESUBTYPE        VFT2_UNKNOWN
+{
+  BLOCK "StringFileInfo"
+  {
+    BLOCK "040904E4"
+    {
+      VALUE "CompanyName", "kd.boss@gmail.com"
+      VALUE "FileDescription", "Win32 Test application"
+      VALUE "FileVersion", "1.0.0.0"
+      VALUE "InternalName", "COLORS2"
+      VALUE "LegalCopyright", "MIT"
+      VALUE "OriginalFilename", "colors2.exe"
+      VALUE "ProductName", "Win32 Test application"
+      VALUE "ProductVersion", "1.0.0.0"
+    }
+  }
+  BLOCK "VarFileInfo"
+  {
+	VALUE "Translation", 0x409, 1252
+  }
+}

@@ -1,0 +1,5 @@
+
+#define IDC_ABOUT3 1000
+#define IDM_APP_ABOUT 1001
+#define IDC_ELLIPSE_BUTTON 10001
+#define IDC_STATIC -1

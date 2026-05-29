@@ -1,0 +1,133 @@
+#include "Resource.h"
+#include "windows.h"
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "DigitalClock.manifest"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+
+IDI_DIGITALCLOCK       ICON         "DigitalClock.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDC_DIGITALCLOCK MENU
+{
+    POPUP "&File"
+    {
+        MENUITEM "E&xit",                IDM_EXIT
+    }
+    POPUP "&Help"
+    {
+        MENUITEM "&About ...",           IDM_ABOUT
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDC_DIGITALCLOCK ACCELERATORS
+{
+    "?",            IDM_ABOUT,              ASCII,  ALT
+    "/",            IDM_ABOUT,              ASCII,  ALT
+	"x",			IDM_EXIT, 				ASCII,  ALT
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 90
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About DigitalClock"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+{
+    ICON            IDI_DIGITALCLOCK,IDC_STATIC,14,14,21,20
+    LTEXT           "DigitalClock, Version 1.0",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "Copyright MIT Liscense",IDC_STATIC,42,26,114,8
+	LTEXT			"An example application for the WinUtility Libary", IDC_STATIC, 7,48,160,8
+    DEFPUSHBUTTON   "O&K",IDOK,113,66,50,14,WS_GROUP
+}
+
+1 TEXTINCLUDE 
+{
+    "resource.h\0"
+}
+
+2 TEXTINCLUDE 
+{
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+}
+
+3 TEXTINCLUDE 
+{
+    "\r\n"
+    "\0"
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+{
+   IDC_DIGITALCLOCK   "DIGITALCLOCK"
+   IDS_APP_TITLE       "Digital Clock"
+}
+
+// Executable version information.
+VS_VERSION_INFO    VERSIONINFO
+FILEVERSION        1,0,0,0
+PRODUCTVERSION     1,0,0,0
+FILEFLAGSMASK      VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS        VS_FF_DEBUG | VS_FF_PRERELEASE
+#else
+  FILEFLAGS        0
+#endif
+FILEOS             VOS_NT_WINDOWS32
+FILETYPE           VFT_APP
+FILESUBTYPE        VFT2_UNKNOWN
+{
+  BLOCK "StringFileInfo"
+  {
+    BLOCK "040904E4"
+    {
+      VALUE "CompanyName", "kd.boss@gmail.com"
+      VALUE "FileDescription", "Win32 Test application"
+      VALUE "FileVersion", "1.0.0.0"
+      VALUE "InternalName", "DIGITALCLOCK"
+      VALUE "LegalCopyright", "MIT"
+      VALUE "OriginalFilename", "DigitalClock.exe"
+      VALUE "ProductName", "Win32 Test application"
+      VALUE "ProductVersion", "1.0.0.0"
+    }
+  }
+  BLOCK "VarFileInfo"
+  {
+	VALUE "Translation", 0x409, 1252
+  }
+}

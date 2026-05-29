@@ -16,8 +16,7 @@
 
 #define SECURITY_WIN32
 #include <fstream>
-#include <utility\System.h>
-#include <utility\SSLClientSocket.h>
+#include <WinUtility\SSLClientSocket.h>
 
 WSAInitHandler hndler;
 SslClientSocket sck;

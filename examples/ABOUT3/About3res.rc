@@ -1,0 +1,25 @@
+#include "Resource.h"
+#include "windows.h"
+
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "about3.manifest"
+
+IDC_ABOUT3 ICON "about3.ico"
+
+IDC_ABOUT3 DIALOG 32, 32, 180, 100
+CAPTION "About3"
+STYLE DS_MODALFRAME | WS_POPUP
+FONT 12, "Consolas"
+{
+    
+    ICON "", IDC_ABOUT3, 11, 7, 20, 20, 20
+    CTEXT "About3", IDC_STATIC, 40, 12, 100, 12
+    CTEXT "About box Demo Program", IDC_STATIC, 7, 40, 166, 12
+}
+
+IDC_ABOUT3 MENU DISCARDABLE
+BEGIN
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About", IDM_APP_ABOUT
+    END
+END

@@ -1,0 +1,94 @@
+#include "Resource.h"
+#include "afxres.h"
+#include "windows.h"
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "about2.manifest"
+
+IDC_ABOUT2  ICON DISCARDABLE "about2.ico"
+
+IDC_ABOUT2 DIALOG 32, 32, 200, 234
+CAPTION "About 2"
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+FONT 11, "Consolas"
+{
+    ICON "", IDC_ABOUT2, 0, 7, 7, 20, 20
+    CTEXT "About2", IDC_STATIC, 57, 12, 86, 8
+    CTEXT "About Box Demo Program", IDC_STATIC, 7, 40, 186, 8
+    LTEXT "", IDC_PAINT, 114, 67, 74, 72
+    GROUPBOX "&Color", IDC_STATIC, 6, 56, 84, 145
+    RADIOBUTTON "&Black", IDC_BLACK, 20, 76, 50, 8, WS_TABSTOP | WS_GROUP
+    RADIOBUTTON "B&lue", IDC_BLUE, 20, 92, 50, 8
+    RADIOBUTTON "Green",IDC_GREEN, 20, 108, 50, 8
+    RADIOBUTTON "Cyan", IDC_CYAN, 20, 124, 50, 8
+    RADIOBUTTON "&Red", IDC_RED, 20, 140, 50, 8
+    RADIOBUTTON "&Magenta", IDC_MAGENTA, 19, 156, 50, 8
+    RADIOBUTTON "&Yellow", IDC_YELLOW, 20, 172, 50, 8
+    RADIOBUTTON "&White", IDC_WHITE, 20, 188, 50, 8
+    RADIOBUTTON "Rec&tangle", IDC_RECT, 116, 172, 65, 8, WS_TABSTOP | WS_GROUP
+    RADIOBUTTON "&Ellipse", IDC_ELLIPSE, 116, 188, 64, 8
+    GROUPBOX "&Figure", IDC_STATIC, 109, 156, 84, 46
+    DEFPUSHBUTTON "OK", IDOK, 35, 212, 50, 14, WS_GROUP
+    PUSHBUTTON "Cancel", IDCANCEL, 113, 212, 50, 14, WS_GROUP
+}
+
+
+IDC_ABOUT2 MENU
+{
+    POPUP "&Help"
+    {
+        MENUITEM "&About", IDM_APP_ABOUT
+    }
+}
+
+STRINGTABLE
+{
+    IDC_ABOUT2 "About2"
+}
+
+1 TEXTINCLUDE
+{
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+}
+
+
+VS_VERSION_INFO    VERSIONINFO
+FILEVERSION        1,0,0,0
+PRODUCTVERSION     1,0,0,0
+FILEFLAGSMASK      VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS        VS_FF_DEBUG | VS_FF_PRERELEASE
+#else
+  FILEFLAGS        0
+#endif
+FILEOS             VOS_NT_WINDOWS32
+FILETYPE           VFT_APP
+FILESUBTYPE        VFT2_UNKNOWN
+{
+  BLOCK "StringFileInfo"
+  {
+    BLOCK "040904E4"
+    {
+      VALUE "CompanyName", "kd.boss@gmail.com"
+      VALUE "FileDescription", "Win32 Test application"
+      VALUE "FileVersion", "1.0.0.0"
+      VALUE "InternalName", "ABOUT2"
+      VALUE "LegalCopyright", "MIT"
+      VALUE "OriginalFilename", "About2.exe"
+      VALUE "ProductName", "Win32 Test application"
+      VALUE "ProductVersion", "1.0.0.0"
+    }
+  }
+  BLOCK "VarFileInfo"
+  {
+        VALUE "Translation", 0x409, 1252
+  }
+}

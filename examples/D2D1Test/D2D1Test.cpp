@@ -5,10 +5,10 @@
 #include <d2d1helper.h>
 #include <dwrite.h>
 #include <wincodec.h>
-#include <utility/System.h>
-#include <utility/BaseWindow.h>
-#include <utility/ComPtr.h>
-
+#include <WinUtility/System.h>
+#include <WinUtility/BaseWindow.h>
+#include <WinUtility/ComPtr.h>
+#include <locale>
 
 class MyWindow : public BaseWindow<MyWindow, Window, FrameWinTraits>
 {
@@ -85,6 +85,7 @@ HRESULT MyWindow::CreateDeviceDependentResources()
         }
         catch (std::exception ex)
         {
+
             TRACE(ex.what());
         }
     }
@@ -107,7 +108,8 @@ void MyWindow::OnSize(UINT nType, Size size)
     }
     catch (std::exception ex)
     {
-        ::MessageBoxW(NULL, System::to_wstring(ex.what()).c_str(), L"D2D1Test", MB_OK);
+	
+        ::MessageBoxA(NULL, ex.what(), "D2D1Test", MB_OK);
     }
 }
 

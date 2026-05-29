@@ -1,0 +1,183 @@
+#include "Resource.h"
+#include "windows.h"
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "poppad2.manifest"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems. 
+
+IDI_POPPAD2       ICON         "poppad2.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDC_POPPAD2 MENU
+{
+    POPUP "&File"
+    {
+        MENUITEM "&New",                IDM_FILE_NEW
+        MENUITEM "&Open",               IDM_FILE_OPEN
+        MENUITEM "&Save",               IDM_FILE_SAVE
+        MENUITEM "Save &As",            IDM_FILE_SAVE_AS
+        MENUITEM SEPARATOR
+        MENUITEM "&Print",              IDM_FILE_PRINT
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",               IDM_EXIT
+    }
+    POPUP "&Edit"
+    {
+
+        MENUITEM "&Undo\tCtrl+Z",        IDM_EDIT_UNDO
+        MENUITEM SEPARATOR
+        MENUITEM "Cu&t\tCtrl+X",                 IDM_EDIT_CUT
+        MENUITEM "&Copy\tCtrl+C",                IDM_EDIT_COPY
+        MENUITEM "&Paste\tCtrl+V",               IDM_EDIT_PASTE
+        MENUITEM SEPARATOR
+        MENUITEM "&Select All",           IDM_EDIT_SELECT_ALL
+    }
+    POPUP "&Search"
+    {
+        MENUITEM "&Find....\tCtrl+F",       IDM_SEARCH_FIND
+        MENUITEM "Find &Next\tF3",          IDM_SEARCH_NEXT
+        MENUITEM "&Replace...\tCtrl+R",     IDM_SEARCH_REPLACE
+    }
+    POPUP "F&ormat"
+    {
+        MENUITEM "&Font...",                IDM_FORMAT_FONT
+    }
+    POPUP "&Help"
+    {
+        MENUITEM "&About ...",           IDM_ABOUT
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDC_POPPAD2 ACCELERATORS
+{
+    VK_OEM_2, IDM_ABOUT, SHIFT, CONTROL, VIRTKEY, NOINVERT
+    "x", IDM_EXIT, VIRTKEY, ALT
+    "c", IDM_EDIT_COPY, VIRTKEY,CONTROL, NOINVERT
+    "v", IDM_EDIT_PASTE, VIRTKEY, CONTROL, NOINVERT
+    "x", IDM_EDIT_CUT, VIRTKEY, CONTROL, NOINVERT
+    "z", IDM_EDIT_UNDO, VIRTKEY, CONTROL, NOINVERT
+    VK_BACK,   IDM_EDIT_UNDO,        VIRTKEY, CONTROL, NOINVERT
+    VK_DELETE, IDM_EDIT_CLEAR,       VIRTKEY, CONTROL,  NOINVERT
+    VK_DELETE, IDM_EDIT_CUT,         VIRTKEY, SHIFT, NOINVERT
+    VK_INSERT, IDM_EDIT_COPY,        VIRTKEY, CONTROL, NOINVERT
+    VK_INSERT, IDM_EDIT_PASTE,       VIRTKEY, SHIFT, NOINVERT
+    "r",       IDM_SEARCH_REPLACE,   VIRTKEY, CONTROL, NOINVERT
+    "f",       IDM_SEARCH_FIND,      VIRTKEY, CONTROL, NOINVERT
+    VK_F3,     IDM_SEARCH_NEXT,      VIRTKEY
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 90
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About poppad2"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+{
+    ICON            IDI_POPPAD2,IDC_STATIC,14,14,21,20
+    LTEXT           "poppad2, Version 1.0",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "Copyright MIT Liscense",IDC_STATIC,42,26,114,8
+	LTEXT			"An example application for the WinUtility Libary", IDC_STATIC, 7,48,160,8
+    DEFPUSHBUTTON   "O&K",IDOK,113,66,50,14,WS_GROUP
+}
+
+PRINTDLGBOX DIALOG 32, 32, 186, 95
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "PopPad"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON "Cancel", IDCANCEL, 67, 74, 50, 14
+    CTEXT      "Sending",IDC_STATIC, 8, 8, 172, 8
+    CTEXT       "", IDC_FILENAME, 8, 28, 172, 8
+    CTEXT       "to print spooler", IDC_STATIC, 8, 48, 172, 8
+END
+
+1 TEXTINCLUDE 
+{
+    "resource.h\0"
+}
+
+2 TEXTINCLUDE 
+{
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+}
+
+3 TEXTINCLUDE 
+{
+    "\r\n"
+    "\0"
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+{
+   IDC_POPPAD2   "POPPAD2"
+   IDS_APP_TITLE       "POPPAD2"
+}
+
+// Executable version information.
+VS_VERSION_INFO    VERSIONINFO
+FILEVERSION        1,0,0,0
+PRODUCTVERSION     1,0,0,0
+FILEFLAGSMASK      VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS        VS_FF_DEBUG | VS_FF_PRERELEASE
+#else
+  FILEFLAGS        0
+#endif
+FILEOS             VOS_NT_WINDOWS32
+FILETYPE           VFT_APP
+FILESUBTYPE        VFT2_UNKNOWN
+{
+  BLOCK "StringFileInfo"
+  {
+    BLOCK "040904E4"
+    {
+      VALUE "CompanyName", "kd.boss@gmail.com"
+      VALUE "FileDescription", "Win32 Test application"
+      VALUE "FileVersion", "1.0.0.0"
+      VALUE "InternalName", "POPPAD2"
+      VALUE "LegalCopyright", "MIT"
+      VALUE "OriginalFilename", "poppad2.exe"
+      VALUE "ProductName", "Win32 Test application"
+      VALUE "ProductVersion", "1.0.0.0"
+    }
+  }
+  BLOCK "VarFileInfo"
+  {
+	VALUE "Translation", 0x409, 1252
+  }
+}

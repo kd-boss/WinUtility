@@ -1,0 +1,3 @@
+C:/Users/kd5ea/Downloads/WinUtility-master/WinUtility-master/examples/msbuildtest/build/CMakeFiles/msbuildtest.dir
+C:/Users/kd5ea/Downloads/WinUtility-master/WinUtility-master/examples/msbuildtest/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/kd5ea/Downloads/WinUtility-master/WinUtility-master/examples/msbuildtest/build/CMakeFiles/ZERO_CHECK.dir
