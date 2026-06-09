@@ -1469,11 +1469,11 @@ namespace Debug
 #define __SYSTEM_DEBUG_PRINT_ERROR__
 inline void PrintError(std::string error)
 {
-    TRACE(error.c_str(), "%s\r\n");
+	debug_println("{}",error.c_str());
 }
 inline void PrintError(std::wstring error)
 {
-    TRACE(error.c_str(), "%s\r\n");
+	debug_println(L"{}",error.c_str());
 }
 #endif
 } // namespace Debug
