@@ -1,4 +1,12 @@
 
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+#include <WinUtility/Numbers.h>
+#include <WinUtility/System.h>
 #include "KeyView.h"
 #include <format>
 #include <bitset>
@@ -13,9 +21,9 @@ void MyWindow::RenderLine(const std::wstring &text, float x, float y)
 	IDWriteTextLayout *pLayout = nullptr;
 	HRESULT hr = m_dw->CreateTextLayout(
 		text.c_str(),
-		static_cast<UINT32>(text.size()),
+		convert_to<UINT32>(text.size()),
 		m_tf.Get(),
-		static_cast<float>(g_cxClient > 0 ? g_cxClient * 2 : 4000),
+		convert_to<float>(g_cxClient > 0 ? g_cxClient * 2 : 4000),
 		g_cyChar + 4.0f,
 		&pLayout);
 
@@ -47,8 +55,8 @@ HRESULT MyWindow::Render()
 		
 		
 		
-		int count = std::min(m_layouts.size(), static_cast<size_t>(visibleRows));
-		for (int i = 0; i < count; i++)
+		Number<size_t> count = std::min(m_layouts.size(), static_cast<size_t>(visibleRows));
+		for (Number<size_t> i = 0; i < count; i++)
 		{
 			float yPos = (g_cyChar *  i) + g_cyChar;
 			m_rt->DrawTextLayout(D2D1::Point2F(0.0f, yPos),m_layouts[i].Get(), m_brush.Get());
@@ -142,11 +150,12 @@ void MyWindow::DiscardDeviceResources()
 		br = nullptr;
 	}
 }
+
 std::tstring MyWindow::LoadTextResource(UINT ID)
 {
 	std::tstring data;
 	data.resize(8 + 1);
-	::LoadString(HINST_THISCOMPONENT, ID, data.data(),data.length());
+	::LoadString(HINST_THISCOMPONENT, ID, data.data(),convert_to<int>(data.length()));
 	return data;
 }
 
@@ -333,10 +342,11 @@ HRESULT MyWindow::FormatCharMessage(
 
 void MyWindow::OnKeyDown(UINT nChar, SHORT nRepCnt, SHORT nFlags)
 {
-	auto lParam = MAKELPARAM(nRepCnt,nFlags);
+	Number<long> lParam = MAKELPARAM(nRepCnt,nFlags);
 	std::tstring buff;
 	buff.resize(35);
-	GetKeyNameText(lParam, buff.data(), buff.length());	
+	Number<int> len = buff.length();
+	GetKeyNameText(lParam, buff.data(), len);	
 	if(SUCCEEDED(FormatKeyMessage(messageNames[WM_KEYDOWN - WM_KEYFIRST].c_str(), nChar,lParam , buff.c_str())))
 	Invalidate(FALSE);	
 }
@@ -346,7 +356,13 @@ void MyWindow::OnKeyUp(UINT nChar, SHORT nRepCnt, SHORT nFlags)
 	std::wstring buff;
 	buff.resize(35);
 	auto lParam = MAKELPARAM( nRepCnt, nFlags);	
-	GetKeyNameText(lParam, buff.data(), buff.length());
+	try{
+		GetKeyNameText(convert_to<LONG>(lParam), buff.data(), convert_to<int>(buff.length()));
+	}
+	catch(const Bad_value&)
+	{
+       debug_println("OnKeyUp threw");
+	}
 	buff.shrink_to_fit();
 	if(SUCCEEDED(FormatKeyMessage(messageNames[WM_KEYUP - WM_KEYFIRST].c_str(), nChar,lParam , buff.c_str())))
 	Invalidate(FALSE);
@@ -357,7 +373,7 @@ void MyWindow::OnSysKeyUp(UINT nChar, SHORT nRepCnt, SHORT nFlags)
 	std::wstring buff;
 	buff.resize(35);
 	auto lParam = MAKELPARAM( nRepCnt, nFlags);	
-	GetKeyNameText(lParam, buff.data(), buff.length());
+	GetKeyNameText(convert_to<LONG>(lParam), buff.data(), convert_to<int>(buff.length()));
 	buff.shrink_to_fit();
 	if(SUCCEEDED(FormatKeyMessage(messageNames[WM_SYSKEYUP - WM_KEYFIRST].c_str(), nChar,lParam , buff.c_str())))	
 	Invalidate(FALSE);	
@@ -368,7 +384,7 @@ void MyWindow::OnSysKeyDown(UINT nChar, SHORT nRepCnt, SHORT nFlags)
 	std::wstring buff;
 	buff.resize(35);
 	auto lParam = MAKELPARAM( nRepCnt, nFlags);	
-	GetKeyNameText(lParam, buff.data(), buff.length());
+	GetKeyNameText(convert_to<LONG>(lParam), buff.data(), convert_to<int>(buff.length()));
 	buff.shrink_to_fit();
 	if(SUCCEEDED(FormatKeyMessage(messageNames[WM_SYSKEYDOWN - WM_KEYFIRST].c_str(), nChar,lParam , buff.c_str())))
 	Invalidate(FALSE);	

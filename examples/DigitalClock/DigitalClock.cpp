@@ -1,6 +1,8 @@
 
 
 #include "DigitalClock.h"
+#include <WinUtility/Numbers.h>
+
 HRESULT DigitalClock::CreateDeviceIndependantResources()
 {
 	HRESULT hr = S_OK;
@@ -48,8 +50,8 @@ void DigitalClock::DiscardDeviceResources()
 
 void DigitalClock::ApplyTransform(float shiftX)
 {
-	float tx = (shiftX - 138.f) * m_scale + m_size.cx * 0.5f;
-	float ty = -36.f * m_scale + m_size.cy * 0.5f;
+	Number tx = (shiftX - 138.f) * m_scale + m_size.cx * 0.5f;
+	Number ty = -36.f * m_scale + m_size.cy * 0.5f;
 
 	m_rt->SetTransform(
 		D2D1::Matrix3x2F::Scale(m_scale, m_scale) *
@@ -59,7 +61,7 @@ void DigitalClock::ApplyTransform(float shiftX)
 void DigitalClock::DisplayDigit(int iNumber, float shiftX)
 {
 	ApplyTransform(shiftX);
-	for (int i = 0; i < 7; i++)
+	for (Number<int> i = 0; i < 7; i++)
 		if (fSevenSegment[iNumber][i])
 			FillPolygon(ptSegment[i], 6);
 }
@@ -130,7 +132,7 @@ HRESULT DigitalClock::Initialize()
 	// get app title from resource file.
 	std::tstring apptitle;
 	apptitle.resize(14);
-	hr = LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), apptitle.length()) > 0 ? S_OK : E_FAIL;
+	hr = LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), convert_to<int>(apptitle.length())) > 0 ? S_OK : E_FAIL;
 	if (SUCCEEDED(hr))
 	{
 
