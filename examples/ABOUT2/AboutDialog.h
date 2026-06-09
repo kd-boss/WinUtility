@@ -34,7 +34,7 @@ public:
     UINT IDD = IDC_ABOUT2;
     int  iCurrentFigure,iCurrentColor;
     void PaintWindow(HWND hwnd, int iColor, int iFigure);
-    
+    DECLARE_WND_CLASS(TEXT("About2AboutDialog"))
     BEGIN_MSG_MAP()
     MSG_WM_INITDIALOG(OnInitDialog)
     BEGIN_COMMAND_MAP()

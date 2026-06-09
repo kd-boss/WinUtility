@@ -31,9 +31,9 @@ class EllipseButton : public BaseWindow<EllipseButton, Window, ChildTraits>
     int OnCreate(LPCREATESTRUCT lpCreate);
     HRESULT Render(DC dc, Rect rect);
     void OnKeyUp(UINT nChar, INT nRepCnt, USHORT nFlags);
-    void OnLButtonUp(UINT nFlags, Point point);
-    void OnLButtonDown(UINT nFlags, Point point);
-    void OnMouseMove(UINT nFlags, Point point);
+    void OnLButtonUp(UINT nFlags, const Point& point);
+    void OnLButtonDown(UINT nFlags, const Point& point);
+    void OnMouseMove(UINT nFlags, const Point& point);
      void OnMouseLeave();
     public:
     void SetBackColor(D2D1_COLOR_F clr) { m_background = clr;}

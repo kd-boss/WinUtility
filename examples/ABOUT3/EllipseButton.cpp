@@ -1,6 +1,7 @@
 #include "EllipseButton.h"
 #include "winuser.h"
 #include <cmath>
+#include <WinUtility/Numbers.h>
 
 HRESULT EllipseButton::CreateDeviceIndependantResorces()
 {
@@ -31,7 +32,7 @@ HRESULT EllipseButton::CreateDeviceResources()
         {
             const auto properties = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT,
                                                                  D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
-                                                                 ::GetDpiForWindow(*this), ::GetDpiForWindow(*this));
+                                                                 convert_to<float>(::GetDpiForWindow(*this)), convert_to<float>(::GetDpiForWindow(*this)));
             hr = m_factory->CreateDCRenderTarget(&properties, m_target.GetAddressOf());
             if (SUCCEEDED(hr))
             {
@@ -80,13 +81,13 @@ HRESULT EllipseButton::Render(DC dc, Rect rect)
         m_target->BindDC(dc, &rect);
         m_target->SetTransform(D2D1::Matrix3x2F::Identity());
         m_target->BeginDraw();
-        m_target->Clear(D2D1::ColorF(240, 240, 240,0.94));
+        m_target->Clear(D2D1::ColorF(240.f, 240.f, 240.f,0.94f));
         auto pt = rect.CenterPoint();
         m_brush->SetColor(m_background);
-        m_target->DrawEllipse(D2D1::Ellipse(D2D1::Point2F(pt.x, pt.y), rect.Width() / 2, rect.Height() / 2), m_brush.Get());
-        m_target->FillEllipse(D2D1::Ellipse(D2D1::Point2F(pt.x, pt.y), rect.Width() / 2, rect.Height() / 2), m_brush.Get());
+        m_target->DrawEllipse(D2D1::Ellipse(D2D1::Point2F(convert_to<float>(pt.x), convert_to<float>(pt.y)), convert_to<float> (rect.Width() / 2),convert_to<float>( rect.Height() / 2)), m_brush.Get());
+        m_target->FillEllipse(D2D1::Ellipse(D2D1::Point2F(convert_to<float>(pt.x), convert_to<float>(pt.y)), convert_to<float> (rect.Width() / 2),convert_to<float>( rect.Height() / 2)), m_brush.Get());
         m_brush->SetColor(m_foreground);
-        m_target->DrawTextW(ts.c_str(), ts.length(), m_fmt.Get(), D2D1::RectF(rect.right /2 - (m_fmt->GetFontSize() / 2 * ts.length() /2), rect.bottom/2 - m_fmt->GetFontSize() /2 , rect.right, rect.bottom), m_brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE, DWRITE_MEASURING_MODE_NATURAL);
+        m_target->DrawTextW(ts.c_str(), convert_to<UINT32>(ts.length()), m_fmt.Get(), D2D1::RectF(rect.right /2 - (m_fmt->GetFontSize() / 2 * ts.length() /2), rect.bottom/2 - m_fmt->GetFontSize() /2 , convert_to<float>(rect.right),convert_to<float>( rect.bottom)), m_brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE, DWRITE_MEASURING_MODE_NATURAL);
         hr = m_target->EndDraw();
     }
     if (hr == D2DERR_RECREATE_TARGET)
@@ -121,7 +122,7 @@ void EllipseButton::OnMouseLeave()
         ReleaseDC(dc);
 }
 
-void EllipseButton::OnMouseMove(UINT nFlags, Point point)
+void EllipseButton::OnMouseMove(UINT nFlags, const Point& point)
 {
     TRACKMOUSEEVENT tme = {0};
     tme.cbSize = sizeof(TRACKMOUSEEVENT);
@@ -133,7 +134,7 @@ void EllipseButton::OnMouseMove(UINT nFlags, Point point)
     Rect rect;
     GetClientRect(rect);
     Point pt = rect.CenterPoint();
-    auto elip = D2D1::Ellipse(D2D1::Point2F(pt.x, pt.y), rect.Width() / 2, rect.Height() / 2);
+    auto elip = D2D1::Ellipse(D2D1::Point2F(convert_to<float>(pt.x), convert_to<float>(pt.y)), convert_to<float>(rect.Width() / 2), convert_to<float>(rect.Height() / 2));
     if(((std::pow(static_cast<float>(point.x) - elip.point.x,2))/std::pow(elip.radiusX,2) + std::pow((static_cast<float>(point.y) - elip.point.y),2)/std::pow(elip.radiusY,2) <= 1)) 
     {
         auto dc = GetDC();
@@ -143,14 +144,14 @@ void EllipseButton::OnMouseMove(UINT nFlags, Point point)
     m_background = back;
 }
 
-void EllipseButton::OnLButtonDown(UINT nFlags, Point point)
+void EllipseButton::OnLButtonDown(UINT nFlags, const Point& point)
 {
     D2D1_COLOR_F back = m_background;
     m_background = D2D1::ColorF(D2D1::ColorF::Blue);
     Rect rect;
     GetClientRect(rect);
     Point pt = rect.CenterPoint();
-    auto elip = D2D1::Ellipse(D2D1::Point2F(pt.x, pt.y), rect.Width() / 2, rect.Height() / 2);
+    auto elip = D2D1::Ellipse(D2D1::Point2F(convert_to<float>(pt.x), convert_to<float>(pt.y)), convert_to<float>(rect.Width() / 2), convert_to<float>(rect.Height() / 2));
     if(((std::pow(static_cast<float>(point.x) - elip.point.x,2))/std::pow(elip.radiusX,2) + std::pow((static_cast<float>(point.y) - elip.point.y),2)/std::pow(elip.radiusY,2) <= 1)) 
     {
         auto dc = GetDC();
@@ -160,12 +161,12 @@ void EllipseButton::OnLButtonDown(UINT nFlags, Point point)
     m_background = back;
 }
 
-void EllipseButton::OnLButtonUp(UINT nFlags, Point point)
+void EllipseButton::OnLButtonUp(UINT nFlags, const Point& point)
 {
     Rect rect;
     GetClientRect(rect);
     Point pt = rect.CenterPoint();
-    auto elip = D2D1::Ellipse(D2D1::Point2F(pt.x, pt.y), rect.Width() / 2, rect.Height() / 2);
+    auto elip = D2D1::Ellipse(D2D1::Point2F(convert_to<float>(pt.x), convert_to<float>(pt.y)), convert_to<float>(rect.Width() / 2), convert_to<float>(rect.Height() / 2));
     if(((std::pow(static_cast<float>(point.x) - elip.point.x,2))/std::pow(elip.radiusX,2) + std::pow((static_cast<float>(point.y) - elip.point.y),2)/std::pow(elip.radiusY,2) <= 1)) 
     {
         auto dc = GetDC();

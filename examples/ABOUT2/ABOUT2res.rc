@@ -1,5 +1,4 @@
 #include "Resource.h"
-#include "afxres.h"
 #include "windows.h"
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US

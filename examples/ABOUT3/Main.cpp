@@ -1,4 +1,5 @@
 #include "About3.h"
+#include <WinUtility/Numbers.h>
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmd, int iCmdShow)
 {
@@ -15,5 +16,5 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR szCmd, 
             DispatchMessage(&msg);
         }
     }
-    return msg.wParam;
+    return convert_to<int>(msg.wParam);
 }
