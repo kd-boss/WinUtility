@@ -16,6 +16,7 @@
 #include <tuple>
 #include <numeric>
 #include <limits>
+#include <format>
 #include <Rpc.h>
 
 // usefull debugging macro's
@@ -90,6 +91,20 @@ inline void TRACE(CHAR const *const format, ...)
 #define TRACE
 #endif
 #endif
+
+template<typename... Args>
+void debug_println(std::format_string<Args...> fmt, Args&&... args)
+{
+    std::string narrow_str = std::format(fmt, std::forward<Args>(args)... ) + "\n";
+    OutputDebugStringA(narrow_str.c_str());
+}
+
+template<typename... Args>
+void debug_println(std::wformat_string<Args...> fmt, Args&&... args)
+{
+	std::wstring wide_str = std::format(fmt, std::forward<Args>(args)... ) + L"\n";
+	OutputDebugStringW(wide_str.c_str());
+}
 
 namespace System
 {
