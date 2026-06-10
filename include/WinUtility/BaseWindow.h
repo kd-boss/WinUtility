@@ -5004,8 +5004,8 @@ public:
                                   rect.Height(), hWndParant, menu, HINST_THISCOMPONENT, lpCreateParam);
         if (!m_hwnd)
         {
-            System::SystemException ex{GetLastError(), __FILE__, __LINE__};
-            auto mess = ex.what();
+           // System::SystemException ex{GetLastError(), __FILE__, __LINE__};
+           // auto mess = ex.what();
             return nullptr;
         }
         return m_hwnd;
@@ -6437,16 +6437,21 @@ inline HINSTANCE BaseModule::SetResourceInstance(HINSTANCE hInst) throw()
 SELECTANY BaseModule _BaseModule;
 SELECTANY CriticalSection _wndCS;
 SELECTANY std::vector<CreateWndData> _wndData;
-
-#ifdef _X86_
+#if defined(_X86_) || defined(_M_IX86)
 #pragma pack(push, 1)
 struct _WndProcThunk
 {
-    DWORD m_mov;  // mov dword ptr [esp+0x4], pThis (esp+0x4 is hWnd)
-    DWORD m_this; // replaces hWnd pointer with the 'this' pointer on the
-    // parameter stack
-    BYTE m_jmp;      // jmp commmand
-    DWORD m_relproc; // relative jmp (address of EndProc)
+    // mov eax, imm32 (load this pointer into eax)
+    BYTE m_mov_eax_op;      // B8
+    DWORD m_this;           // The this pointer immediate
+    
+    // mov [esp+4], eax (replace hwnd with this)
+    BYTE m_mov_mem[4];      // 89 44 24 04
+    
+    // jmp rel32
+    BYTE m_jmp_op;          // E9
+    DWORD m_relproc;        // Relative offset
+    
     void *GetCodeAddress()
     {
         return this;
@@ -6454,7 +6459,8 @@ struct _WndProcThunk
 };
 #pragma pack(pop)
 #endif
-#ifdef __x86_64__
+
+#if defined(__x86_64__) || defined(_M_X64)
 #pragma pack(push, 2)
 struct _WndProcThunk
 {
@@ -6470,27 +6476,13 @@ struct _WndProcThunk
 };
 #pragma pack(pop)
 #endif
-#ifdef _M_X64
-#pragma pack(push, 2)
-struct _WndProcThunk
-{
-    USHORT m_raxMov;  // mov rcx,[pthis]
-    ULONG64 m_raxImm; // [pthis]
-    USHORT m_rcxMov;  // mov rax ,[proc]
-    ULONG64 m_rcxImm; // [proc]
-    USHORT m_raxJmp;  // jmp rax
-    void *GetCodeAddress()
-    {
-        return this;
-    }
-};
-#pragma pack(pop)
-#endif
+
+
 
 class WndProcThunk
 {
 public:
-#if defined(__x86_64__) || defined(_M_X64)
+#if defined(__x86_64__) || defined(_M_X64) || (defined(_M_IX86) && defined(_MSC_VER))
     _WndProcThunk *thunk; // for x86_64 we need to VirtualAlloc the thunk code,    // and make the page executable
 #else 
     _WndProcThunk thunk; // for x86 we need only to stack allocate it, which fails                   // at runtime with msvc.
@@ -6498,7 +6490,7 @@ public:
 
     void Init(WNDPROC proc, void *pThis)
     {
-#if defined(__x86_64__) || defined(_WIN64)
+#if defined(__x86_64__) || (defined(_M_X64) && defined(_MSC_VER))
         thunk =
             (_WndProcThunk *)::VirtualAlloc(0, sizeof(_WndProcThunk), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
         thunk->m_rcxMov = 0xb948;         // x86_64 op code : mov rcx,this
@@ -6507,26 +6499,34 @@ public:
         thunk->m_raxImm = (ULONG64)proc;  // target pointer
         thunk->m_raxJmp = 0xe0ff;         // jmp rax
         ::FlushInstructionCache(::GetCurrentProcess(), thunk, sizeof(_WndProcThunk));
-#else
-#ifdef _x86
-        // x86 — was a value member (non-executable).  Now VirtualAlloc'd for use by msvc.
+#elif defined(_MSC_VER) && defined(_M_IX86)
         thunk = static_cast<_WndProcThunk *>(
             ::VirtualAlloc(nullptr, sizeof(_WndProcThunk),
                            MEM_COMMIT | MEM_RESERVE,
                            PAGE_EXECUTE_READWRITE));
+        
+        if (thunk == nullptr)
+            return;
 
-        thunk->m_mov = 0x042444C7; // mov dword ptr [esp+4], imm32
+        // mov eax, this (B8 [imm32])
+        thunk->m_mov_eax_op = 0xB8;
         thunk->m_this = static_cast<DWORD>(reinterpret_cast<ULONG_PTR>(pThis));
-        thunk->m_jmp = 0xe9; // jmp rel32
-        // Displacement = target - address_of_next_instruction
-        // Next instruction after the jmp = thunk pointer + sizeof struct
-        // KEY FIX: use `thunk` (the alloc'd block), not `this` (the wrapper).
-        thunk->m_relproc = DWORD(
-            reinterpret_cast<INT_PTR>(proc) - (reinterpret_cast<INT_PTR>(thunk) + static_cast<INT_PTR>(sizeof(_WndProcThunk))));
+        
+        // mov [esp+4], eax (89 44 24 04)
+        thunk->m_mov_mem[0] = 0x89;
+        thunk->m_mov_mem[1] = 0x44;
+        thunk->m_mov_mem[2] = 0x24;
+        thunk->m_mov_mem[3] = 0x04;
+        
+        // jmp rel32 (E9 [rel32])
+        thunk->m_jmp_op = 0xE9;
+        INT_PTR thunk_addr = reinterpret_cast<INT_PTR>(thunk);
+        INT_PTR proc_addr = reinterpret_cast<INT_PTR>(proc);
+        INT_PTR next_instr = thunk_addr + sizeof(_WndProcThunk);
+        thunk->m_relproc = static_cast<DWORD>(proc_addr - next_instr);
 
-        ::FlushInstructionCache(::GetCurrentProcess(),
-                                thunk, sizeof(_WndProcThunk));
-#else
+        ::FlushInstructionCache(::GetCurrentProcess(), thunk, sizeof(_WndProcThunk));
+#elif __GNUG__
         thunk.m_mov = 0x042444C7;               // x86 op code : mov eax, DWORD_PTR this
         thunk.m_this = (ULONG_PTR)(ULONG)pThis; // this
         thunk.m_jmp = 0xe9;                     // x86 op code  : jmp relproc  (relproc is calculated to
@@ -6544,12 +6544,11 @@ public:
 // sub eax,al (from the argument stack) (replacing HWND with the this ptr)
 // jmp  BaseWindow::EndProc
 #endif
-#endif
     }
 
     WNDPROC GetWNDPROC()
     {
-#if defined(__x86_64__) || defined(_MSC_VER)
+#if (defined(__x86_64__) || defined(_MSC_VER)) 
         return (WNDPROC)thunk->GetCodeAddress();
 #else
         return (WNDPROC)thunk.GetCodeAddress();
@@ -6558,7 +6557,7 @@ public:
 
     ~WndProcThunk()
     {
-#if defined(__x86_64__) || defined(_MSC_VER)
+#if (defined(__x86_64__) || defined(_M_X64)) || (defined(_M_IX86) && defined(_MSC_VER))
         if (thunk)
             ::VirtualFree(thunk, 0, MEM_RELEASE);
 #endif
@@ -6780,6 +6779,13 @@ public:
                     ::SetWindowLongPtr(pThis->m_hwnd, GWLP_WNDPROC, (LONG_PTR)pThis->oldProc);
                     return lRes;
                 }
+#elif defined(_M_IX86) && defined(_MSC_VER)
+                if (pThis->oldProc != (WNDPROC)pThis->m_thunk.thunk &&
+                    ((WNDPROC)::GetWindowLongPtr(pThis->m_hwnd, GWLP_WNDPROC) == (WNDPROC)pThis->m_thunk.thunk))
+                {
+                    ::SetWindowLongPtr(pThis->m_hwnd, GWLP_WNDPROC, (LONG_PTR)pThis->oldProc);
+                    return lRes;
+                }
 #else
                 if (pThis->oldProc != (WNDPROC)&pThis->m_thunk.thunk &&
                     ((WNDPROC)::GetWindowLongPtr(pThis->m_hwnd, GWLP_WNDPROC) == (WNDPROC)&pThis->m_thunk.thunk))
@@ -6834,9 +6840,13 @@ public:
 #if defined(__x86_64__) || defined(_WIN64)
             WNDPROC pProc = (WNDPROC)(pThis->m_thunk.thunk);                                   // cast the thunk pointer to a wndproc.
             pThis->oldProc = (WNDPROC)::SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)pProc); // replace the winproc with the thunk for this window.
-#else
-            WNDPROC pProc = (WNDPROC) & (pThis->m_thunk.thunk); // these two steps are the same as above for the 64 bit,
+#elif defined(_M_IX86) && defined(_MSC_VER)
+            WNDPROC pProc = (WNDPROC)(pThis->m_thunk.thunk);                                   // x86 MSVC: thunk is VirtualAlloc'd pointer, use directly
             pThis->oldProc = (WNDPROC)::SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)pProc);
+#else
+WNDPROC pProc;
+            pProc = (WNDPROC) & (pThis->m_thunk.thunk); // GCC/Clang x86: thunk is stack-allocated, take address
+            pThis->oldProc = (WNDPROC)::SetWindowLong(hwnd, GWL_WNDPROC, (LONG)pProc);
 #endif
             if (pThis->oldProc != WindowProc)
                 WINTRACE(0,(LPTSTR) TEXT("Sub-classing through a discarded hook.\n"));
@@ -6852,13 +6862,13 @@ public:
         WINCHECK(hWnd);
         m_thunk.Init(EndProc, this);
 #ifdef __x86_64__
-        WNDPROC pProc = (WNDPROC)(m_thunk.thunk);
-        oldProc = (WNDPROC)::SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)pProc);
+    WNDPROC pProc = (WNDPROC)(m_thunk.thunk);
+#elif defined(_M_IX86) && defined(_MSC_VER)
+    WNDPROC pProc = (WNDPROC)(m_thunk.thunk);
 #else
-        WNDPROC pProc = (WNDPROC) & (m_thunk.thunk);
-        oldProc = (WNDPROC)::SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)pProc);
+    WNDPROC pProc = (WNDPROC) & (m_thunk.thunk);
 #endif
-        if (oldProc == nullptr)
+    oldProc = (WNDPROC)::SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)pProc);        if (oldProc == nullptr)
             return FALSE;
 
         ((BaseWindowImplT<TBase, TWinTraits> *)this)->m_hwnd = hWnd;
@@ -6870,6 +6880,8 @@ public:
         HWND hWndo = ((BaseWindowImplT<TBase, TWinTraits> *)this)->m_hwnd;
         WINCHECK(hWndo);
 #ifdef __x86_64__
+        WNDPROC ourproc = (WNDPROC)(m_thunk.thunk);
+#elif defined(_M_IX86) && defined(_MSC_VER)
         WNDPROC ourproc = (WNDPROC)(m_thunk.thunk);
 #else
         WNDPROC ourproc = (WNDPROC) & (m_thunk.thunk);
@@ -6949,9 +6961,15 @@ public:
         }
         else
         {
+            try{
             hWnd = ::CreateWindowEx(dwExStyle, MAKEINTATOM(atom), szWindowName, dwStyle, rect->left, rect->top,
                                     rect->right - rect->left, rect->bottom - rect->top, hWndParent, MenuOrID,
                                     HINST_THISCOMPONENT, lpCreateParam);
+            }
+            catch(...)
+            {
+
+            }
         }
         TBase::m_hwnd = hWnd;
         return hWnd;
@@ -7102,6 +7120,9 @@ public:
 #ifdef __x86_64__
             WNDPROC pProc = (WNDPROC)(pThis->m_thunk.thunk);
             WNDPROC oldProc = (WNDPROC)::SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)pProc);
+#elif defined(_M_IX86) && defined(_MSC_VER)
+            WNDPROC pProc = (WNDPROC)(pThis->m_thunk.thunk);
+            pThis->oldProc = (WNDPROC)::SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)pProc);
 #else
             WNDPROC pProc = (WNDPROC) & (pThis->m_thunk.thunk);
             pThis->oldProc = (WNDPROC)::SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)pProc);
@@ -7254,10 +7275,13 @@ public:
     {
         return DialogProc;
     }
-
+#ifndef _M_IX86
     static INT_PTR CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     static INT_PTR CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
+#else
+    static LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    static BOOL CALLBACK DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+#endif
     BOOL MapDialogRect(LPRECT lpRect)
     {
         WINASSERT(::IsWindow(((DialogBaseImplT<TBase> *)this)->m_hwnd));
@@ -7338,8 +7362,13 @@ public:
     }
 };
 
-template <class TBase>
+#if defined(_M_IX86) 
+template <class TBase> \
+LRESULT CALLBACK DialogBaseImplT<TBase>::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+#else
+template <class TBase> \
 INT_PTR CALLBACK DialogBaseImplT<TBase>::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+#endif
 {
     auto ret = std::find_if(_wndData.rbegin(), _wndData.rend(),
                             [&](CreateWndData &dat)
@@ -7353,15 +7382,25 @@ INT_PTR CALLBACK DialogBaseImplT<TBase>::WindowProc(HWND hWnd, UINT uMsg, WPARAM
         pThis->m_hwnd = hWnd;
         pThis->m_thunk.Init((WNDPROC)pThis->GetDialogProc(), pThis);
         DLGPROC pProc = (DLGPROC)pThis->m_thunk.GetWNDPROC();
+    #if defined(_M_IX86)
+        DLGPROC pOldProc = (DLGPROC)::SetWindowLong(hWnd, DWL_DLGPROC, (LONG)pProc);
+    #else
         DLGPROC pOldProc = (DLGPROC)::SetWindowLongPtr(hWnd, DWLP_DLGPROC, (LONG_PTR)pProc);
+    #endif
         return pProc(hWnd, uMsg, wParam, lParam);
     }
     else
         return 0;
 }
 
-template <class TBase>
+
+#if defined(_M_IX86) 
+template <class TBase> \
+BOOL CALLBACK DialogBaseImplT<TBase>::DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+#else
+template <class TBase> \
 INT_PTR CALLBACK DialogBaseImplT<TBase>::DialogProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+#endif
 {
     DialogBaseImplT<TBase> *pThis = (DialogBaseImplT<TBase> *)hWnd;
     LPARAM lRes = 0;
@@ -7396,6 +7435,7 @@ INT_PTR CALLBACK DialogBaseImplT<TBase>::DialogProc(HWND hWnd, UINT uMsg, WPARAM
             // Make sure the window was not destroyed before setting attributes.
             if (pThis->m_state != DialogBaseImplT<TBase>::WINSTATE_DESTROYED)
             {
+                
                 ::SetWindowLongPtr(pThis->m_hwnd, DWLP_MSGRESULT, lRes);
             }
             break;
@@ -7412,11 +7452,20 @@ INT_PTR CALLBACK DialogBaseImplT<TBase>::DialogProc(HWND hWnd, UINT uMsg, WPARAM
             ::SetWindowLongPtr(pThis->m_hwnd, GWLP_WNDPROC, (LONG_PTR)pThis->oldProc);
             return lRes;
         }
-#else
-        if (pThis->oldProc != (WNDPROC)&pThis->m_thunk.thunk &&
-            ((WNDPROC)::GetWindowLongPtr(pThis->m_hwnd, GWLP_WNDPROC) == (WNDPROC)&pThis->m_thunk.thunk))
+#elif defined(_M_IX86) && defined(_MSC_VER)
+
+        if (pThis->oldProc != (WNDPROC)pThis->m_thunk.thunk &&
+            ((WNDPROC)::GetWindowLong(pThis->m_hwnd, GWL_WNDPROC) == (WNDPROC)pThis->m_thunk.thunk))
         {
-            ::SetWindowLongPtr(pThis->m_hwnd, GWLP_WNDPROC, (LONG_PTR)pThis->oldProc);
+            ::SetWindowLong(pThis->m_hwnd, GWL_WNDPROC, (LONG)pThis->oldProc);
+            return lRes;
+        }
+#elif defined(_M_IX86)
+
+        if (pThis->oldProc != (WNDPROC)&pThis->m_thunk.thunk &&
+            ((WNDPROC)::GetWindowLong(pThis->m_hwnd, GWL_WNDPROC) == (WNDPROC)&pThis->m_thunk.thunk))
+        {
+            ::SetWindowLong(pThis->m_hwnd, GWL_WNDPROC, (LONG)pThis->oldProc);
             return lRes;
         }
 #endif
@@ -7430,6 +7479,7 @@ INT_PTR CALLBACK DialogBaseImplT<TBase>::DialogProc(HWND hWnd, UINT uMsg, WPARAM
     return bRet;
 }
 
+
 typedef DialogBaseImplT<Window> DialogImlBase;
 
 template <class T, class TBase = Window>
@@ -7442,6 +7492,23 @@ public:
         return ::RegisterClassEx(&wcx);
     }
     // modal stuff
+#if defined(_M_IX86)
+BOOL DoModal(HWND hWndParent = ::GetActiveWindow(), LPARAM dwInitParam = 0)
+    {
+      
+      
+        _wndCS.Lock();
+        _wndData.push_back({this, ::GetCurrentThreadId()});
+        _wndCS.UnLock();
+        SetLastError(ERROR_SUCCESS);
+        auto res = ::DialogBox(_BaseModule.m_hInstance, MAKEINTRESOURCE(static_cast<T *>(this)->IDD),
+                                hWndParent,(DLGPROC)T::WindowProc, dwInitParam);
+        if(res == -1)
+            HR(__HRESULT_FROM_WIN32(GetLastError()));
+
+        return res;
+    }
+#else
     INT_PTR DoModal(HWND hWndParent = ::GetActiveWindow(), LPARAM dwInitParam = 0)
     {
       
@@ -7457,6 +7524,7 @@ public:
 
         return res;
     }
+#endif
 
     BOOL EndDialog(int retCode)
     {
