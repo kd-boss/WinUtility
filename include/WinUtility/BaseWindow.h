@@ -5176,10 +5176,10 @@ public:
     HRESULT GetWindowText(std::tstring &str)
     {
         HRESULT hr = S_OK;
-        int txtlen = GetWindowTextLength();
+        unsigned int txtlen = GetWindowTextLength();
         try
         {
-            if (txtlen + 1 <= str.max_size())
+            if (txtlen + 1U <= str.max_size())
             {
                 str.resize(txtlen + 1);
             }
@@ -6414,7 +6414,7 @@ inline HINSTANCE BaseModule::GetHInstanceAt(int i) throw()
         {
             return nullptr;
         }
-        if (m_vecResources.size() >= i)
+        if (m_vecResources.size() >= static_cast<size_t>(i))
         {
             return nullptr;
         }
@@ -6950,7 +6950,7 @@ public:
             dwStyle = TWindowTraits::GetStyle();
         if (dwExStyle == 0)
             dwExStyle = TWindowTraits::GetStyleEx();
-        HWND hWnd;
+        HWND hWnd = nullptr;
 
         if (atom == 0)
         {
@@ -7501,7 +7501,7 @@ BOOL DoModal(HWND hWndParent = ::GetActiveWindow(), LPARAM dwInitParam = 0)
         _wndData.push_back({this, ::GetCurrentThreadId()});
         _wndCS.UnLock();
         SetLastError(ERROR_SUCCESS);
-        auto res = ::DialogBox(_BaseModule.m_hInstance, MAKEINTRESOURCE(static_cast<T *>(this)->IDD),
+        auto res = ::DialogBoxParam(_BaseModule.m_hInstance, MAKEINTRESOURCE(static_cast<T *>(this)->IDD),
                                 hWndParent,(DLGPROC)T::WindowProc, dwInitParam);
         if(res == -1)
             HR(__HRESULT_FROM_WIN32(GetLastError()));
@@ -15165,9 +15165,17 @@ public:
     static LPCTSTR GetWndClassName()
     {
 #if (_RICHEDIT_VER >= 0x0500)
-        return MSFTEDIT_CLASS;
+#if(__GNUG__)
+return TEXT(MSFTEDIT_CLASS);
 #else
-        return RICHEDIT_CLASS;
+return MSFTEDIT_CLASS;
+#endif
+#else
+#if(__GNUG__)
+return TEXT(RICHEDIT_CLASS);
+#else
+return RICHEDIT_CLASS;
+#endif
 #endif
     }
 
