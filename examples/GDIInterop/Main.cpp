@@ -1,4 +1,5 @@
 #include "GdiInterop.h"
+#include <WinUtility/Numbers.h>
 
 int WINAPI wWinMain(HINSTANCE,HINSTANCE, LPTSTR,int)
 {
@@ -25,5 +26,5 @@ int WINAPI wWinMain(HINSTANCE,HINSTANCE, LPTSTR,int)
         }
         
     }
-    return msg.wParam;
+    return convert_to<int>(msg.wParam);
 }

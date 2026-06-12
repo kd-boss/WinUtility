@@ -2,6 +2,7 @@
 #include "Clover.h"
 #include <cmath>
 #include <numbers>
+#include <WinUtility/Numbers.h>
 
 HRESULT MyWindow::CombineGeoms(
 	ID2D1Geometry *pA,
@@ -51,10 +52,9 @@ HRESULT MyWindow::RebuildCloverGeometry()
 	if (size.cx == 0 || size.cy == 0)
 		return S_OK;
 
-	const float cx = static_cast<float>(size.cx);
-	const float cy = static_cast<float>(size.cy);
+	Number cx = static_cast<float>(size.cx);
+	Number cy = static_cast<float>(size.cy);
 
-	
 	ID2D1EllipseGeometry *e[4] = {};
 
 	HRESULT hr = m_ft->CreateEllipseGeometry( // left petal
@@ -69,7 +69,6 @@ HRESULT MyWindow::RebuildCloverGeometry()
 		hr = m_ft->CreateEllipseGeometry( // bottom petal
 			D2D1::Ellipse(D2D1::Point2F(cx / 2.f, 3.f * cy / 4.f), cx / 6.f, cy / 4.f), &e[3]);
 
-	
 	ID2D1PathGeometry *pLR = nullptr; // left  OR right
 	ID2D1PathGeometry *pTB = nullptr; // top   OR bottom
 	if (SUCCEEDED(hr))
@@ -77,12 +76,10 @@ HRESULT MyWindow::RebuildCloverGeometry()
 	if (SUCCEEDED(hr))
 		hr = CombineGeoms(e[2], e[3], D2D1_COMBINE_MODE_UNION, &pTB);
 
-	
 	if (SUCCEEDED(hr))
 		hr = CombineGeoms(pLR, pTB, D2D1_COMBINE_MODE_XOR, m_cloverGeo.GetAddressOf());
 
-	
-	for (int i = 0; i < 4; ++i)
+	for (Number i = 0; i < 4; ++i)
 		if (e[i])
 			e[i]->Release();
 	if (pLR)
@@ -110,10 +107,10 @@ HRESULT MyWindow::Render(const PAINTSTRUCT &ps)
 	GetClientRect(&rc);
 	m_rt->BindDC(ps.hdc, &rc);
 	auto size = rc.Size();
-	auto radius = std::hypotf(size.cx / 2.0, size.cy / 2.0);
+	Number radius = std::hypotf(size.cx / 2.0f, size.cy / 2.0f);
 	auto center = D2D1::Point2F(size.cx / 2.0f, size.cy / 2.0f);
-	
-	auto twopi = (2.f * std::numbers::pi);
+
+	Number twopi = (2.f * static_cast<float>(std::numbers::pi));
 	m_rt->BeginDraw();
 	D2D1_LAYER_PARAMETERS params = D2D1::LayerParameters(
 		D2D1::RectF(static_cast<float>(rc.left), static_cast<float>(rc.top), static_cast<float>(rc.right), static_cast<float>(rc.bottom)),
@@ -125,7 +122,7 @@ HRESULT MyWindow::Render(const PAINTSTRUCT &ps)
 	m_rt->Clear(D2D1::ColorF(D2D1::ColorF::LawnGreen));
 
 	m_rt->SetTransform(D2D1::Matrix3x2F::Translation(center.x, center.y));
-	for (float angle = 0.f; angle < twopi; angle += twopi / 360.f)
+	for (Number angle = 0.f; angle < twopi; angle += twopi / 360.0f)
 	{
 		m_rt->DrawLine(D2D1::Point2F(0.0f, 0.0f),
 					   D2D1::Point2F(radius * std::cos(angle) + 0.5f, radius * sin(angle) + 0.5f),
@@ -150,8 +147,8 @@ HRESULT MyWindow::Initialize()
 		return hr;
 	// get app title from resource file.
 	std::tstring apptitle;
-	apptitle.resize(256);
-	LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), apptitle.length());
+	apptitle.resize(std::size_t{256});
+	LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), convert_to<int>(apptitle.length()));
 	apptitle.shrink_to_fit();
 
 	hr = ::IsWindow(Create(nullptr, &Window::rcDefault, apptitle.c_str())) ? S_OK : E_FAIL;

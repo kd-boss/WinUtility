@@ -110,7 +110,7 @@ void Checker3_child::SetChecked(BOOL checked)
     Invalidate(FALSE);
 }
 
-void Checker3_child::OnMouseMove(UINT nFlags, Point point)
+void Checker3_child::OnMouseMove(UINT nFlags, const Point& point)
 {
     if(!isTracking)
     {
@@ -141,14 +141,14 @@ void Checker3_child::OnMouseLeave()
     Invalidate(FALSE);
 }
 
-void Checker3_child::OnLButtonDown(UINT nFlags, Point point)
+void Checker3_child::OnLButtonDown(UINT nFlags, const Point& point)
 {
     m_background = m_mouseDown;
     m_checked = !m_checked;
     Invalidate(FALSE);
 }
 
-void Checker3_child::OnLButtonUp(UINT nFlags, Point point)
+void Checker3_child::OnLButtonUp(UINT nFlags, const Point& point)
 {
     m_background = m_mouseOver;
     Invalidate(FALSE);

@@ -4,7 +4,7 @@ RCDIR := .
 
 TARGET := AltWind.exe
 CXX := g++
-CXXFLAGS := -std=c++23 -municode
+CXXFLAGS := -std=c++23 -municode -DUNICODE -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wformat=2  
 LDFLAGS := -std=c++23 -municode -mwindows
 RC := windres
 LIBS := -lcomctl32 -ld2d1

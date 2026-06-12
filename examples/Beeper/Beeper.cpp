@@ -1,3 +1,4 @@
+#include <WinUtility/Numbers.h>
 
 #include "Beeper.h"
 VOID CALLBACK TimerProc(HWND hwnd, UINT message, UINT_PTR iTimerID, DWORD dwTime)
@@ -52,7 +53,7 @@ HRESULT Beeper::InitDeviceResources()
 	{
 		hr = m_factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(
 												   D2D1_RENDER_TARGET_TYPE_DEFAULT,
-												   D2D1::PixelFormat(), static_cast<float>(dpi), static_cast<float>(dpi)),
+												   D2D1::PixelFormat(), convert_to<float>(dpi), convert_to<float>(dpi)),
 											   D2D1::HwndRenderTargetProperties(*this, D2D1::SizeU(rc.Width(), rc.Height())),
 											   m_rt.GetAddressOf());
 	}
@@ -69,7 +70,7 @@ HRESULT Beeper::Initialize()
 		// get app title from resource file.
 		std::tstring apptitle;
 		apptitle.resize(7);
-		hr = LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), apptitle.length()) > 0 ? S_OK : E_FAIL;
+		hr = LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), convert_to<int>(apptitle.length())) > 0 ? S_OK : E_FAIL;
 		if (SUCCEEDED(hr))
 		{
 			hr = ::IsWindow(Create(nullptr, &Window::rcDefault, apptitle.c_str())) ? S_OK : E_FAIL;

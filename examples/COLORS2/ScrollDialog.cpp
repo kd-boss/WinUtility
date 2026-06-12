@@ -1,5 +1,5 @@
 #include "ScrollDialog.h"
-
+#include <algorithm>
 BOOL ScrollDialog::OnInit(Window wndFocus, LPARAM lInitParam)
 {
     sb_red = GetDlgItem(10);
@@ -26,13 +26,13 @@ BOOL ScrollDialog::OnVScroll(UINT nSBCode, UINT nPos, ScrollBarControl pScrollBa
             pos += 15;
         break;
         case SB_LINEDOWN:
-            pos = std::min(255, pos + 1);
+            pos = std::min<int>(255, pos + 1);
         break;
         case SB_PAGEUP:
             pos -= 15;
         break;
         case SB_LINEUP:
-            pos = std::max(0, pos - 1);
+            pos = std::max<int>(0, pos - 1);
         break;
         case SB_TOP:
             pos = 0;

@@ -6,7 +6,7 @@ class MyAboutDialog : public BaseDialog<MyAboutDialog>
 {
 public:
 	UINT IDD = IDD_ABOUTBOX; //to use the base dialog class, specify the IDD. 
-	
+	DECLARE_DLG_CLASS(TEXT("MyAboutDialog"))
 	void OnOk(UINT uNotifyCode, int nID, Window wndCtl);
 	void OnClose();
 	int OnCreate(LPCREATESTRUCT lpCreateStruct);

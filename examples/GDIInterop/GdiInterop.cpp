@@ -1,6 +1,7 @@
 #include "GdiInterop.h"
 #include <stdlib.h>
 #include <math.h>
+#include <WinUtility/Numbers.h>
 
 HRESULT GdiInterop::CreateDeviceIndependantResources()
 {
@@ -63,7 +64,7 @@ HRESULT GdiInterop::OnRender(const PAINTSTRUCT& ps)
 
         m_renderTarget->DrawEllipse(D2D1::Ellipse(D2D1::Point2F(150.0f,150.0f),100.0f,100.0f),m_brush.Get(), 3.0f);
         std::tstring str =  TEXT("Some alpha blended text");
-        m_renderTarget->DrawTextW(str.c_str(), str.length(),m_format.Get(),D2D1::RectF(150.0f, 150.0f, 150.0f/2.0f + 150.0f, 150.0f/2.0f - 16.0f),m_alphabrush.Get());
+        m_renderTarget->DrawTextW(str.c_str(), convert_to<UINT32>(str.length()),m_format.Get(),D2D1::RectF(150.0f, 150.0f, 150.0f/2.0f + 150.0f, 150.0f/2.0f - 16.0f),m_alphabrush.Get());
         m_renderTarget->DrawLine(
            line1[0],line1[1],
         m_brush.Get(), 3.0f
@@ -150,8 +151,9 @@ HRESULT GdiInterop::Initalize()
     auto hr =  CreateDeviceIndependantResources();
     if(SUCCEEDED(hr))
     {
-        float dpiX,dpiY;
-        m_factory->GetDesktopDpi(&dpiX,&dpiY);
+        float dpiX = 96.0f;
+        float dpiY = dpiX;
+        
         Rect rc = {0,0,
                 static_cast<int>(::ceil(640.0f * dpiX / 96.0f)),
                 static_cast<int>(::ceil(480.0f * dpiY / 96.0f))
@@ -162,6 +164,14 @@ HRESULT GdiInterop::Initalize()
         hr = IsWindow() ? S_OK : E_FAIL;
         if(SUCCEEDED(hr))
         {
+            dpiX = convert_to<float>(GetDpiForWindow());
+            dpiY = dpiX;
+            Rect rb = {0,0,
+                static_cast<int>(::ceil(640.0f * dpiX / 96.0f)),
+                static_cast<int>(::ceil(480.0f * dpiY / 96.0f))
+                };
+            MoveWindow(rb.left,rb.top,rb.Width(),rb.Height(),FALSE);
+            
             ShowWindow(ShowWindowType::Show);
             UpdateWindow();
         }

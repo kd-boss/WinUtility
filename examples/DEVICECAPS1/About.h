@@ -18,7 +18,8 @@ class MyAbout : public BaseDialog<MyAbout>
 
 public:
     UINT IDD = IDD_ABOUTBOX;
-
+    DECLARE_DLG_CLASS(TEXT("MyAbout"))
+    
     BEGIN_MSG_MAP()
         MSG_WM_INITDIALOG(OnInitDialog);
         MSG_WM_CLOSE(OnClose);

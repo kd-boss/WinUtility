@@ -31,7 +31,7 @@ public:
 
     UINT IDD = HEXCALC;
 
-    DECLARE_DLG_CLASS(nullptr)
+    DECLARE_DLG_CLASS(TEXT("HexCalc"))
 
     BEGIN_MSG_MAP()
         DLG_WM_INITDIALOG(OnInitDialog)

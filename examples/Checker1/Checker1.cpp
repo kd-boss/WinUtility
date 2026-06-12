@@ -1,5 +1,10 @@
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include "Checker1.h"
 #include <format>
+#include <algorithm>
+#include <WinUtility/Numbers.h>
 
 HRESULT Checker1::Initialize()
 {
@@ -14,7 +19,7 @@ HRESULT Checker1::Initialize()
 	{
 		std::tstring apptitle;
 		apptitle.resize(8);
-		LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), apptitle.length());
+		LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), convert_to<int>(apptitle.length()));
 
 		hr = ::IsWindow(Create(nullptr, &Window::rcDefault, apptitle.c_str())) ? S_OK : E_FAIL;
 		if (SUCCEEDED(hr))
@@ -36,11 +41,11 @@ HRESULT Checker1::Render()
 	if (m_rt)
 	{
 		auto sz = m_rt->GetSize();
-		auto rectWidth = sz.width / 5.0f;
-		auto rectHeight = sz.height / 5.0f;
-		for (int i = 0; i < 5; i++)
+		Number rectWidth = sz.width / 5.0f;
+		Number rectHeight = sz.height / 5.0f;
+		for (Number i = 0U; i < 5U; i++)
 		{
-			for (int j = 0; j < 5; j++)
+			for (Number j = 0U; j < 5U; j++)
 			{
 				m_checkers[j + (i * 5)].first = {
 					j * rectWidth,
@@ -126,12 +131,12 @@ void Checker1::DestroyRenderTargetResources()
 	if(m_br)
 	{
 		auto br = m_br.ReleaseAndGetAddressOf();
-		br = nullptr;
+	    (br);
 	}
 	if(m_rt)
 	{
 		auto rt = m_rt.ReleaseAndGetAddressOf();
-		rt = nullptr;
+		(rt);
 	}
 }
 
@@ -164,8 +169,8 @@ void Checker1::OnClose()
 {
 	DestroyRenderTargetResources();
 	if(m_ft){
-		m_ft->Release();
-		m_ft = nullptr;
+		m_ft.ReleaseAndGetAddressOf();
+		
 	}
 	PostQuitMessage(0);
 }
@@ -178,8 +183,8 @@ int Checker1::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void Checker1::OnLButtonDown(UINT nFlags, const Point &pt)
 {
-	auto x = pt.x; 
-	auto y = pt.y;
+	Number x = pt.x; 
+	Number y = pt.y;
 
 	for(auto &a : m_checkers)
 	{
@@ -202,13 +207,13 @@ void Checker1::OnClear(UINT uNotifyCode, int nID, Window wndCtl)
 void Checker1::OnSize(UINT nFlags, Size size)
 {
 	m_size = size;
-	auto rectWidth = m_size.cx / 5.0f;
-	auto rectHeight = m_size.cy / 5.0f;
-	for(int i = 0; i < 5; i++)
+	Number rectWidth = m_size.cx / 5.0f;
+	Number rectHeight = m_size.cy / 5.0f;
+	for(Number i = 0U; i < 5U; i++)
 	{
 		for(int j = 0; j < 5; j++)
 		{
-			m_checkers[j + (i * 5)].first = {
+			m_checkers[j + (i * 5U)].first = {
 				j * rectWidth,
 				i * rectHeight,
 				rectWidth + (j * rectWidth),
@@ -228,10 +233,10 @@ void Checker1::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	Point pt;
 	GetCursorPos(&pt);
 	ScreenToClient(&pt);
-    auto divisioncx = m_checkers[0].first.right - m_checkers[0].first.left;
-	auto divisioncy = m_checkers[0].first.bottom - m_checkers[0].first.top;
-	auto x = static_cast<int>(std::max(0.f, std::min(4.f, pt.x / divisioncx)));
-	auto y = static_cast<int>(std::max(0.f, std::min(4.f, pt.y / divisioncy)));
+    Number divisioncx = m_checkers[0].first.right - m_checkers[0].first.left;
+	Number divisioncy = m_checkers[0].first.bottom - m_checkers[0].first.top;
+	Number x = static_cast<int>(std::max(0.f, std::min<float>(4.f, pt.x / divisioncx)));
+	Number y = static_cast<int>(std::max(0.f, std::min<float>(4.f, pt.y / divisioncy)));
 
     //if(!(x = divisioncx/2 and ((y = divisioncy/2) or (y = 4 * divisioncy +  divisioncy/2))))
 	switch(nChar)

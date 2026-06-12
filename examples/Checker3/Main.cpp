@@ -1,5 +1,6 @@
 #include "Checker3.h"
 #include "winstring.h"
+#include <WinUtility/Numbers.h>
 
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nShow)
 {
@@ -11,6 +12,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nShow)
 
     Checker3 win;
     MSG msg;
+	
     if(SUCCEEDED(win.Initialize()))
     {
 
@@ -26,5 +28,5 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nShow)
 
         }
     }
-    return msg.wParam;
+    return convert_to<int, decltype(msg.wParam)>(msg.wParam);
 }

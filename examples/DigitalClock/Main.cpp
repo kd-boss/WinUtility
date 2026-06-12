@@ -4,6 +4,7 @@
 
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nShow)
 {
+	CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 	// Initialise common controls.
 	INITCOMMONCONTROLSEX icc;
 	icc.dwSize = sizeof(icc);
@@ -27,5 +28,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nShow)
 
         }
     }
+	CoUninitialize();
     return convert_to<int>(msg.wParam);
 }

@@ -1,4 +1,5 @@
 #include "Clover.h"
+#include <WinUtility/Numbers.h>
 
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nShow)
 {
@@ -25,5 +26,5 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nShow)
 
         }
     }
-    return msg.wParam;
+    return convert_to<int,decltype(msg.wParam)>(msg.wParam);
 }

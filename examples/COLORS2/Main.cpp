@@ -26,5 +26,5 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nShow)
 
         }
     }
-    return msg.wParam;
+    return static_cast<int>(msg.wParam);
 }

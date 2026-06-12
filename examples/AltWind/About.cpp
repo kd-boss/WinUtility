@@ -1,7 +1,7 @@
 #include "About.h"
 
 
-BOOL MyAboutDialog::OnInitDialog(Window wndFocus, LPARAM lInitParam)
+BOOL MyAboutDialog::OnInitDialog(Window , LPARAM )
 {
 	return CenterWindow();
 }
@@ -12,7 +12,7 @@ void MyAboutDialog::OnClose()
 	Detach();
 }
 
-void MyAboutDialog::OnOk(UINT uNotifyCode, int nID, Window wndCtl)
+void MyAboutDialog::OnOk(UINT , int nID, Window )
 {
 	EndDialog(nID);
 }

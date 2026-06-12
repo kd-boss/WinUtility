@@ -1,5 +1,7 @@
 
 #include "BtnLook.h"
+#include <format>
+#include <WinUtility/Numbers.h>
 
 
 
@@ -8,8 +10,8 @@ HRESULT BtnLook::Initialize()
 	HRESULT hr = S_OK;
 	//get app title from resource file.
 	std::tstring apptitle;
-    apptitle.resize(256);
-    LoadString(HINST_THISCOMPONENT,IDS_APP_TITLE,apptitle.data(),apptitle.length());
+    apptitle.resize(convert_to<size_t>(256));
+    LoadString(HINST_THISCOMPONENT,IDS_APP_TITLE,apptitle.data(),convert_to<int>(apptitle.length()));
     apptitle.shrink_to_fit();
 
 	hr = ::IsWindow(Create(nullptr, &Window::rcDefault, apptitle.c_str())) ? S_OK : E_FAIL;
@@ -96,7 +98,6 @@ int BtnLook::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void BtnLook::OnLButtonDown(UINT nFlags, const Point &pt)
 {
-    	std::tstringstream str;
-        str << TEXT("Clicked At: ") << pt.x << TEXT(",") << pt.y;
-        MessageBox::Show(str.str().c_str(), TEXT("WinTest"),MessageBoxButtons::Ok , MessageBoxIcon::Information);
+		auto str = std::format(TEXT("Clicked At: {},{}"), pt.x, pt.y);
+        MessageBox::Show(str.c_str(), TEXT("WinTest"),MessageBoxButtons::Ok , MessageBoxIcon::Information);
 }

@@ -1,6 +1,7 @@
 
 
 #include "AltWind.h"
+#include <WinUtility/Numbers.h>
 
 HRESULT MyWindow::CreateDeviceIndependantResources()
 {
@@ -40,7 +41,7 @@ HRESULT MyWindow::CreateDeviceResources()
 	return hr;
 }
 
-HRESULT MyWindow::Render(const PAINTSTRUCT& ps)
+HRESULT MyWindow::Render(const PAINTSTRUCT& )
 {
 	HRESULT hr = S_OK;
 	if(!m_factory)
@@ -63,21 +64,25 @@ HRESULT MyWindow::Render(const PAINTSTRUCT& ps)
 	m_rt->Clear(background);
 	m_rt->DrawGeometry(m_path.Get(), m_brush.Get());
 	m_rt->DrawGeometry(m_path2.Get(), m_brush.Get());
-	//auto color = m_brush->GetColor();
-	//m_brush->SetColor(fillColor);
+
 	m_rt->FillGeometry(m_path.Get(), m_fbrush.Get());
 	m_rt->FillGeometry(m_path2.Get(), m_fbrush.Get()); 
-	//m_brush->SetColor(color);
+
 	hr = m_rt->EndDraw();
 	if(hr == D2DERR_RECREATE_TARGET)
 	{
+
 		auto fbrush = m_fbrush.ReleaseAndGetAddressOf();
+		(*fbrush)->Release();
 		fbrush = nullptr;
 		auto brush = m_brush.ReleaseAndGetAddressOf();
+		(*brush)->Release();
 		brush = nullptr;
 		auto target = m_rt.ReleaseAndGetAddressOf();
+		(*target)->Release();
 		target = nullptr;
 		hr = CreateDeviceResources();
+		
 	}
 	return hr;
 }
@@ -88,8 +93,8 @@ HRESULT MyWindow::Initialize()
 	hr = CreateDeviceIndependantResources();
 	//get app title from resource file.
 	std::tstring apptitle;
-    apptitle.resize(256);
-    LoadString(HINST_THISCOMPONENT,IDS_APP_TITLE,apptitle.data(),apptitle.length());
+    apptitle.resize(convert_to<size_t>(256));
+    LoadString(HINST_THISCOMPONENT,IDS_APP_TITLE,apptitle.data(),convert_to<int>(apptitle.length()));
     apptitle.shrink_to_fit();
 
 	hr = ::IsWindow(Create(nullptr, &Window::rcDefault, apptitle.c_str())) ? S_OK : E_FAIL;
@@ -101,12 +106,12 @@ HRESULT MyWindow::Initialize()
 	return hr;
 }
 
-void MyWindow::OnExit(UINT uNotifyCode, int nID, Window wndCtl)
+void MyWindow::OnExit(UINT , int , Window )
 {
 	OnClose();
 }
 
-void MyWindow::OnAbout(UINT uNotifyCode, int nID, Window wndCtl)
+void MyWindow::OnAbout(UINT , int , Window )
 {
 	if(!about)
 	{
@@ -119,14 +124,14 @@ void MyWindow::OnClose()
     PostQuitMessage(0);
 }
 
-int MyWindow::OnCreate(LPCREATESTRUCT lpCreateStruct)
+int MyWindow::OnCreate(LPCREATESTRUCT )
 {
 	//additional window initalization would go here.
 
     return 0;
 }
 
-void MyWindow::OnSize(UINT nType, Size size)
+void MyWindow::OnSize(UINT , Size )
 {
 	Rect rc;
 	GetClientRect(&rc);
@@ -163,10 +168,13 @@ void MyWindow::OnSize(UINT nType, Size size)
 	if(hr == D2DERR_RECREATE_TARGET)
 	{
 		auto fbrush = m_fbrush.ReleaseAndGetAddressOf();
+		(*fbrush)->Release();
 		fbrush = nullptr;
 		auto brush = m_brush.ReleaseAndGetAddressOf();
+		(*brush)->Release();
 		brush = nullptr;
 		auto target = m_rt.ReleaseAndGetAddressOf();
+		(*target)->Release();
 		target = nullptr;
 		hr = CreateDeviceResources();
 	}
@@ -180,17 +188,20 @@ void MyWindow::CalculateGeometry()
 	Size size = rc.Size();
 	for(int i = 0 ; i < 10; i++)
 	{
-		apt[i].x = static_cast<float>(size.cx) * aptFigure[i].x / 200.0f;
-		apt[i].y = static_cast<float>(size.cy) * aptFigure[i].y / 100.0f;
+		apt[i].x = convert_to<float>(size.cx) * aptFigure[i].x / 200.0f;
+		apt[i].y = convert_to<float>(size.cy) * aptFigure[i].y / 100.0f;
 	}
 
 	if(m_path)
 	{
 		auto path = m_path.ReleaseAndGetAddressOf();
+		(*path)->Release();
 		path = nullptr;
 		auto path2 = m_path2.ReleaseAndGetAddressOf();
+		(*path2)->Release();
 		path2 = nullptr;
 		auto sink = m_sink.ReleaseAndGetAddressOf();
+		(*sink)->Release();
 		sink = nullptr;
 	}
 
@@ -211,7 +222,7 @@ void MyWindow::CalculateGeometry()
 				m_path2->Open(m_sink.GetAddressOf());
 				for(int i = 0; i < 10; i++)
 				{
-					apt[i].x += static_cast<float>(size.cx) / 2;
+					apt[i].x += convert_to<float>(size.cx) / 2.f;
 				}
 				m_sink->SetFillMode(D2D1_FILL_MODE_WINDING);
 				m_sink->BeginFigure(apt[0], D2D1_FIGURE_BEGIN_FILLED);
@@ -228,14 +239,14 @@ void MyWindow::CalculateGeometry()
 	}
 }
 
-void MyWindow::OnPaint(DC dc)
+void MyWindow::OnPaint(DC )
 {
 	BeginPaint(&ps);
 	Render(ps);
 	EndPaint(&ps);
 }
 
-void MyWindow::OnLButtonDown(UINT nFlags, const Point &pt)
+void MyWindow::OnLButtonDown(UINT , const Point&)
 {
     
 }

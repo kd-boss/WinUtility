@@ -21,9 +21,9 @@ class Checker3_child : public BaseWindow<Checker3_child, Window, ChildWindowTrai
     const D2D1_COLOR_F m_mouseOver = D2D1::ColorF(D2D1::ColorF::Orange);
     const D2D1_COLOR_F m_mouseDown = D2D1::ColorF(D2D1::ColorF::Blue);
 
-    void OnMouseMove(UINT nFlags, Point point);
-    void OnLButtonDown(UINT nFlags, Point point);
-    void OnLButtonUp(UINT nFlags, Point point);
+    void OnMouseMove(UINT nFlags, const Point& point);
+    void OnLButtonDown(UINT nFlags, const Point& point);
+    void OnLButtonUp(UINT nFlags, const Point& point);
     void OnMouseLeave();
     
     HRESULT CreateDeviceResources();

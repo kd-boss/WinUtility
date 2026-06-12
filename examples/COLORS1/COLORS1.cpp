@@ -217,5 +217,5 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nShow)
 				DispatchMessage(&msg);
 			}	
     }
-    return msg.wParam;
+    return static_cast<int>(msg.wParam);
 }

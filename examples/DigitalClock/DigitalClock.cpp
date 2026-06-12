@@ -50,8 +50,8 @@ void DigitalClock::DiscardDeviceResources()
 
 void DigitalClock::ApplyTransform(float shiftX)
 {
-	Number tx = (shiftX - 138.f) * m_scale + m_size.cx * 0.5f;
-	Number ty = -36.f * m_scale + m_size.cy * 0.5f;
+	Number<float> tx = (shiftX - 138.f) * m_scale + m_size.cx * 0.5f;
+	Number<float> ty = -36.f * m_scale + m_size.cy * 0.5f;
 
 	m_rt->SetTransform(
 		D2D1::Matrix3x2F::Scale(m_scale, m_scale) *
@@ -167,8 +167,7 @@ void DigitalClock::OnAbout(UINT uNotifyCode, int nID, Window wndCtl)
 
 	if (!about)
 	{
-		about.DoModal();
-		
+		about.DoModal();		
 	}
 }
 

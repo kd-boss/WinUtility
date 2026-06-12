@@ -16,7 +16,7 @@ public:
 	void OnClose();
 	int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	BOOL OnInitDialog(Window wndFocus, LPARAM lInitParam);
-	
+	DECLARE_DLG_CLASS(TEXT("MyAboutDialog"))
 	BEGIN_MSG_MAP()
 		MSG_WM_INITDIALOG(OnInitDialog)
 		MSG_WM_CLOSE(OnClose)

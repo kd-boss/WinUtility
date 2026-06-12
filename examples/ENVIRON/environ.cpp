@@ -1,6 +1,7 @@
 
 
 #include "environ.h"
+#include<WinUtility/Numbers.h>
 
 HRESULT Environ::Initialize()
 {
@@ -8,7 +9,7 @@ HRESULT Environ::Initialize()
 	// get app title from resource file.
 	std::tstring apptitle;
 	apptitle.resize(256);
-	LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), apptitle.length());
+	LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), convert_to<int>(apptitle.length()));
 	apptitle.shrink_to_fit();
 
 	hr = ::IsWindow(Create(nullptr, &Window::rcDefault, apptitle.c_str())) ? S_OK : E_FAIL;
@@ -151,7 +152,7 @@ void Environ::OnUp(UINT uNotifyCode, int nID, Window wndCtl)
 	LVITEM item = {0};
 
 	text.resize(255);
-	item.cchTextMax = text.size();
+	item.cchTextMax = convert_to<int>(text.size());
 	item.pszText = text.data();
 	item.mask |= LVIF_TEXT;
 	item.iItem = m_listView.GetSelectedIndex();
@@ -172,7 +173,7 @@ void Environ::OnDown(UINT uNotifyCode, int nID, Window wndCtl)
 	LVITEM item = {0};
 
 	text.resize(255);
-	item.cchTextMax = text.size();
+	item.cchTextMax = convert_to<int>(text.size());
 	item.pszText = text.data();
 	item.mask |= LVIF_TEXT;
 	item.iItem = m_listView.GetSelectedIndex();
@@ -205,7 +206,7 @@ void Environ::OnSave(UINT uNotifyCode, int nID, Window wndCtl)
 	{
 		text.clear();
 		text.resize(255);
-		m_listView.GetItemText(i, 0, &text[0], text.size());
+		m_listView.GetItemText(i, 0, &text[0], convert_to<int>( text.size()));
 		value += text.c_str();
 		value += TEXT(";");
 	}

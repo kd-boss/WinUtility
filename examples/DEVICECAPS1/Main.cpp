@@ -1,5 +1,6 @@
 
 #include "DEVICECAPS1.h"
+#include <WinUtility/Numbers.h>
 
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
@@ -24,5 +25,5 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
         }
     }
     CoUninitialize();
-    return msg.wParam;
+    return convert_to<int>(msg.wParam);
 }

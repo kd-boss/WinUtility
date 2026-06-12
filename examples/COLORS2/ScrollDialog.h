@@ -9,7 +9,7 @@ class ScrollDialog : public BaseDialog<ScrollDialog, Window>
     BOOL OnVScroll(UINT nSBCode, UINT nPos, ScrollBarControl pScrollBar);
     public:
     UINT IDD = COLORSCRDLG;
-
+    DECLARE_DLG_CLASS(TEXT("ScrollDialog"))
     BEGIN_MSG_MAP()
         MSG_WM_INITDIALOG(OnInit)
         DLG_MSG_WM_VSCROLL(OnVScroll)

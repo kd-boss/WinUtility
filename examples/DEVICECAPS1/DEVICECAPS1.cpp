@@ -1,6 +1,6 @@
 #include "DEVICECAPS1.h"
 #include <format>
-
+#include<WinUtility/Numbers.h>
 
 HRESULT DEVICECAPS1::Initialize()
 {
@@ -63,9 +63,9 @@ void DEVICECAPS1::OnPaint(DC dc)
     
     for(auto a : devicecaps)
     {
-       m_renderTarget->DrawTextW(a.szLabel.c_str(), a.szLabel.length(), m_format.Get(),col1,m_blackbrush.Get());
-       m_renderTarget->DrawTextW(a.szDesc.c_str(), a.szDesc.length(),m_format.Get(),col2,m_blackbrush.Get());
-       m_renderTarget->DrawTextW(a.szVal.c_str(), a.szVal.length(), m_format.Get(),col3,m_blackbrush.Get());
+       m_renderTarget->DrawTextW(a.szLabel.c_str(), convert_to<UINT32>(a.szLabel.length()), m_format.Get(),col1,m_blackbrush.Get());
+       m_renderTarget->DrawTextW(a.szDesc.c_str(),  convert_to<UINT32>(a.szDesc.length()),m_format.Get(),col2,m_blackbrush.Get());
+       m_renderTarget->DrawTextW(a.szVal.c_str(),   convert_to<UINT32>(a.szVal.length()), m_format.Get(),col3,m_blackbrush.Get());
        col1.top += lineheight;
        col1.bottom += lineheight;
        col2.top += lineheight;

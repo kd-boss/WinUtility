@@ -1,4 +1,5 @@
 #include "Checker3.h"
+#include <WinUtility/Numbers.h>
 
 HRESULT Checker3::Initialize()
 {
@@ -7,9 +8,9 @@ HRESULT Checker3::Initialize()
 	hr = CreateDeviceIndependantResources();
 	// get app title from resource file.
 	std::tstring apptitle;
-	apptitle.resize(9);
-	LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), apptitle.length());
-	
+	apptitle.resize(256);
+	LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), convert_to<int>(apptitle.length()));
+	apptitle.shrink_to_fit();
 	hr = ::IsWindow(Create(nullptr, &Window::rcDefault, apptitle.c_str())) ? S_OK : E_FAIL;
 	return hr;
 }

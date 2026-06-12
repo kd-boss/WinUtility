@@ -3,4 +3,4 @@
 
 #define HEXCALC 4001
 
-#endif
+#endif // _RESOURCE_H_

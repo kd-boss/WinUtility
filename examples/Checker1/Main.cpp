@@ -27,5 +27,5 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nShow)
         }
     }
 	CoUninitialize();
-    return msg.wParam;
+    return static_cast<int>(msg.wParam);
 }

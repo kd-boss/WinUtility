@@ -1,6 +1,8 @@
 
 
 #include "Bezier.h"
+#include <WinUtility/Numbers.h>
+
 
 HRESULT MyWindow::RecreateResources()
 {
@@ -85,7 +87,7 @@ HRESULT MyWindow::Initialize()
 	// get app title from resource file.
 	std::tstring apptitle;
 	apptitle.resize(256);
-	LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), apptitle.length());
+	LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), convert_to<int>(apptitle.length()));
 	apptitle.shrink_to_fit();
 	
 	hr = ::IsWindow(Create(nullptr, &Window::rcDefault, apptitle.c_str())) ? S_OK : E_FAIL;
@@ -94,17 +96,17 @@ HRESULT MyWindow::Initialize()
 		Rect rc;
 		GetClientRect(&rc);
 		Size size = rc.Size();
-		apt[0].x = static_cast<float>(size.cx / 4);
-		apt[0].y = static_cast<float>(size.cy / 2);
+		apt[0].x = convert_to<float>(size.cx / 4);
+		apt[0].y = convert_to<float>(size.cy / 2);
 
-		apt[1].x = static_cast<float>(size.cx / 2);
-		apt[1].y = static_cast<float>(size.cy / 4);
+		apt[1].x = convert_to<float>(size.cx / 2);
+		apt[1].y = convert_to<float>(size.cy / 4);
 
-		apt[2].x = static_cast<float>(size.cx / 2);
-		apt[2].y = static_cast<float>(3 * size.cy / 4);
+		apt[2].x = convert_to<float>(size.cx / 2);
+		apt[2].y = convert_to<float>(3 * size.cy / 4);
 
-		apt[3].x = static_cast<float>(3 * size.cx / 4);
-		apt[3].y = static_cast<float>(size.cy / 2);
+		apt[3].x = convert_to<float>(3 * size.cx / 4);
+		apt[3].y = convert_to<float>(size.cy / 2);
 		CalculateBezier();
 		ShowWindow(ShowWindowType::Normal);
 		UpdateWindow();
@@ -146,17 +148,17 @@ void MyWindow::OnPaint(DC dc)
 
 void MyWindow::OnSize(UINT nType, Size size)
 {
-	apt[0].x = static_cast<float>(size.cx / 4);
-	apt[0].y = static_cast<float>(size.cy / 2);
+	apt[0].x = convert_to<float>(size.cx / 4);
+	apt[0].y = convert_to<float>(size.cy / 2);
 
-	apt[1].x = static_cast<float>(size.cx / 2);
-	apt[1].y = static_cast<float>(size.cy / 4);
+	apt[1].x = convert_to<float>(size.cx / 2);
+	apt[1].y = convert_to<float>(size.cy / 4);
 
-	apt[2].x = static_cast<float>(size.cx / 2);
-	apt[2].y = static_cast<float>(3 * size.cy / 4);
+	apt[2].x = convert_to<float>(size.cx / 2);
+	apt[2].y = convert_to<float>(3 * size.cy / 4);
 
-	apt[3].x = static_cast<float>(3 * size.cx / 4);
-	apt[3].y = static_cast<float>(size.cy / 2);
+	apt[3].x = convert_to<float>(3 * size.cx / 4);
+	apt[3].y = convert_to<float>(size.cy / 2);
 	CalculateBezier();
 }
 
@@ -213,23 +215,23 @@ void MyWindow::OnMouseMove(UINT nFlags, Point point)
 
 	if (nFlags & MK_LBUTTON)
 	{
-		apt[1].x = static_cast<float>(point.x);
-		apt[1].y = static_cast<float>(point.y);
+		apt[1].x = convert_to<float>(point.x);
+		apt[1].y = convert_to<float>(point.y);
 	}
 	else if (nFlags & MK_RBUTTON)
 	{
-		apt[2].x = static_cast<float>(point.x);
-		apt[2].y = static_cast<float>(point.y);
+		apt[2].x = convert_to<float>(point.x);
+		apt[2].y = convert_to<float>(point.y);
 	}
 	else if (nFlags & MK_CONTROL)
 	{
-		apt[0].x = static_cast<float>(point.x);
-		apt[0].y = static_cast<float>(point.y);
+		apt[0].x = convert_to<float>(point.x);
+		apt[0].y = convert_to<float>(point.y);
 	}
 	else if (nFlags & MK_SHIFT)
 	{
-		apt[3].x = static_cast<float>(point.x);
-		apt[3].y = static_cast<float>(point.y);
+		apt[3].x = convert_to<float>(point.x);
+		apt[3].y = convert_to<float>(point.y);
 	}
 
 	CalculateBezier();

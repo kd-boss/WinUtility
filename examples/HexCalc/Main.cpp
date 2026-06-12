@@ -1,4 +1,5 @@
 #include "HexCalc.h"
+#include <WinUtility/Numbers.h>
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPTSTR lpCmd,int nShow)
 {
@@ -16,5 +17,5 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPTSTR lpCmd,int nShow)
             DispatchMessage(&msg);
         }
     }
-    return msg.wParam;
+    return convert_to<int>(msg.wParam);
 }

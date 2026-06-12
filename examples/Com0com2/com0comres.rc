@@ -1,0 +1,125 @@
+#include "resource.h"
+#include "windows.h"
+
+1 TEXTINCLUDE
+{
+    "resource.h\0"
+}
+
+// ── Language ─────────────────────────────────────────────────────────────────
+LANGUAGE 0x09, 0x01   // LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+// ── Application icon ─────────────────────────────────────────────────────────
+// Windows will automatically select the best size from the multi-resolution
+// ICO when showing the window title bar, taskbar, Alt+Tab, and Explorer.
+IDI_APP   ICON   "com0com.ico"
+
+
+STRINGTABLE
+{
+   IDC_COM_COM          "COM0COM"
+}
+
+// ── Version info block ───────────────────────────────────────────────────────
+// Update FILEVERSION / PRODUCTVERSION and the string table for each release.
+VS_VERSION_INFO    VERSIONINFO
+FILEVERSION        1,0,0,0
+PRODUCTVERSION     1,0,0,0
+FILEFLAGSMASK      VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS        VS_FF_DEBUG | VS_FF_PRERELEASE
+#else
+  FILEFLAGS        0
+#endif
+FILEOS             VOS_NT_WINDOWS32
+FILETYPE           VFT_APP
+FILESUBTYPE        VFT2_UNKNOWN
+
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"   // 0409 = English (US), 04B0 = Unicode
+        BEGIN
+            VALUE "CompanyName",      "com0com Manager"
+            VALUE "FileDescription",  "com0com Virtual Serial Port Manager"
+            VALUE "FileVersion",      "1.0.0.0"
+            VALUE "InternalName",     "Com0Com"
+            VALUE "LegalCopyright",   "Open source — see github.com/nickelc/com0com"
+            VALUE "OriginalFilename", "Com0Com.exe"
+            VALUE "ProductName",      "com0com Manager"
+            VALUE "ProductVersion",   "1.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 0x04B0
+    END
+END
+
+1 RT_MANIFEST "Com0Com.manifest"
+
+// ── About dialog ─────────────────────────────────────────────────────────────
+//
+// Layout (dialog units):
+//   ┌─────────────────────────────────────────────────────────┐
+//   │  [icon 32×32]  com0com Manager              v1.0.0      │
+//   │                A GUI front-end for the com0com driver.   │
+//   │                Virtual null-modem pairs for Windows.     │
+//   │                                                          │
+//   │  Driver source / issue tracker:                         │
+//   │  <a href="...">https://github.com/nickelc/com0com</a>   │
+//   │                                                          │
+//   │                              [ Close ]                   │
+//   └─────────────────────────────────────────────────────────┘
+//
+// The SysLink control (WC_LINK / "SysLink") renders HTML anchor tags as
+// clickable hyperlinks and sends NM_CLICK / NM_RETURN notifications with
+// the href value in NMLINK.item.szUrl.  Handle those in the dialog proc
+// with ShellExecute(NULL,"open",szUrl,...) to open the browser.
+//
+// DS_SHELLFONT + DS_CENTER ensure the dialog uses the shell font (Segoe UI
+// on Windows Vista+) and is centred over the owner window.
+
+IDD_ABOUT DIALOGEX 0, 0, 260, 140
+STYLE    DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION  "About com0com Manager"
+FONT     9, "Segoe UI", 400, 0, 0x1
+BEGIN
+    // Application icon — displayed via SS_ICON | SS_REALSIZECONTROL.
+    // The dialog proc must call Static_SetIcon() with LoadIcon(IDI_APP, 32x32)
+    // after the dialog is created (WM_INITDIALOG).
+    ICON    IDI_APP,              IDC_ABOUT_ICON,    8,   8,  48, 48,
+            SS_ICON | SS_REALSIZECONTROL
+
+    // Title and version on the same row as the icon
+    LTEXT   "com0com Manager",    IDC_ABOUT_TITLE,   64,  8, 140, 12,
+            SS_LEFT
+    LTEXT   "Version 1.0.0",      IDC_ABOUT_VERSION, 200, 8,  52, 12,
+            SS_LEFT
+
+    // Description
+    LTEXT   "A GUI front-end for the com0com virtual null-modem driver.\n"
+            "Create and manage virtual COM port pairs for Windows.",
+            IDC_ABOUT_DESC,   48, 24, 204, 20,
+            SS_LEFT
+
+    // Section label for the driver link
+    LTEXT   "Driver source / issue tracker:",
+            IDC_ABOUT_DRIVER_LABEL, 8, 58, 244, 10,
+            SS_LEFT
+
+    // SysLink control — renders the anchor tag as a clickable hyperlink.
+    // The dialog proc must handle WM_NOTIFY / NM_CLICK and call ShellExecute.
+    // WC_LINK is defined in <commctrl.h> as L"SysLink".
+    CONTROL "<a href=""https://github.com/nickelc/com0com"">https://github.com/nickelc/com0com</a>",
+            IDC_ABOUT_LINK, "SysLink",
+            WS_TABSTOP, 8, 72, 244, 12
+
+    // Operations note
+    LTEXT   "Operations that create or remove pairs require elevation.",
+            IDC_ABOUT_NOTE, 8, 92, 244, 10,
+            SS_LEFT
+
+    // Close button — default push button so Enter dismisses the dialog
+    DEFPUSHBUTTON "Close", IDC_ABOUT_CLOSE, 100, 116, 60, 16
+END
