@@ -12,6 +12,8 @@
 #include <shtypes.h>
 #include <combaseapi.h>
 #include <filesystem>
+#include <WinUtility/Numbers.h>
+
 
 void PopPad2::PopFileInitialize()
 {
@@ -133,9 +135,9 @@ BOOL PopPad2::PopFileRead(const std::tstring &fileName)
         auto iFileLength = GetFileSize(m_fileHandle.get(), NULL);
         buffer.resize(iFileLength);
         DWORD dwBytesRead = 0;
-        ReadFile(m_fileHandle.get(), &buffer[0], buffer.size(), &dwBytesRead, NULL);
+        ReadFile(m_fileHandle.get(), &buffer[0], convert_to<int>(buffer.size()), &dwBytesRead, NULL);
         auto iUiniTest = IS_TEXT_UNICODE_SIGNATURE | IS_TEXT_UNICODE_REVERSE_SIGNATURE;
-        if (IsTextUnicode(buffer.data(), buffer.size(), &iUiniTest))
+        if (IsTextUnicode(buffer.data(), convert_to<int>(buffer.size()), &iUiniTest))
         {
             auto pText = (wchar_t *)&buffer[2];
             auto iFileLength = dwBytesRead - 2;

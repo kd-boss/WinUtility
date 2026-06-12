@@ -1,5 +1,6 @@
 #include "poppad2.h"
 #include "winstring.h"
+#include <WinUtility/Numbers.h>
 
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nShow)
 {
@@ -29,5 +30,5 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nShow)
 	}
 
 	CoUninitialize();
-	return msg.wParam;
+	return convert_to<int>(msg.wParam);
 }

@@ -47,9 +47,6 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
   IDS_APP_TITLE, 	"LineDemo"
 }
 
-IDI_LINEDEMO ICON "LineDemo.ico"
-IDI_SMALL ICON "small.ico"
-
 1 TEXTINCLUDE
 {
   "Resource.h\0"

@@ -1,6 +1,6 @@
 
 #include "ownerdraw.h"
-
+#include <WinUtility/Numbers.h>
 
 HRESULT MyWindow::CreateDeviceResources()
 {
@@ -9,7 +9,7 @@ HRESULT MyWindow::CreateDeviceResources()
 	{
 		auto props = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT,
 		D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
-		GetDpiForWindow(),GetDpiForWindow());
+		convert_to<float>(GetDpiForWindow()),convert_to<float>(GetDpiForWindow()));
 		hr = m_factory->CreateDCRenderTarget(&props, m_rt.GetAddressOf());
 	}
 	if(m_rt)
@@ -60,7 +60,7 @@ HRESULT MyWindow::Initialize()
 	//get app title from resource file.
 	std::tstring apptitle;
     apptitle.resize(256);
-    LoadString(HINST_THISCOMPONENT,IDS_APP_TITLE,apptitle.data(),apptitle.length());
+    LoadString(HINST_THISCOMPONENT,IDS_APP_TITLE,apptitle.data(),convert_to<int>(apptitle.length()));
     apptitle.shrink_to_fit();
 
 	hr = ::IsWindow(Create(nullptr, &Window::rcDefault, apptitle.c_str())) ? S_OK : E_FAIL;
@@ -159,41 +159,41 @@ void MyWindow::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 	
 	auto cx = rc.right - rc.left;
 	auto cy = rc.bottom - rc.top;
-	auto cx8 = cx / 8;
-	auto cy8 = cy / 8;
+	auto cx8 = cx / 8.f;
+	auto cy8 = cy / 8.f;
 	switch(static_cast<ButtonID>(nIDCtl))
 	{
 		case ButtonID::ID_SMALLER:
 		{
-			auto point1 = D2D1::Point2F(3 * cx8, 1 * cy8);
-			auto point2 = D2D1::Point2F(5 * cx8, 1 * cy8);
-			auto point3 = D2D1::Point2F(4 * cx8, 3 * cy8);
+			auto point1 = D2D1::Point2F(3.f * cx8, 1.f * cy8);
+			auto point2 = D2D1::Point2F(5.f * cx8, 1.f * cy8);
+			auto point3 = D2D1::Point2F(4.f * cx8, 3.f * cy8);
 			auto triangle1 = DrawTriangle(point1, point2, point3);
 			m_rt->DrawGeometry(triangle1, m_brush.Get());
 			m_rt->FillGeometry(triangle1, m_brush.Get());
 			triangle1->Release();
 
-			point1 = D2D1::Point2F(7 * cx8, 3 * cy8);
-			point2 = D2D1::Point2F(7 * cx8, 5 * cy8);
-			point3 = D2D1::Point2F(5 * cx8, 4 * cy8);
+			point1 = D2D1::Point2F(7.f * cx8, 3.f * cy8);
+			point2 = D2D1::Point2F(7.f * cx8, 5.f * cy8);
+			point3 = D2D1::Point2F(5.f * cx8, 4.f * cy8);
 			triangle1 = DrawTriangle(point1, point2, point3);
 			m_rt->DrawGeometry(triangle1, m_brush.Get());
 			m_rt->FillGeometry(triangle1, m_brush.Get());
 			triangle1->Release();
 
 			
-			point1 = D2D1::Point2F(5 * cx8, 7 * cy8);
-			point2 = D2D1::Point2F(3 * cx8, 7 * cy8);
-			point3 = D2D1::Point2F(4 * cx8, 5 * cy8);
+			point1 = D2D1::Point2F(5.f * cx8, 7.f * cy8);
+			point2 = D2D1::Point2F(3.f * cx8, 7.f * cy8);
+			point3 = D2D1::Point2F(4.f * cx8, 5.f * cy8);
 			triangle1 = DrawTriangle(point1, point2, point3);
 			m_rt->DrawGeometry(triangle1, m_brush.Get());
 			m_rt->FillGeometry(triangle1, m_brush.Get());
 			triangle1->Release();
 
 			
-			point1 = D2D1::Point2F(1 * cx8, 5 * cy8);
-			point2 = D2D1::Point2F(1 * cx8, 3 * cy8);
-			point3 = D2D1::Point2F(3 * cx8, 4 * cy8);
+			point1 = D2D1::Point2F(1.f * cx8, 5.f * cy8);
+			point2 = D2D1::Point2F(1.f * cx8, 3.f * cy8);
+			point3 = D2D1::Point2F(3.f * cx8, 4.f * cy8);
 			triangle1 = DrawTriangle(point1, point2, point3);
 			m_rt->DrawGeometry(triangle1, m_brush.Get());
 			m_rt->FillGeometry(triangle1, m_brush.Get());
@@ -203,33 +203,33 @@ void MyWindow::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 		break;
 		case ButtonID::ID_LARGER:
 		{
-			auto point1 = D2D1::Point2F(5 * cx8, 3 * cy8);
-			auto point2 = D2D1::Point2F(3 * cx8, 3 * cy8);
-			auto point3 = D2D1::Point2F(4 * cx8, 1 * cy8);
+			auto point1 = D2D1::Point2F(5.f * cx8, 3.f * cy8);
+			auto point2 = D2D1::Point2F(3.f * cx8, 3.f * cy8);
+			auto point3 = D2D1::Point2F(4.f * cx8, 1.f * cy8);
 			auto triangle1 = DrawTriangle(point1, point2, point3);
 			m_rt->DrawGeometry(triangle1, m_brush.Get());
 			m_rt->FillGeometry(triangle1, m_brush.Get());
 			triangle1->Release();
 
-			point1 = D2D1::Point2F(5 * cx8, 5 * cy8);
-			point2 = D2D1::Point2F(5 * cx8, 3 * cy8);
-			point3 = D2D1::Point2F(7 * cx8, 4 * cy8);
+			point1 = D2D1::Point2F(5.f * cx8, 5.f * cy8);
+			point2 = D2D1::Point2F(5.f * cx8, 3.f * cy8);
+			point3 = D2D1::Point2F(7.f * cx8, 4.f * cy8);
 			triangle1 = DrawTriangle(point1, point2, point3);
 			m_rt->DrawGeometry(triangle1, m_brush.Get());
 			m_rt->FillGeometry(triangle1, m_brush.Get());
 			triangle1->Release();
 
-			point1 = D2D1::Point2F(3 * cx8, 5 * cy8);
-			point2 = D2D1::Point2F(5 * cx8, 5 * cy8);
-			point3 = D2D1::Point2F(4 * cx8, 7 * cy8);
+			point1 = D2D1::Point2F(3.f * cx8, 5.f * cy8);
+			point2 = D2D1::Point2F(5.f * cx8, 5.f * cy8);
+			point3 = D2D1::Point2F(4.f * cx8, 7.f * cy8);
 			triangle1 = DrawTriangle(point1, point2, point3);
 			m_rt->DrawGeometry(triangle1, m_brush.Get());
 			m_rt->FillGeometry(triangle1, m_brush.Get());
 			triangle1->Release();
 
-			point1 = D2D1::Point2F(3 * cx8, 3 * cy8);
-			point2 = D2D1::Point2F(3 * cx8, 5 * cy8);
-			point3 = D2D1::Point2F(1 * cx8, 4 * cy8);
+			point1 = D2D1::Point2F(3.f * cx8, 3.f * cy8);
+			point2 = D2D1::Point2F(3.f * cx8, 5.f * cy8);
+			point3 = D2D1::Point2F(1.f * cx8, 4.f * cy8);
 			triangle1 = DrawTriangle(point1, point2, point3);
 			m_rt->DrawGeometry(triangle1, m_brush.Get());
 			m_rt->FillGeometry(triangle1, m_brush.Get());

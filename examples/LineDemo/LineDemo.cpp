@@ -1,5 +1,6 @@
 
 #include "LineDemo.h"
+#include <WinUtility/Numbers.h>
 
 
 HRESULT MyWindow::Render(const PAINTSTRUCT& ps)
@@ -18,24 +19,26 @@ HRESULT MyWindow::Render(const PAINTSTRUCT& ps)
 		m_renderTarget->BeginDraw();
 		m_renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
 
-		m_renderTarget->DrawRectangle(D2D1::RectF(static_cast<float>(rc.Width() / 8),
-												  static_cast<float>(rc.Height() / 8),
-												  static_cast<float>(7 * (rc.Width() / 8)),
-												  static_cast<float>(7 * (rc.Height() / 8))),
+		m_renderTarget->DrawRectangle(D2D1::RectF(convert_to<float>(rc.Width() / 8),
+												  convert_to<float>(rc.Height() / 8),
+												  convert_to<float>(7 * (rc.Width() / 8)),
+												  convert_to<float>(7 * (rc.Height() / 8))),
 												  m_blackBrush.Get(), stroke);
 				
 	    m_renderTarget->DrawLine(D2D1::Point2F(0.0f,0.0f),
-								 D2D1::Point2F(static_cast<float>(rc.Width()),
-								 static_cast<float>(rc.Height())),
+								 D2D1::Point2F(convert_to<float>(rc.Width()),
+								 convert_to<float>(rc.Height())),
 								m_blackBrush.Get(),stroke);
 
-		m_renderTarget->DrawLine(D2D1::Point2F(static_cast<float>(rc.Width()), 0.0f),
-								 D2D1::Point2F(0.0f,static_cast<float>(rc.Height())),
+		m_renderTarget->DrawLine(D2D1::Point2F(convert_to<float>(rc.Width()), 0.0f),
+								 D2D1::Point2F(0.0f,convert_to<float>(rc.Height())),
 								 m_blackBrush.Get(),stroke);
 	    auto elipse = D2D1::Ellipse(
-									D2D1::Point2F(rc.Width() / 2, rc.Height() / 2),
-									static_cast<float>(3 * (rc.Width() / 8)),
-									static_cast<float>(3 * (rc.Height() / 8)));
+									D2D1::Point2F(
+									convert_to<float>(rc.Width() / 2.f),
+									convert_to<float>(rc.Height() / 2.f)),
+									convert_to<float>(3 * (rc.Width() / 8)),
+									convert_to<float>(3 * (rc.Height() / 8)));
 		m_renderTarget->DrawEllipse(elipse, 
 									m_blackBrush.Get(),stroke + 4.0f);
 
@@ -43,13 +46,13 @@ HRESULT MyWindow::Render(const PAINTSTRUCT& ps)
 
 		m_renderTarget->DrawRoundedRectangle(D2D1::RoundedRect(
 											 D2D1::RectF(
-												static_cast<float>(rc.Width() / 4),
-												static_cast<float>(rc.Height() / 4),
-												static_cast<float>(3 * rc.Width() / 4),
-												static_cast<float>(3 * rc.Height() / 4)
+												convert_to<float>(rc.Width() / 4),
+												convert_to<float>(rc.Height() / 4),
+												convert_to<float>(3 * rc.Width() / 4),
+												convert_to<float>(3 * rc.Height() / 4)
 											 			), 
-												static_cast<float>(rc.Width() / 12),
-											 	static_cast<float>(rc.Height() /12)
+												convert_to<float>(rc.Width() / 12),
+											 	convert_to<float>(rc.Height() /12)
 															  ),
 												m_blackBrush.Get(),
 												stroke
@@ -121,7 +124,7 @@ HRESULT MyWindow::Initialize()
 	//get app title from resource file.
 	std::tstring apptitle;
     apptitle.resize(256);
-    LoadString(HINST_THISCOMPONENT,IDS_APP_TITLE,apptitle.data(),apptitle.length());
+    LoadString(HINST_THISCOMPONENT,IDS_APP_TITLE,apptitle.data(),convert_to<int>(apptitle.length()));
     apptitle.shrink_to_fit();
 
 	hr = ::IsWindow(Create(nullptr, &Window::rcDefault, apptitle.c_str())) ? S_OK : E_FAIL;

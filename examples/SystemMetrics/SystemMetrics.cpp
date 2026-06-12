@@ -6,6 +6,7 @@
 
 #include "SystemMetrics.h"
 #include <format>
+#include <WinUtility/Numbers.h>
 
 BOOL MyAboutDialog::OnInitDialog(Window wndFocus, LPARAM lInitParam)
 {
@@ -144,10 +145,10 @@ void MyWindow::OnPaint(DC dc)
 	for(int i = iPaintBeg; i <= iPaintEnd; i++)
 	{
 		int y = cyChar * (i - iVertPos);
-		hdc.TextOut(0, y, systemmetrics[i].szLabel.c_str(), systemmetrics[i].szLabel.length());
-		hdc.TextOut(22 * cxCaps, y, systemmetrics[i].szDesc.c_str(), systemmetrics[i].szDesc.length());
+		hdc.TextOut(0, y, systemmetrics[i].szLabel.c_str(), convert_to<int>(systemmetrics[i].szLabel.length()));
+		hdc.TextOut(22 * cxCaps, y, systemmetrics[i].szDesc.c_str(), convert_to<int>(systemmetrics[i].szDesc.length()));
 		hdc.SetTextAlign(TA_RIGHT | TA_TOP);
-		hdc.TextOut(22 * cxCaps + 40 * cxChar, y, systemmetrics[i].szVal.c_str(), systemmetrics[i].szVal.length());
+		hdc.TextOut(22 * cxCaps + 40 * cxChar, y, systemmetrics[i].szVal.c_str(), convert_to<int>(systemmetrics[i].szVal.length()));
 		hdc.SetTextAlign(TA_LEFT | TA_TOP);
 	}
 	EndPaint(&ps);
@@ -187,5 +188,5 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nShow)
 		}
 
     }
-    return msg.wParam;
+    return convert_to<int>(msg.wParam);
 }

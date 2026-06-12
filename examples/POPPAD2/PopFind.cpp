@@ -1,5 +1,6 @@
 
 #include "poppad2.h"
+#include <WinUtility/Numbers.h>
 
 LPARAM PopPad2::OnFind(WPARAM wParam, LPARAM lParam)
 {
@@ -86,7 +87,7 @@ HWND PopPad2::PopFindDlg()
     fr.Flags = FR_HIDEUPDOWN | FR_HIDEMATCHCASE | FR_HIDEWHOLEWORD;
     fr.lpstrFindWhat = &m_findText[0];
     fr.lpstrReplaceWith = nullptr;
-    fr.wFindWhatLen = m_findText.length();
+    fr.wFindWhatLen = convert_to<WORD>(m_findText.length());
     fr.wReplaceWithLen = 0;
     fr.lCustData = 0;
     fr.lpTemplateName = nullptr;
@@ -109,8 +110,8 @@ HWND PopPad2::PopFindReplaceDlg()
     fr.Flags = FR_HIDEUPDOWN | FR_HIDEMATCHCASE | FR_HIDEWHOLEWORD;
     fr.lpstrFindWhat = &m_findText[0];
     fr.lpstrReplaceWith = &m_replaceText[0];
-    fr.wFindWhatLen = m_findText.length();
-    fr.wReplaceWithLen = m_replaceText.length();
+    fr.wFindWhatLen = convert_to<WORD>(m_findText.length());
+    fr.wReplaceWithLen = convert_to<WORD>(m_replaceText.length());
     fr.lCustData = 0;
     fr.lpTemplateName = nullptr;
     return ReplaceText(&fr);
@@ -124,9 +125,9 @@ BOOL PopPad2::PopFindSearchText(const int &iSearchOffset, LPFINDREPLACE pfr)
     if (pos == std::string::npos)
         return FALSE;
 
-    iSearchText = pos + lstrlen(pfr->lpstrFindWhat);
+    iSearchText = convert_to<int>(pos) + lstrlen(pfr->lpstrFindWhat);
 
-    m_edit.SetSel(pos, iSearchText, 0);
+    m_edit.SetSel(convert_to<int>(pos), iSearchText, 0);
     m_edit.ScrollCaret();
     m_edit.Invalidate();
     this->SetFocus();
@@ -137,7 +138,7 @@ BOOL PopPad2::PopFindNextText()
 {
     fr = {0};
     fr.lpstrFindWhat = const_cast<wchar_t *>(m_findText.c_str());
-    fr.wFindWhatLen = m_findText.length();
+    fr.wFindWhatLen = convert_to<WORD>(m_findText.length());
     return PopFindSearchText(iSearchText, &fr);
 }
 

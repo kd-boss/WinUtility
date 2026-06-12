@@ -9,6 +9,7 @@
 */
 
 #include "poppad1.h"
+#include <WinUtility/Numbers.h>
 
 HRESULT PopPad1::Initialize()
 {
@@ -16,7 +17,7 @@ HRESULT PopPad1::Initialize()
 	//get app title from resource file.
 	std::tstring apptitle;
     apptitle.resize(256);
-    LoadString(HINST_THISCOMPONENT,IDS_APP_TITLE,apptitle.data(),apptitle.length());
+    LoadString(HINST_THISCOMPONENT,IDS_APP_TITLE,apptitle.data(),convert_to<int>(apptitle.length()));
     apptitle.shrink_to_fit();
 
 	hr = ::IsWindow(Create(nullptr, &Window::rcDefault, apptitle.c_str())) ? S_OK : E_FAIL;

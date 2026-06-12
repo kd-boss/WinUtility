@@ -2,6 +2,8 @@
 
 #include "poppad2.h"
 #include <format>
+#include <WinUtility/Numbers.h>
+
 
 void PopPad2::DoCaption(LPCTSTR Caption)
 {
@@ -15,7 +17,7 @@ HRESULT PopPad2::Initialize()
 	// get app title from resource file.
 	std::tstring apptitle;
 	apptitle.resize(256);
-	LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), apptitle.length());
+	LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), convert_to<int>(apptitle.length()));
 	apptitle = System::Utility::trim(apptitle);
 	m_appname = apptitle.c_str();
 

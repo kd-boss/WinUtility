@@ -1,0 +1,10 @@
+^C:\USERS\KD5EA\DOWNLOADS\WINUTILITY-MASTER\WINUTILITY-MASTER\EXAMPLES\HEXCALC\BUILD\CMAKEFILES\4F7D29BE423C0CE7A2CE553F83865C05\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/kd5ea/Downloads/WinUtility-master/WinUtility-master/examples/HexCalc -BC:/Users/kd5ea/Downloads/WinUtility-master/WinUtility-master/examples/HexCalc/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/kd5ea/Downloads/WinUtility-master/WinUtility-master/examples/HexCalc/build/HexCalc.slnx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

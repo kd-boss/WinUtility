@@ -8,6 +8,7 @@
 
 #include "SystemMetricsD2D1.h"
 #include <format>
+#include <WinUtility/Numbers.h>
 
 void MyWindow::OnExit(UINT uNotifyCode, int nID, Window wndCtl)
 {
@@ -87,11 +88,11 @@ void MyWindow::OnPaint(DC dc)
 	for (auto i = iPaintBeg; i <= iPaintEnd; i++)
 	{
 		auto a = &systemmetrics[i];
-		m_renderTarget->DrawTextW(a->szLabel.c_str(), a->szLabel.length(), m_textFormat.Get(), col1, m_textBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
-		m_renderTarget->DrawTextW(a->szDesc.c_str(), a->szDesc.length(), m_textFormat.Get(), col2, m_textBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+		m_renderTarget->DrawTextW(a->szLabel.c_str(), convert_to<UINT32>(a->szLabel.length()), m_textFormat.Get(), col1, m_textBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+		m_renderTarget->DrawTextW(a->szDesc.c_str(), convert_to<UINT32>(a->szDesc.length()), m_textFormat.Get(), col2, m_textBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
 		auto alignment = m_textFormat->GetTextAlignment();
 		m_textFormat->SetTextAlignment(m_alignment);
-		m_renderTarget->DrawTextW(a->szVal.c_str(), a->szVal.length(), m_textFormat.Get(), col3, m_textBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+		m_renderTarget->DrawTextW(a->szVal.c_str(), convert_to<UINT32>(a->szVal.length()), m_textFormat.Get(), col3, m_textBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
 		m_textFormat->SetTextAlignment(alignment);
 		col1.bottom += linehight;
 		col1.top += linehight;
@@ -275,7 +276,7 @@ void MyWindow::CalculateScrollInfo()
 	if (m_renderTarget)
 	{
 		D2D1_SIZE_F size;
-		m_renderTarget->GetSize(&size);
+		size = m_renderTarget->GetSize();
 		float fontSize = 16.0f;
 
 		if (m_textFormat)
@@ -306,7 +307,7 @@ void MyWindow::OnSize(UINT nType, Size size)
 
 			m_renderTarget->Resize(D2D1::SizeU(size.cx, size.cy));
 		}
-		rtSize = D2D1::SizeF(size.cx, size.cy);
+		rtSize = D2D1::SizeF(convert_to<float>(size.cx), convert_to<float>(size.cy));
 		if (!m_renderTarget)
 		{
 			CreateDeviceIndependentResources();

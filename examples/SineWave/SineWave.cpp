@@ -13,6 +13,7 @@
 #include <d2derr.h>
 #include <cmath>
 #include <numbers>
+#include <WinUtility/Numbers.h>
 
 void MyWindow::Render(const PAINTSTRUCT &ps)
 {
@@ -27,12 +28,12 @@ void MyWindow::Render(const PAINTSTRUCT &ps)
 	m_renderTarget->BeginDraw();
 	m_renderTarget->DrawLine(
 		D2D1::Point2F(0.0f, rc.Height() / 2.0f),
-		D2D1::Point2F(static_cast<float>(rc.Width()), static_cast<float>(rc.Height() / 2.0f)),
+		D2D1::Point2F(convert_to<float>(rc.Width()), convert_to<float>(rc.Height() / 2.0f)),
 		m_blackBrush.Get(),
 		0.5f);
 	m_renderTarget->DrawLine(
-		D2D1::Point2F(rc.Width() / 2.0, static_cast<float>(rc.top)),
-		D2D1::Point2F(rc.Width() / 2.0, static_cast<float>(rc.bottom)),
+		D2D1::Point2F(rc.Width() / 2.0f, convert_to<float>(rc.top)),
+		D2D1::Point2F(rc.Width() / 2.0f, convert_to<float>(rc.bottom)),
 		m_blackBrush.Get(), 0.5f);
 
 	m_renderTarget->DrawGeometry(m_path.Get(), m_sinewaveBrush.Get(), 1.0f);
@@ -105,7 +106,7 @@ HRESULT MyWindow::Initialize()
 		// get app title from resource file.
 		std::tstring apptitle;
 		apptitle.resize(256);
-		LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), apptitle.length());
+		LoadString(HINST_THISCOMPONENT, IDS_APP_TITLE, apptitle.data(), convert_to<int>(apptitle.length()));
 		apptitle.shrink_to_fit();
 
 		hr = ::IsWindow(Create(nullptr, &Window::rcDefault, apptitle.c_str())) ? S_OK : E_FAIL;
@@ -153,7 +154,7 @@ void MyWindow::OnSize(UINT nType, Size size)
 		hr = m_path->Open(m_sink.GetAddressOf());
 		if (SUCCEEDED(hr))
 		{
-			m_sink->BeginFigure(D2D1::Point2F(static_cast<float>(rc.left), static_cast<float>(rc.Height() / 2)),
+			m_sink->BeginFigure(D2D1::Point2F(convert_to<float>(rc.left), convert_to<float>(rc.Height() / 2)),
 								D2D1_FIGURE_BEGIN_HOLLOW);
 			auto numsegments = 10000;
 			auto twopi = 2.0 * std::numbers::pi;
@@ -161,22 +162,34 @@ void MyWindow::OnSize(UINT nType, Size size)
 			{
 				for (int i = 0; i < numsegments; i++)
 				{
-					auto x = static_cast<float>(i * rc.Width() / numsegments);
-					auto y = static_cast<float>(rc.Height() / 2 * (1 - std::sin(twopi * i / numsegments)));
-					m_linepoints[i].x = x;
-					m_linepoints[i].y = y;
+					try
+					{
+						auto x = static_cast<float>(i * rc.Width() / numsegments);
+						auto y = static_cast<float>(rc.Height() / 2 * (1 - std::sin(twopi * i / numsegments)));
+						m_linepoints[i].x = x;
+						m_linepoints[i].y = y;
+					}
+					catch(const Bad_value&)
+					{
+					}
 				}
 			}
 			else
 			{
 				for (int i = 0; i < numsegments; i++)
 				{
-					auto x = static_cast<float>(i * rc.Width() / numsegments);
-					auto y = static_cast<float>(rc.Height() / 2 * (1 - std::sin(twopi * i / numsegments)));
-					m_linepoints.emplace_back(x, y);
+					try
+					{
+						auto x = static_cast<float>(i * rc.Width() / numsegments);
+						auto y = static_cast<float>(rc.Height() / 2 * (1 - std::sin(twopi * i / numsegments)));
+						m_linepoints.emplace_back(x, y);
+					}
+					catch(const Bad_value&)
+					{
+					}
 				}
 			}
-			m_sink->AddLines(m_linepoints.data(), m_linepoints.size());
+			m_sink->AddLines(m_linepoints.data(), convert_to<int>(m_linepoints.size()));
 			m_sink->EndFigure(D2D1_FIGURE_END_OPEN);
 			hr = m_sink->Close();
 		}

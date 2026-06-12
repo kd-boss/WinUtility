@@ -11,4 +11,5 @@
 #ifndef IDC_STATIC
 #define IDC_STATIC -1
 #endif
-#endif
+
+#endif //__RESOURCE_H_
