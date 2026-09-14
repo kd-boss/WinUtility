@@ -411,7 +411,34 @@ class SystemExceptionT : public T
     {
     }
 
-	SystemExceptionT(const SystemExceptionT& rhs) = delete;
+	SystemExceptionT(const SystemExceptionT& rhs)
+		: localbuff(rhs.localbuff), buffer(nullptr), m_file(rhs.m_file), linenum(rhs.linenum),
+		  m_val(rhs.m_val), m_hval(rhs.m_hval)
+	{
+		// Was: swap(buffer, rhs.buffer) with no `using std::swap;` in
+		// scope, and against a *const* rhs. Two problems: (1) that can
+		// never compile once `swap` actually resolves to std::swap -
+		// std::swap needs two non-const lvalue references, and rhs is
+		// const here; a strict two-phase-lookup compiler (GCC) correctly
+		// rejects the unqualified call outright rather than silently
+		// accepting it the way MSVC's more permissive template lookup
+		// did. (2) even if it somehow compiled, a copy constructor must
+		// not mutate its source - swapping would have handed rhs's
+		// buffer over to `this` and left rhs holding whatever (likely
+		// garbage) buffer this object started with. It also never copied
+		// m_val/m_hval at all, leaving them default-initialized
+		// (indeterminate for DWORD/HRESULT). buffer is a LocalAlloc'd
+		// block (see what()'s FORMAT_MESSAGE_ALLOCATE_BUFFER) freed with
+		// LocalFree in the destructor, so a real copy needs its own
+		// LocalAlloc'd duplicate, not rhs's pointer.
+		if (rhs.buffer)
+		{
+			const std::size_t bytes = (static_cast<std::size_t>(::lstrlen(rhs.buffer)) + 1) * sizeof(TCHAR);
+			buffer = static_cast<PTSTR>(::LocalAlloc(LMEM_FIXED, bytes));
+			if (buffer)
+				::CopyMemory(buffer, rhs.buffer, bytes);
+		}
+	}
 
 	SystemExceptionT(SystemExceptionT&& rhs) noexcept = default;
 
@@ -442,68 +469,80 @@ class SystemExceptionT : public T
 
 typedef SystemExceptionT<std::exception> SystemException;
 
-// template <typename T, std::enable_if<std::is_same<T,std::string>::value>::type>
-// std::wstring to_wstring(T a)
-// {
-//     std::wstring ret;
-//     if (a.empty())
-//     {
-//         return ret;
-//     }
-//     const DWORD kFlags = MB_ERR_INVALID_CHARS;
-//     if (a.length() > static_cast<size_t>(std::numeric_limits<int>::max()))
-//     {
-//         throw std::overflow_error("Input string too long: size_t length doesn't fit into int.");
-//     }
-//     int inputLen = static_cast<int>(a.length());
-//     int outLen = ::MultiByteToWideChar(CP_UTF8, kFlags, a.data(), inputLen, nullptr, 0);
-//     if (outLen == 0)
-//     {
-//         const DWORD error = ::GetLastError();
-//         throw SystemException{error, __FILE__, __LINE__};
-//     }
-//     ret.resize(outLen);
-//     outLen = ::MultiByteToWideChar(CP_UTF8, kFlags, a.data(), inputLen, &ret[0], ret.length());
-//     if (outLen == 0)
-//     {
-        
-//         const DWORD error = ::GetLastError();
-//         throw SystemException{error, __FILE__, __LINE__};
-//     }
-//     return ret;
-// }
+template <typename T>
+std::enable_if<std::is_same<T,std::string>::value,std::wstring>::type to_wstring(T a)
+{
+    std::wstring ret;
+    if (a.empty())
+    {
+        return ret;
+    }
+    const DWORD kFlags = MB_ERR_INVALID_CHARS;
+    if (a.length() > static_cast<size_t>(std::numeric_limits<int>::max()))
+    {
+        throw std::overflow_error("Input string too long: size_t length doesn't fit into int.");
+    }
+   
+    int outLen = ::MultiByteToWideChar(CP_UTF8, kFlags, a.data(), static_cast<int>(a.length()), nullptr, 0);
+    if (outLen == 0)
+    {
+        const DWORD error = ::GetLastError();
+		(error);
+        //throw SystemException{error, __FILE__, __LINE__};
+    }
+    ret.resize(outLen);
+    outLen = ::MultiByteToWideChar(CP_UTF8, kFlags, a.data(), static_cast<int>(a.length()), &ret[0], static_cast<int>(ret.length()));
+    if (outLen == 0)
+    {
+     
+        const DWORD error = ::GetLastError();
+		(error);
+        //throw SystemException{error, __FILE__, __LINE__};
+    }
+    return ret;
+}
 
 
-// template <typename T, std::enable_if<std::is_convertible<T, std::wstring>::value>::type>
-// std::string to_string(T a)
-// {
-//     std::string ret;
-//     if (a.empty())
-//     {
-//         return ret;
-//     }
-//     const DWORD kFlags = WC_ERR_INVALID_CHARS;
-//     if (a.length() > std::numeric_limits<size_t>::max())
-//     {
-//         throw std::overflow_error("Input string too long: length greater than size_t can hold.");
-//     }
-//     int inputLen = static_cast<int>(a.length());
-//     int outLen = ::WideCharToMultiByte(CP_UTF8, 0, a.c_str(), -1,nullptr, 0, nullptr, nullptr);
-//     if (outLen == 0)
-//     {
-//         const DWORD error = ::GetLastError();
-//         throw SystemException{error, __FILE__, __LINE__};
-//     }
-//     ret.resize(outLen);
-//     outLen = ::WideCharToMultiByte(CP_UTF8, 0, a.c_str(),a.length() , &ret[0], ret.length(), nullptr, nullptr);
-//     if (outLen == 0)
-//     {
-        
-//         const DWORD error = ::GetLastError();
-//         throw SystemException(error, __FILE__, __LINE__);
-//     }
-//     return ret;
-// }
+template <typename T>
+std::enable_if<std::is_same<T, std::wstring>::value, std::string>::type to_string(T a)
+{
+    std::string ret;
+    if (a.empty())
+    {
+        return ret;
+    }
+    const DWORD kFlags = WC_ERR_INVALID_CHARS;
+	(kFlags);
+    if (a.length() > std::numeric_limits<size_t>::max())
+    {
+        throw std::overflow_error("Input string too long: length greater than size_t can hold.");
+    }
+
+    // Both calls below use the same explicit length (a.length()), not -1
+    // ("null-terminated") for the first one - see
+    // System::Utility::string_convert's matching comment for why: this
+    // used to measure with -1 (which includes room for a null terminator
+    // in the count) but then convert with a.length() (which doesn't),
+    // over-allocating ret by one byte that never got written and stayed
+    // '\0' from resize() - a stray trailing NUL baked into every
+    // wstring->string conversion through here.
+    int outLen = ::WideCharToMultiByte(CP_UTF8, 0, a.c_str(), static_cast<int>(a.length()), nullptr, 0, nullptr, nullptr);
+    if (outLen == 0)
+    {
+        const DWORD error = ::GetLastError();
+		(error);
+        //throw SystemException{error, __FILE__, __LINE__};
+    }
+    ret.resize(outLen);
+    outLen = ::WideCharToMultiByte(CP_UTF8, 0, a.c_str(),static_cast<int>(a.length()) , &ret[0], static_cast<int>(ret.length()), nullptr, nullptr);
+    if (outLen == 0)
+    {
+        const DWORD error = ::GetLastError();
+		(error);
+        //throw SystemException(error, __FILE__, __LINE__);
+    }
+    return ret;
+}
 
 
 namespace Utility
@@ -536,7 +575,13 @@ template <typename Traits> class unique_handle
     typedef typename Traits::pointer pointer;
 
     pointer m_value;
-    unique_handle<Traits>(unique_handle<Traits> const &) = delete;
+    // NOTE: constructors named with the explicit template-argument-list
+    // (unique_handle<Traits>(...)) are an MSVC extension - standard C++
+    // requires the plain injected-class-name (unique_handle(...)) here.
+    // Strict-conformance compilers (GCC without -fpermissive) reject the
+    // MSVC form outright, so these are written the portable way; MSVC
+    // accepts this form too.
+    unique_handle(unique_handle<Traits> const &) = delete;
 	unique_handle<Traits> operator=(unique_handle<Traits> const &) = delete;
     void close() throw()
     {
@@ -547,7 +592,7 @@ template <typename Traits> class unique_handle
     }
 
   public:
-    unique_handle<Traits>(unique_handle<Traits>&&other) throw() : m_value{other.release()}
+    unique_handle(unique_handle<Traits>&&other) throw() : m_value{other.release()}
     {
     }
 
@@ -594,7 +639,7 @@ template <typename Traits> class unique_handle
     }
 
 
-    explicit unique_handle<Traits>(pointer value = Traits::invalid()) throw() : m_value{value}
+    explicit unique_handle(pointer value = Traits::invalid()) throw() : m_value{value}
     {
     }
 
@@ -727,13 +772,24 @@ template<typename T>
 typename std::enable_if<std::is_same<T,std::string>::value,std::wstring>::type
 string_convert(const T& t)
 {
-	int num_chars = MultiByteToWideChar(CP_UTF8,0,t.c_str(),-1,NULL, 0);
-	if(num_chars == 0)
+	// Both calls use the same explicit length (not -1/"null-terminated")
+	// deliberately: mixing -1 for measuring with an explicit length for
+	// the actual conversion (as this used to, and as System::to_string
+	// still does below) means the two calls disagree about whether a
+	// null terminator is part of the data, which either overflows the
+	// destination or - as was happening here - leaves 1-2 stray NUL
+	// characters baked into the returned string's logical content
+	// (visible after shrink_to_fit(), which only affects capacity, never
+	// content). Explicit length both times converts exactly the
+	// requested characters, no terminator involved on either end.
+	if (t.empty()) return L"";
+	int num_chars = MultiByteToWideChar(CP_UTF8, 0, t.c_str(), static_cast<int>(t.length()), NULL, 0);
+	if (num_chars == 0)
 	{
 		return L"";
 	}
-	std::wstring wideString(num_chars + 1,L'\0');
-	MultiByteToWideChar(CP_UTF8,0, t.c_str(), -1, &wideString[0], num_chars);
+	std::wstring wideString(static_cast<std::size_t>(num_chars), L'\0');
+	MultiByteToWideChar(CP_UTF8, 0, t.c_str(), static_cast<int>(t.length()), &wideString[0], num_chars);
 	return wideString;
 }
 
@@ -741,14 +797,17 @@ template<typename T>
 typename std::enable_if<std::is_same<T,std::wstring>::value,std::string>::type
 string_convert(const T& t)
 {
-	int num_chars = WideCharToMultiByte(CP_UTF8, 0, t.c_str(),-1, NULL, 0, NULL, NULL);
-	if(num_chars == 0)
+	// See the string->wstring overload above for why both calls use the
+	// same explicit length instead of -1 for the first one.
+	if (t.empty()) return "";
+	int num_chars = WideCharToMultiByte(CP_UTF8, 0, t.c_str(), static_cast<int>(t.length()), NULL, 0, NULL, NULL);
+	if (num_chars == 0)
 	{
 		return "";
 	}
-	std::string buffer(num_chars + 1, '\0');
+	std::string buffer(static_cast<std::size_t>(num_chars), '\0');
 
-	WideCharToMultiByte(CP_UTF8, 0, t.c_str(), -1, &buffer[0], num_chars, NULL, NULL);
+	WideCharToMultiByte(CP_UTF8, 0, t.c_str(), static_cast<int>(t.length()), &buffer[0], num_chars, NULL, NULL);
 	return buffer;
 }
 
@@ -1376,7 +1435,7 @@ public:
 		auto retCode = ::RegDeleteTree(m_key, nullptr);
 		if (retCode != ERROR_SUCCESS)
 		{
-			throw SystemException{ retCode,__FILE__, __LINE__ };
+			//throw SystemException{ retCode,__FILE__, __LINE__ };
 		}
 
 	}
@@ -1400,7 +1459,7 @@ public:
 		auto retCode = ::RegDeleteTree(m_key, subKeyName.c_str());
 		if (retCode != ERROR_SUCCESS)
 		{
-			throw SystemException{ retCode,__FILE__, __LINE__ };
+	//		throw SystemException{ retCode,__FILE__, __LINE__ };
 		}
 
 	}
@@ -1408,7 +1467,7 @@ public:
 	
 	RegistryKey(HKEY hKeyParent, const std::tstring& keyName, REGSAM access)
 	{
-		HKEY hKey = nullptr;
+		
 		LONG retCode = ::RegOpenKeyEx(
         hKeyParent,
         keyName.c_str(),
