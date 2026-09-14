@@ -6,7 +6,7 @@ General utilities for windows development using mingw32/mingw64/clang++/MSVC 32b
 
 To use:
 
-copy the include/utlity folder of this project to your compilers default include path.
+copy the include/WinUtlity folder of this project to your compilers default include path.
  
  after that all the examples will build just fine  if your build envrioment is set up properly and you can start using the library in your own code. Many of the examples are adaptations of Petzold apps from Programming Windows 5th addition for modern programming, and may provide good starting points for your own projects. 
 
