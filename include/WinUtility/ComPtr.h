@@ -59,7 +59,7 @@ template <typename T> class ComPtrRef : public ComPtrRefBase<T>
 
     typename ComPtrRefBase<T>::InterfaceType **ReleaseAndGetAddressOf() throw()
     {
-        return ComPtrRefBase<T>::m_ptr->RelaseAndGetAddressOf();
+        return ComPtrRefBase<T>::m_ptr->ReleaseAndGetAddressOf();
     }
 };
 
