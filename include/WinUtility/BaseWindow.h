@@ -15349,7 +15349,7 @@ return RICHEDIT_CLASS;
         ::SendMessage(TBase::m_hwnd, EM_EXGETSEL, 0, (LPARAM)&cr);
 
 #if (_RICHEDIT_VER >= 0x0200)
-        TCHAR buff = TCHAR[cr.cpMax - cr.cpMin + 1];
+        LPTSTR buff = TCHAR[cr.cpMax - cr.cpMin + 1];
         LPTSTR lpstrText = &buff[0];
         if (lpstrText == NULL)
             return FALSE;
@@ -15358,8 +15358,9 @@ return RICHEDIT_CLASS;
 
         bstrText = ::SysAllocString(T2W(lpstrText));
 #else
-        CTempBuffer<char, _WTL_STACK_ALLOC_THRESHOLD> buff;
-        LPSTR lpstrText = buff.Allocate(cr.cpMax - cr.cpMin + 1);
+        std::string strBuff(cr.cpMax - cr.cpMin + 1, '\0');
+        
+        LPSTR lpstrText = strBuff.data();
         if (lpstrText == NULL)
             return FALSE;
         if (::SendMessage(TBase::m_hwnd, EM_GETSELTEXT, 0, (LPARAM)lpstrText) == 0)
@@ -15389,8 +15390,8 @@ return RICHEDIT_CLASS;
             strText.ReleaseBuffer();
         }
 #else  // !(_RICHEDIT_VER >= 0x0200)
-        CTempBuffer<char, _WTL_STACK_ALLOC_THRESHOLD> buff;
-        LPSTR lpstrText = buff.Allocate(cr.cpMax - cr.cpMin + 1);
+        std::string strBuff(cr.cpMax - cr.cpMin + 1, '\0');
+        LPSTR lpstrText = strBuff.data();
         if (lpstrText == NULL)
             return 0;
         LONG lLen = (LONG)::SendMessage(TBase::m_hwnd, EM_GETSELTEXT, 0, (LPARAM)lpstrText);
