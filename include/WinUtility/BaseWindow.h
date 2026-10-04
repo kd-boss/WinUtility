@@ -311,9 +311,13 @@ class Point : public tagPOINT
 public:
     Point();
     Point(Point &) = default;
-    // Point(Point &&) = default;
+    Point(Point &&) = default;
+    Point(const Point& other);
+    Point(const POINT& other);
+    ~Point() = default;
     Point(LONG xx, LONG yy);
     Point(LPARAM lParam);
+    
     void Offset(int OffsetX, int OffsetY);
     void Offset(POINT point);
     void SetPoint(int X, int Y);
@@ -328,6 +332,7 @@ public:
     Point operator+(POINT other) const;
     Point operator-(POINT other) const;
     Point operator-() const;
+    Point operator=(const Point& other);
     Rect operator+(const RECT *pother) const;
     Rect operator-(const RECT *pother) const;
 };
@@ -480,6 +485,25 @@ inline Point::Point()
     x = 0;
     y = 0;
 }
+inline Point::Point(const Point& other)
+{
+    x = other.x;
+    y = other.y;
+}
+
+inline Point::Point(const POINT& other)
+{
+    x = other.x;
+    y = other.y;
+}
+
+inline Point Point::operator=(const Point& other) 
+{
+    x = other.x;
+    y = other.y;
+    return *this;
+}
+
 inline Point::Point(LONG xx, LONG yy)
 {
     x = xx;
@@ -1234,7 +1258,7 @@ public:
         POINT ptOrg = {0, 0};
         ::DPtoLP(hDC1, &ptOrg, 1);
 
-        auto lfHeight = -abs(pt.y - ptOrg.y);
+        lfHeight = -abs(pt.y - ptOrg.y);
 
         if (hDC == nullptr)
             ::ReleaseDC(nullptr, hDC1);
@@ -5175,7 +5199,7 @@ public:
 
     HRESULT GetWindowText(std::tstring &str)
     {
-        HRESULT hr = S_OK;
+       // HRESULT hr = S_OK;
         unsigned int txtlen = GetWindowTextLength();
         try
         {
@@ -5202,7 +5226,7 @@ public:
         {
             return __HRESULT_FROM_WIN32(ERROR_OUTOFMEMORY);
         }
-        return S_OK;
+       // return S_OK;
     }
 
     void SetFont(HFONT hFont, BOOL bRedraw = TRUE)
@@ -6109,7 +6133,7 @@ public:
         GetWindowRect(&rcDlg);
         Rect rcArea;
         Rect rcCenter;
-        HWND hWndParent = {0};
+       // HWND hWndParent = {0};
 
         // don't center against invisible or minimized windows
         if (hWndCenter != NULL)
@@ -7012,7 +7036,7 @@ public:
             dwExStyle = TWindowTraits::GetStyleEx();
 
         ATOM atom = this->RegisterClass();
-        LPTSTR st = MAKEINTATOM(atom);
+        //LPTSTR st = MAKEINTATOM(atom);
 
         HWND hwnd = Create(hWndParent, rect, szWindowName, dwStyle, dwExStyle,
                            MenuOrID, atom, lpCreateParam);
@@ -7064,42 +7088,24 @@ public:
     }
 };
 
-template <class TBase, class TWinTraits>
+template <class TBase>
 class ContainedWindowT : public TBase
 {
 public:
     WndProcThunk m_thunk;
     WNDPROC m_pfnSuperWndProc;
-    MessageMap *m_pObject;
     LPTSTR m_className;
-    DWORD m_dwMsgMapID;
-    MSG m_currMsg;
-    ContainedWindowT()
+    Window m_owner;
+   
+    ContainedWindowT(HWND owner): m_owner(owner)
     {
     }
 
-    ContainedWindowT(LPTSTR ClassName, MessageMap *pObject, DWORD dwMsgMapID = 0)
-        : m_className(ClassName), m_pfnSuperWndProc(nullptr), m_pObject(pObject),
-          m_dwMsgMapID(dwMsgMapID), m_currMsg{0, 0, 0, 0}
+    void SetOwner(Window owner)
     {
+        m_owner = owner;
     }
-
-    ContainedWindowT(MessageMap *pObject, DWORD dwMsgMapID)
-        : m_className(TBase::GetWndClassName()), m_pfnSuperWndProc(::DefWindowProc), m_pObject(pObject),
-          m_dwMsgMapID(dwMsgMapID)
-    {
-    }
-
-    void SwitchMessageMap(DWORD dwMsgMapID)
-    {
-        m_dwMsgMapID = dwMsgMapID;
-    }
-
-    LRESULT DefWindowProc()
-    {
-        MSG msg = m_currMsg;
-        return DefWindowProc(msg.message, msg.wParam, msg.lParam);
-    }
+  
 
     LRESULT DefWindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
@@ -7114,7 +7120,7 @@ public:
                            { return dat.dwThreadId == ::GetCurrentThreadId(); });
         if (ret != _wndData.rend())
         {
-            ContainedWindowT<TBase, TWinTraits> *pThis = (ContainedWindowT<TBase, TWinTraits> *)ret->pThis;
+            ContainedWindowT<TBase> *pThis = (ContainedWindowT<TBase> *)ret->pThis;
             pThis->m_hwnd = hWnd;
             pThis->m_thunk.Init(pThis->GetWindowProc(), pThis);
 #ifdef __x86_64__
@@ -7137,22 +7143,22 @@ public:
         return 0;
     }
 
+    virtual BOOL HandleMessage(
+    HWND hWnd,
+    UINT uMsg,
+    WPARAM wParam,
+    LPARAM lParam,
+    LRESULT &lResult,
+    DWORD dwMapID = 0
+) = 0;
     static LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
-        ContainedWindowT<TBase, TWinTraits> *pThis = (ContainedWindowT<TBase, TWinTraits> *)hWnd;
+        ContainedWindowT<TBase> *pThis = (ContainedWindowT<TBase> *)hWnd;
         if (!pThis)
             return 0;
-
-        if (!pThis->m_hwnd || !pThis->m_pObject)
-            return 0;
-
-        pThis->m_currMsg.hwnd = pThis->m_hwnd;
-        pThis->m_currMsg.message = uMsg;
-        pThis->m_currMsg.wParam = wParam;
-        pThis->m_currMsg.lParam = lParam;
-
+     
         LRESULT lRes = 0;
-        BOOL bRet = pThis->m_pObject->HandleMessage(pThis->m_hwnd, uMsg, wParam, lParam, lRes, pThis->m_dwMsgMapID);
+        BOOL bRet = pThis->HandleMessage(hWnd, uMsg, wParam, lParam, lRes);
 
         if (!bRet)
         {
@@ -7211,9 +7217,8 @@ public:
         if (rect.Get() == nullptr)
             rect = &TBase::rcDefault;
 
-        dwStyle = TWinTraits::GetWndStyle(dwStyle);
-        dwExStyle = TWinTraits::GetWndExStyle(dwExStyle);
-
+        DWORD dwExstyle = TBase::GetExStyle();
+        DWORD dwStyle = TBase::GetStyle();
         HWND hWnd =
             ::CreateWindowEx(dwExStyle, MAKEINTATOM(atom), szWindowName, dwStyle, rect.Get()->left, rect.Get()->top,
                              rect.Get()->right - rect.Get()->left, rect.Get()->bottom - rect.Get()->top, hWndParent,
@@ -7221,18 +7226,8 @@ public:
         return hWnd;
     }
 
-    HWND Create(LPCTSTR lpszClassName, MessageMap *pObject, DWORD dwMsgMapID, HWND hWndParent, URECT rect,
-                LPCTSTR szWindowName = nullptr, DWORD dwStyle = 0, DWORD dwExStyle = 0, UMenuOrID MenuOrID = 0U,
-                LPVOID lpCreateParam = nullptr)
-    {
-        m_className = const_cast<LPTSTR>(lpszClassName);
-        m_pfnSuperWndProc = ::DefWindowProc;
-        m_pObject = pObject;
-        m_dwMsgMapID = dwMsgMapID;
-        return Create(hWndParent, rect, szWindowName, dwStyle, dwExStyle, MenuOrID, lpCreateParam);
-    }
 
-    BOOL SubclassWindow(HWND hWnd)
+    BOOL SubClassWindow(HWND hWnd)
     {
         m_thunk.Init(WindowProc, (void *)this);
         WNDPROC pProc = (WNDPROC)m_thunk.thunk;
@@ -9680,14 +9675,14 @@ public:
         return (BOOL)::SendMessage(TBase::m_hwnd, TTM_ADDTOOL, 0, (LPARAM)lpToolInfo);
     }
 
-    BOOL AddTool(HWND hWnd, UStringOrID text = LPSTR_TEXTCALLBACK, LPCRECT lpRectTool = NULL, UINT nIDTool = 0)
+    BOOL AddTool(HWND hWnd, UStringOrID text = LPSTR_TEXTCALLBACK, LPCRECT lpRectTool = NULL, UINT nIDTool = 0, UINT nFlags = 0)
     {
         WINASSERT(::IsWindow(TBase::m_hwnd));
         WINASSERT(hWnd != NULL);
         // the toolrect and toolid must both be zero or both valid
         WINASSERT((lpRectTool != NULL && nIDTool != 0) || (lpRectTool == NULL && nIDTool == 0));
 
-        ToolInfo ti(0, hWnd, nIDTool, (LPRECT)lpRectTool, (LPTSTR)text.Get());
+        ToolInfo ti(nFlags, hWnd, nIDTool, (LPRECT)lpRectTool, (LPTSTR)text.Get());
         return (BOOL)::SendMessage(TBase::m_hwnd, TTM_ADDTOOL, 0, ti);
     }
 
@@ -9816,7 +9811,7 @@ template <typename TBase, typename Traits>
 class ToolTipImpl : public TBase
 {
 public:
-    HWND Create(HWND hWndParent = nullptr, Rect rc = {0, 0, 0, 0}, UMenuOrID id = nullptr, LPTSTR windowName = TEXT(""))
+    HWND Create(HWND hWndParent = nullptr, Rect rc = {0, 0, 0, 0}, UMenuOrID id = nullptr, LPTSTR windowName = const_cast<LPTSTR>(TEXT("ToolTip")))
     {
         DWORD style = Traits::GetStyle();
         DWORD styleEx = Traits::GetStyleEx();
@@ -15166,13 +15161,13 @@ public:
     {
 #if (_RICHEDIT_VER >= 0x0500)
 #if(__GNUG__)
-return TEXT(MSFTEDIT_CLASS);
+return MSFTEDIT_CLASS;
 #else
 return MSFTEDIT_CLASS;
 #endif
 #else
 #if(__GNUG__)
-return TEXT(RICHEDIT_CLASS);
+return RICHEDIT_CLASS;
 #else
 return RICHEDIT_CLASS;
 #endif
@@ -15349,7 +15344,7 @@ return RICHEDIT_CLASS;
         ::SendMessage(TBase::m_hwnd, EM_EXGETSEL, 0, (LPARAM)&cr);
 
 #if (_RICHEDIT_VER >= 0x0200)
-        LPTSTR buff = TCHAR[cr.cpMax - cr.cpMin + 1];
+        TCHAR buff = TCHAR[cr.cpMax - cr.cpMin + 1];
         LPTSTR lpstrText = &buff[0];
         if (lpstrText == NULL)
             return FALSE;
@@ -15358,9 +15353,8 @@ return RICHEDIT_CLASS;
 
         bstrText = ::SysAllocString(T2W(lpstrText));
 #else
-        std::string strBuff(cr.cpMax - cr.cpMin + 1, '\0');
-        
-        LPSTR lpstrText = strBuff.data();
+        CTempBuffer<char, _WTL_STACK_ALLOC_THRESHOLD> buff;
+        LPSTR lpstrText = buff.Allocate(cr.cpMax - cr.cpMin + 1);
         if (lpstrText == NULL)
             return FALSE;
         if (::SendMessage(TBase::m_hwnd, EM_GETSELTEXT, 0, (LPARAM)lpstrText) == 0)
@@ -15390,8 +15384,8 @@ return RICHEDIT_CLASS;
             strText.ReleaseBuffer();
         }
 #else  // !(_RICHEDIT_VER >= 0x0200)
-        std::string strBuff(cr.cpMax - cr.cpMin + 1, '\0');
-        LPSTR lpstrText = strBuff.data();
+        CTempBuffer<char, _WTL_STACK_ALLOC_THRESHOLD> buff;
+        LPSTR lpstrText = buff.Allocate(cr.cpMax - cr.cpMin + 1);
         if (lpstrText == NULL)
             return 0;
         LONG lLen = (LONG)::SendMessage(TBase::m_hwnd, EM_GETSELTEXT, 0, (LPARAM)lpstrText);
@@ -17359,18 +17353,14 @@ typedef DateTimePickerControlT<Window> DateTimePickerControl;
     BOOL bHandled = FALSE;                                                                                      \
     void SetHandled(BOOL handled = TRUE) { bHandled = handled; }                                                \
                                                                                                                 \
-    BOOL HandleMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT &lResult, DWORD dwMapID = 0) \
+    BOOL HandleMessage([[maybe_unused]]HWND hWnd,[[maybe_unused]] UINT uMsg,[[maybe_unused]] WPARAM wParam,[[maybe_unused]] LPARAM lParam,[[maybe_unused]] LRESULT &lResult,[[maybe_unused]] DWORD dwMapID = 0) \
     {                                                                                                           \
-                                                                                                                \
-        (hWnd);                                                                                                 \
-        (uMsg);                                                                                                 \
-        (wParam);                                                                                               \
-        (lParam);                                                                                               \
         lResult = 0;                                                                                            \
         bHandled = FALSE;                                                                                       \
         switch (uMsg)                                                                                           \
         {
-
+        
+            
 #define END_MSG_MAP() \
     }                 \
     ;                 \
@@ -17537,26 +17527,27 @@ typedef DateTimePickerControlT<Window> DateTimePickerControl;
     }                    \
     break;
 
-// LRESULT OnNotifyHandlerEX(LPNMHDR pnmh)
+// //LRESULT OnNotifyHandlerEX(LPNMHDR pnmh)
 // #define NOTIFY_HANDLER_EX(id, cd, func)                                                                                \
 //    case cd:                          \
 //    {   \    
-//         if(id == ((LPNMHDR)lParam)->idFrom){\                                                                                                          \
+//         if(id == ((LPNMHDR)lParam)->idFrom){                                                                          \
 //        SetHandled();                                                                                                  \
 //        lResult = func((LPNMHDR)lParam);                                                                               \
 //                                                                                                       \
 //         }\
-// //   }
+//    }\
+//    break;
 
-// LRESULT OnNotifyIDHandlerEX(LPNMHDR pnmh)
-//  #define NOTIFY_ID_HANDLER_EX(id, func)                                                                                 \
-//      case id:                                                        \
-//      {                                                                                                                  \
-//                                                                                                            \
-//          lResult = func((LPNMHDR)lParam);                                                                               \
-//          return bHandled;                                                                                               \
-//      } \
-//      break;
+//LRESULT OnNotifyIDHandlerEX(LPNMHDR pnmh)
+ #define NOTIFY_ID_HANDLER_EX(id, func)                                                                                 \
+     case id:                                                        \
+     {                                                                                                                  \
+                                                                                                           \
+         lResult = func((LPNMHDR)lParam);                                                                               \
+         return bHandled;                                                                                               \
+     } \
+     break;
 
 #define BEGIN_NOTIFY_CODE_MAP(ID_CONTROL) \
     case ID_CONTROL:                      \
@@ -18821,6 +18812,16 @@ typedef DateTimePickerControlT<Window> DateTimePickerControl;
         lResult = (LRESULT)func((HWND)wParam, (PCOPYDATASTRUCT)lParam); \
         return bHandled;                                                \
     }                                                                   \
+    break;
+
+// void OnPaste()
+#define MSG_WM_PASTE(func)  \
+    case WM_PASTE:          \
+    {                       \
+        SetHandled();       \
+        func();             \
+        lResult = 0;        \
+    }                       \
     break;
 
 // void OnDestroy()
