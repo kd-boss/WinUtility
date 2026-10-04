@@ -1,0 +1,19 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "vs2026-debug",
+      "displayName": "Visual Studio 2026 Debug",
+      "generator": "Visual Studio 18 2026",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    }
+  ]
+}
