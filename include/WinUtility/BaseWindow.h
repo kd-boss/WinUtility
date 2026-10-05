@@ -5259,6 +5259,25 @@ public:
         return ::DrawMenuBar(m_hwnd);
     }
 
+    BOOL SetProp(LPCTSTR lpszString, HANDLE hData)
+    {
+        WINCHECK(m_hwnd);
+        return ::SetProp(m_hwnd, lpszString, hData);
+    }
+
+    HANDLE GetProp(LPCTSTR lpszString)
+    {
+        WINCHECK(m_hwnd);
+        return ::GetProp(m_hwnd, lpszString);
+    
+    }
+
+    HANDLE RemoveProp(LPCTSTR lpszString)
+    {
+        WINCHECK(m_hwnd);
+        return ::RemoveProp(m_hwnd,lpszString);
+    }
+
     HMENU GetSystemMenu(BOOL bRevert) const
     {
         WINCHECK(m_hwnd);
@@ -7213,8 +7232,8 @@ public:
         if (rect.Get() == nullptr)
             rect = &TBase::rcDefault;
 
-        DWORD dwExstyle = TBase::GetExStyle();
-        DWORD dwStyle = TBase::GetStyle();
+        dwExStyle = TBase::GetExStyle();
+        dwStyle = TBase::GetStyle();
         HWND hWnd =
             ::CreateWindowEx(dwExStyle, MAKEINTATOM(atom), szWindowName, dwStyle, rect.Get()->left, rect.Get()->top,
                              rect.Get()->right - rect.Get()->left, rect.Get()->bottom - rect.Get()->top, hWndParent,
