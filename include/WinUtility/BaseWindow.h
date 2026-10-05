@@ -7095,16 +7095,11 @@ public:
     WndProcThunk m_thunk;
     WNDPROC m_pfnSuperWndProc;
     LPTSTR m_className;
-    Window m_owner;
    
-    ContainedWindowT(HWND owner): m_owner(owner)
+    ContainedWindowT()
     {
     }
 
-    void SetOwner(Window owner)
-    {
-        m_owner = owner;
-    }
   
 
     LRESULT DefWindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -7118,7 +7113,7 @@ public:
         auto ret = find_if(_wndData.rbegin(), _wndData.rend(),
                            [&](CreateWndData &dat)
                            { return dat.dwThreadId == ::GetCurrentThreadId(); });
-        if (ret != _wndData.rend())
+        if (ret == _wndData.rend())
         {
             ContainedWindowT<TBase> *pThis = (ContainedWindowT<TBase> *)ret->pThis;
             pThis->m_hwnd = hWnd;
@@ -7151,6 +7146,7 @@ public:
     LRESULT &lResult,
     DWORD dwMapID = 0
 ) = 0;
+
     static LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         ContainedWindowT<TBase> *pThis = (ContainedWindowT<TBase> *)hWnd;
@@ -18824,6 +18820,45 @@ typedef DateTimePickerControlT<Window> DateTimePickerControl;
     }                       \
     break;
 
+// void OnCut()
+#define MSG_WM_CUT(func)    \
+    case WM_CUT:            \
+    {                       \
+        SetHandled();       \
+        func();             \
+        lResult = 0;        \
+    }                       \
+    break;
+
+// void OnCopy()
+#define MSG_WM_COPY(func)    \
+    case WM_COPY:            \
+    {                       \
+        SetHandled();       \
+        func();             \
+        lResult = 0;        \
+    }                       \
+    break;
+
+// void OnUndo()
+#define MSG_WM_UNDO(func)    \
+    case WM_UNDO:            \
+    {                       \
+        SetHandled();       \
+        func();             \
+        lResult = 0;        \
+    }                       \
+    break;
+
+#define MSG_WM_CLEAR(func)   \
+    case WM_CLEAR:           \
+    {                        \
+        SetHandled();        \
+        func();              \
+        lResult = 0;         \
+    }                        \
+    break;
+    
 // void OnDestroy()
 #define MSG_WM_DESTROY(func) \
     case WM_DESTROY:         \

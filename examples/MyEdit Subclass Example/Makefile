@@ -1,7 +1,7 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -I../../include
+CXXFLAGS = -std=c++23 -Wall -Wextra -municode -DUNICODE -D_UNICODE 
 LDFLAGS = -mwindows -municode
-LDLIBS = -luser32 -lgdi32 -lcomctl32
+LDLIBS = -luser32 -lgdi32 -lcomctl32 -lstdc++exp
 
 TARGET = ContainedEditTest.exe
 OBJECTS = ContainedEditTest.o
@@ -13,7 +13,7 @@ all: $(TARGET)
 $(TARGET): $(OBJECTS)
 	$(CXX) $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $@
 
-ContainedEditTest.o: ContainedEditTest.cpp ContainedEditTest.h
+ContainedEditTest.o: ContainedEditTest.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:

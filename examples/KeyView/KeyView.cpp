@@ -5,8 +5,9 @@
 #ifdef max
 #undef max
 #endif
-#include <WinUtility/Numbers.h>
 #include <WinUtility/System.h>
+#include <WinUtility/Numbers.h>
+
 #include "KeyView.h"
 #include <format>
 #include <bitset>
@@ -342,6 +343,7 @@ HRESULT MyWindow::FormatCharMessage(
 
 void MyWindow::OnKeyDown(UINT nChar, SHORT nRepCnt, SHORT nFlags)
 {
+	SetHandled(false);
 	Number<long> lParam = MAKELPARAM(nRepCnt,nFlags);
 	std::tstring buff;
 	buff.resize(35);
@@ -357,7 +359,8 @@ void MyWindow::OnKeyUp(UINT nChar, SHORT nRepCnt, SHORT nFlags)
 	buff.resize(35);
 	auto lParam = MAKELPARAM( nRepCnt, nFlags);	
 	try{
-		GetKeyNameText(convert_to<LONG>(lParam), buff.data(), convert_to<int>(buff.length()));
+		
+		GetKeyNameText(lParam, buff.data(), convert_to<int>(buff.length()));
 	}
 	catch(const Bad_value&)
 	{
@@ -373,7 +376,7 @@ void MyWindow::OnSysKeyUp(UINT nChar, SHORT nRepCnt, SHORT nFlags)
 	std::wstring buff;
 	buff.resize(35);
 	auto lParam = MAKELPARAM( nRepCnt, nFlags);	
-	GetKeyNameText(convert_to<LONG>(lParam), buff.data(), convert_to<int>(buff.length()));
+	GetKeyNameText(lParam, buff.data(), convert_to<int>(buff.length()));
 	buff.shrink_to_fit();
 	if(SUCCEEDED(FormatKeyMessage(messageNames[WM_SYSKEYUP - WM_KEYFIRST].c_str(), nChar,lParam , buff.c_str())))	
 	Invalidate(FALSE);	
@@ -384,7 +387,7 @@ void MyWindow::OnSysKeyDown(UINT nChar, SHORT nRepCnt, SHORT nFlags)
 	std::wstring buff;
 	buff.resize(35);
 	auto lParam = MAKELPARAM( nRepCnt, nFlags);	
-	GetKeyNameText(convert_to<LONG>(lParam), buff.data(), convert_to<int>(buff.length()));
+	GetKeyNameText(lParam, buff.data(), convert_to<int>(buff.length()));
 	buff.shrink_to_fit();
 	if(SUCCEEDED(FormatKeyMessage(messageNames[WM_SYSKEYDOWN - WM_KEYFIRST].c_str(), nChar,lParam , buff.c_str())))
 	Invalidate(FALSE);	
