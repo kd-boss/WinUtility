@@ -18703,7 +18703,6 @@ typedef DateTimePickerControlT<Window> DateTimePickerControl;
 
 #endif
 
-#ifndef CHAIN_HANDLERS
 
 
 #if (_WIN32_WINNT >= 0x0400)
