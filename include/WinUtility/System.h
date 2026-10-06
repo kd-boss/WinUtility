@@ -19,11 +19,12 @@
 #include <format>
 #include <Rpc.h>
 
-// usefull debugging macro's
-//#if __cplusplus <= 201103L
-//#error This file requires compiler and library support for the \
-//ISO C++ 2023 standard.
-//#endif
+/* usefull debugging macro's
+#if __cplusplus <= 201103L
+#error This file requires compiler and library support for the \
+ISO C++ 2023 standard.
+#endif
+*/
 
 #ifndef ASSERT
 #define ASSERT(cond) _ASSERTE(cond)
@@ -935,6 +936,7 @@ public:
 			m_trx = other.m_trx;
 			other.m_trx = nullptr;
 		}
+		return *this;
 	}
     
 	Transaction(LPSECURITY_ATTRIBUTES lpTransactionAttributes,DWORD CreateOptions, DWORD IsolationLevel, DWORD IsolationFlags, DWORD Timeout,const std::tstring& Description)

@@ -4024,7 +4024,7 @@ public:
     ENHMETAHEADER m_header;
     PIXELFORMATDESCRIPTOR m_pfd;
 
-    EnhMetaFileInfo(HENHMETAFILE hEMF) : m_bits(nullptr), m_desc(nullptr), m_emf(hEMF)
+    EnhMetaFileInfo(HENHMETAFILE hEMF) :  m_emf(hEMF), m_bits(nullptr),m_desc(nullptr) 
     {
     }
 
@@ -5222,7 +5222,7 @@ public:
             }
             return S_OK;
         }
-        catch (std::bad_alloc e)
+        catch ([[maybe_unused]]std::bad_alloc& e)
         {
             return __HRESULT_FROM_WIN32(ERROR_OUTOFMEMORY);
         }
@@ -6430,7 +6430,7 @@ inline BOOL BaseModule::AddResourceInstance(HINSTANCE hInst) throw()
         m_vecResources.push_back(hInst);
         return TRUE;
     }
-    catch (std::exception e)
+    catch ([[maybe_unused]]std::exception& e)
     {
         return FALSE;
     }
@@ -6443,7 +6443,7 @@ inline BOOL BaseModule::RemoveResourceInstance(HINSTANCE hInst) throw()
         m_vecResources.erase(std::remove(m_vecResources.begin(), m_vecResources.end(), hInst), m_vecResources.end());
         return TRUE;
     }
-    catch (std::exception e)
+    catch ([[maybe_unused]]std::exception& e)
     {
         return FALSE;
     }
@@ -6457,13 +6457,13 @@ inline HINSTANCE BaseModule::GetHInstanceAt(int i) throw()
         {
             return nullptr;
         }
-        if (m_vecResources.size() >= static_cast<size_t>(i))
+        if (m_vecResources.size() <= static_cast<size_t>(i))
         {
             return nullptr;
         }
         return m_vecResources[i];
     }
-    catch (std::exception /*e*/)
+    catch ([[maybe_unused]]std::exception e)
     {
         return nullptr;
     }
@@ -16910,6 +16910,8 @@ typedef ComboBoxExT<Window> ComboBoxControlEx;
 #endif
 
 // Part
+
+#if defined(__MINGW_MAJOR_VERSION) && __MINGW_MAJOR_VERSION < 4
 #define MCGIP_CALENDARCONTROL 0
 #define MCGIP_NEXT 1
 #define MCGIP_PREV 2
@@ -16925,7 +16927,7 @@ typedef ComboBoxExT<Window> ComboBoxControlEx;
 #define MCGIF_NAME 0x00000004
 
 // Note: iRow of -1 refers to the row header and iCol of -1 refers to the col header.
-#if defined(__MINGW_MAJOR_VERSION) && __MINGW_MAJOR_VERSION < 4
+
 typedef struct tagMCGRIDINFO
 {
     UINT cbSize;
@@ -17231,14 +17233,14 @@ typedef struct tagDATETIMEPICKERINFO
     HWND hwndUD;
     HWND hwndDropDown;
 } DATETIMEPICKERINFO, *LPDATETIMEPICKERINFO;
-#endif
+
 #define DTM_GETMONTHCAL (DTM_FIRST + 8)
 #define DTM_SETMCSTYLE (DTM_FIRST + 11)
 #define DTM_GETMCSTYLE (DTM_FIRST + 12)
 #define DTM_GETDATETIMEPICKERINFO (DTM_FIRST + 14)
 #define DTM_GETIDEALSIZE (DTM_FIRST + 15)
 #define DTM_CLOSEMONTHCAL (DTM_FIRST + 13)
-
+#endif
 #endif
 
 template <class TBase>
@@ -17435,15 +17437,16 @@ typedef DateTimePickerControlT<Window> DateTimePickerControl;
     }                                                                  \
     break;
 
-// // BOOL OnCommandIDHandlerEX(UINT uNotifyCode, int nID, Window wndCtl)
-// #define DLG_COMMAND_ID_HANDLER_EX(id, func)                                               \
-//     case id:                                                                              \
-//     {                                                                                     \
-//         SetHandled();                                                                     \
-//         lResult = (LRESULT)func((UINT)HIWORD(wParam), (int)LOWORD(wParam), (HWND)lParam); \
-//         return bHandled;                                                                  \
-//     }                                                                                     \
-//     break;
+/* BOOL OnCommandIDHandlerEX(UINT uNotifyCode, int nID, Window wndCtl)
+#define DLG_COMMAND_ID_HANDLER_EX(id, func)                                               \
+     case id:                                                                              \
+     {                                                                                     \
+         SetHandled();                                                                     \
+         lResult = (LRESULT)func((UINT)HIWORD(wParam), (int)LOWORD(wParam), (HWND)lParam); \
+         return bHandled;                                                                  \
+     }                                                                                     \
+     break;
+*/
 
 // BOOL OnCommandRangeHandlerEX(UINT uNotifyCode, int nID, Window wndCtl)
 #define COMMAND_RANGE_HANDLER_EX(idFirst, idLast, func)                                   \
@@ -17490,16 +17493,6 @@ typedef DateTimePickerControlT<Window> DateTimePickerControl;
         lResult = 0;                                                   \
     }
 
-// // LRESULT OnReflectedCommandCodeHandlerEX(UINT uNotifyCode, int nID, Window
-// // wndCtl)
-// #define REFLECTED_COMMAND_CODE_HANDLER_EX(code, func)                                                                  \
-//     if (uMsg == OCM_COMMAND && code == HIWORD(wParam))                                                                 \
-//     {                                                                                                                  \
-//         SetHandled();                                                                                                  \
-//         func((UINT)HIWORD(wParam), (int)LOWORD(wParam), (HWND)lParam);                                                 \
-//         lResult = 0;                                                                                                   \
-//                                                                                                        \
-//     }
 
 // void OnReflectedCommandRangeHandlerEX(UINT uNotifyCode, int nID, Window
 // wndCtl)
@@ -17542,17 +17535,6 @@ typedef DateTimePickerControlT<Window> DateTimePickerControl;
     }                    \
     break;
 
-// //LRESULT OnNotifyHandlerEX(LPNMHDR pnmh)
-// #define NOTIFY_HANDLER_EX(id, cd, func)                                                                                \
-//    case cd:                          \
-//    {   \    
-//         if(id == ((LPNMHDR)lParam)->idFrom){                                                                          \
-//        SetHandled();                                                                                                  \
-//        lResult = func((LPNMHDR)lParam);                                                                               \
-//                                                                                                       \
-//         }\
-//    }\
-//    break;
 
 //LRESULT OnNotifyIDHandlerEX(LPNMHDR pnmh)
  #define NOTIFY_ID_HANDLER_EX(id, func)                                                                                 \
@@ -17773,15 +17755,17 @@ typedef DateTimePickerControlT<Window> DateTimePickerControl;
     }                                              \
     break;
 
-// // void OnTreeViewBeginDragDrop( const NMTREEVIEW& tview);
-// #define TVN_BEGINDRAG_HANDLER(func)    \
-//     case TVN_BEGINDRAG:                \
-//     {                                  \
-//         SetHanled();                   \
-//         func(*((LPNMTREEVIEW)lParam)); \
-//         return bHandled;               \
-//     }                                  \
-//     break;
+/* // void OnTreeViewBeginDragDrop( const NMTREEVIEW& tview);
+#define TVN_BEGINDRAG_HANDLER(func)    \
+    case TVN_BEGINDRAG:                \
+    {                                  \
+        SetHanled();                   \
+        func(*((LPNMTREEVIEW)lParam)); \
+        return bHandled;               \
+    }                                  \
+    break;
+*/
+
 
 // OnTreeViewDeleteItem( const NMTREEVIEW& tview);
 /*
@@ -18716,86 +18700,11 @@ typedef DateTimePickerControlT<Window> DateTimePickerControl;
     }                                            \
     break;
 
-// // LRESULT OnReflectedNotifyCodeHandlerEX(LPNMHDR pnmh)
-// #define REFLECTED_NOTIFY_CODE_HANDLER_EX(cd, func)                                                                     \
-//     case OCM_NOTIFY:                                                           \
-//     {
-//         if( cd == ((LPNMHDR)lParam)->code){\                                                                                                   \
-//         SetHandled();                                                                                                  \
-//         lResult = func((LPNMHDR)lParam);                                                                               \
-//         lResult = 0;                     \
-//                                                                                    }                                                                           \
-//     }\
-//     break;
-
-// LRESULT OnReflectedNotifyRangeHandlerEX(LPNMHDR pnmh)
-#define REFLECTED_NOTIFY_RANGE_HANDLER_EX(idFirst, idLast, func)                         \
-    case idFirst:                                                                        \
-    case idLast:                                                                         \
-    {                                                                                    \
-        if (((LPNMHDR)lParam)->idFrom >= idFirst && ((LPNMHDR)lParam)->idFrom <= idLast) \
-        {                                                                                \
-            \ SetHandled();                                                              \
-            lResult = func((LPNMHDR)lParam);                                             \
-            return bHandled;                                                             \
-        }                                                                                \
-    }                                                                                    \
-    break;
-
-// LRESULT OnReflectedNotifyRangeCodeHandlerEX(LPNMHDR pnmh)
-#define REFLECTED_NOTIFY_RANGE_CODE_HANDLER_EX(idFirst, idLast, cd, func)            \
-    case idFirst:                                                                    \
-    case idLast:                                                                     \
-    {                                                                                \
-        if (cd == ((LPNMHDR)lParam)->code && ((LPNMHDR)lParam)->idFrom >= idFirst && \
-            ((LPNMHDR)lParam)->idFrom <= idLast)                                     \
-        {                                                                            \
-            \ SetHandled();                                                          \
-            lResult = func((LPNMHDR)lParam);                                         \
-            return bHandled;                                                         \
-        }                                                                            \
-        break;
-
-#define FORWARD_NOTIFICATIONS()                                                \
-    {                                                                          \
-                                                                               \
-        lResult = ForwardNotifications(*this, uMsg, wParam, lParam, bHandled); \
-    }
-
-#define REFLECT_NOTIFICATIONS()                                         \
-    {                                                                   \
-                                                                        \
-        lResult = ReflectNotifications(uMsg, wParam, lParam, bHandled); \
-    }
 
 #endif
 
 #ifndef CHAIN_HANDLERS
 
-#define CHAIN_MSG_MAP(theChainClass)                                           \
-    {                                                                          \
-        if (theChainClass::HandleMessage(hWnd, uMsg, wParam, lParam, lResult)) \
-            return TRUE;                                                       \
-    }
-
-#define CHAIN_MSG_MAP_MEMBER(theChainMember)                                   \
-    {                                                                          \
-        if (theChainMember.HandleMessage(hWnd, uMsg, wParam, lParam, lResult)) \
-            return TRUE;                                                       \
-    }
-
-#define CHAIN_MSG_MAP_ALT(theChainClass, msgMapID)                                       \
-    {                                                                                    \
-        if (theChainClass::HandleMessage(hWnd, uMsg, wParam, lParam, lResult, msgMapID)) \
-            return TRUE;                                                                 \
-    }
-
-#define CHAIN_MSG_MAP_ALT_MEMBER(theChainMember, msgMapID)                               \
-    {                                                                                    \
-        if (theChainMember.HandleMessage(hWnd, uMsg, wParam, lParam, lResult, msgMapID)) \
-            return TRUE;                                                                 \
-    }
-#endif
 
 #if (_WIN32_WINNT >= 0x0400)
 
