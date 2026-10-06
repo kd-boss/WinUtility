@@ -4,10 +4,14 @@ RCDIR := .
 
 TARGET := hexcalc.exe
 CXX := g++
-CXXFLAGS := -std=c++23 -municode
-LDFLAGS := -mwindows
+CXXFLAGS := -std=c++23 -municode -DUNICODE -D_UNICODE -Wall -Werror -Wextra -Wpedantic -Wshadow
+CXXFLAGS += -Wformat=2 -Wconversion -Wduplicated-cond -Wduplicated-branches -Wignored-qualifiers
+CXXFLAGS += -Wsign-conversion -Wcast-qual -Wold-style-cast -Woverloaded-virtual 
+CXXFLAGS += -Wnon-virtual-dtor -Wsuggest-override -Wlogical-op -Wnull-dereference
+CXXFLAGS += -Wunused -Wreturn-type -Wmissing-field-initializers 
+LDFLAGS := -mwindows -municode -mconsole
 RC := windres
-LIBS := -lcomctl32 
+LIBS := -lcomctl32 -lstdc++exp
 
 CPP_SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 RC_SOURCES := $(wildcard $(RCDIR)/*.rc)
@@ -19,8 +23,8 @@ ALL_OBJS := $(CPP_OBJS) $(RC_OBJS)
 BUILD ?= release
 
 ifeq ($(BUILD),debug)
-	CXXFLAGS += -g -Wall -Wpedantic
-	LDFLAGS += -g
+	CXXFLAGS += -g3 -Wall -Wpedantic
+	LDFLAGS += -g3
 else
 	CXXFLAGS += -O3 -s
 	LDFLAGS += -O3 -s

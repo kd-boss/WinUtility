@@ -1,7 +1,8 @@
 #include "HexCalc.h"
+#include <WinUtility/Numbers.h>
 
 #include <format>
-
+#include <print>
 
 void HexCalc::OnDestroy()
 {
@@ -13,7 +14,7 @@ void HexCalc::OnClose()
     DestroyWindow();
 }
 
-void HexCalc::OnCommand(UINT nNotifyCode, int nID, Window wndCtl)
+void HexCalc::OnCommand([[maybe_unused]]UINT nNotifyCode, [[maybe_unused]]int nID, [[maybe_unused]]Window wndCtl)
 {
     SetFocus();
     if(nID == VK_BACK) 
@@ -35,7 +36,7 @@ void HexCalc::OnCommand(UINT nNotifyCode, int nID, Window wndCtl)
         bNewNumber = false;
         
         if(iNumber  <= MAXWORD >> 4)
-            ShowNumber(iNumber = 16 * iNumber + nID - (isdigit(nID) ? TEXT('0') : TEXT('A') - 10));
+            ShowNumber(iNumber = 16 * iNumber + Number<int>(nID) - (isdigit(nID) ? TEXT('0') : TEXT('A') - 10));
         else
             MessageBeep(0);
     }
@@ -50,12 +51,12 @@ void HexCalc::OnCommand(UINT nNotifyCode, int nID, Window wndCtl)
     }
 }
 
-LRESULT HexCalc::OnSetFocus(Window wndPrev)
+LRESULT HexCalc::OnSetFocus([[maybe_unused]]Window wndPrev)
 {
     return 0;
 }
 
-void HexCalc::OnKeyUp(UINT nVirtKey, UINT nRepCntAndFlags)
+void HexCalc::OnKeyUp([[maybe_unused]]UINT nVirtKey, [[maybe_unused]]UINT nRepCntAndFlags)
 {
     switch(nVirtKey)
     {
@@ -67,10 +68,11 @@ void HexCalc::OnKeyUp(UINT nVirtKey, UINT nRepCntAndFlags)
     }
 }
 
-void HexCalc::OnKeyDown(UINT nVirtKey, UINT nRepCntAndFlags)
+void HexCalc::OnKeyDown([[maybe_unused]]UINT nVirtKey, [[maybe_unused]]UINT nRepCntAndFlags)
 {
     switch(nVirtKey)
     {
+	
         case VK_LEFT:
             nVirtKey = VK_BACK;
         break;
@@ -119,10 +121,10 @@ void HexCalc::OnKeyDown(UINT nVirtKey, UINT nRepCntAndFlags)
     SetHandled(false);
 }
 
-void HexCalc::OnChar(TCHAR ch, UINT nRepCntAndFlags)
+void HexCalc::OnChar([[maybe_unused]]TCHAR ch, [[maybe_unused]]UINT nRepCntAndFlags)
 {
     
-    if((WPARAM)CharUpper(&ch) == VK_RETURN)
+    if(reinterpret_cast<WPARAM>(CharUpper(&ch)) == VK_RETURN)
         ch = TEXT('=');
 
     
@@ -142,21 +144,28 @@ void HexCalc::OnChar(TCHAR ch, UINT nRepCntAndFlags)
     OnCommand(nRepCntAndFlags,static_cast<int>(ch),btn.m_hwnd);
 }
 
-BOOL HexCalc::OnInitDialog(Window wndFocus)
+BOOL HexCalc::OnInitDialog([[maybe_unused]]Window wndFocus)
 {
     this->SetFocus();
     CenterWindow();
+    UpdateWindow();
+    
+    }
+
     return FALSE;
 }
 
-void HexCalc::ShowNumber(UINT iNumber)
+void HexCalc::ShowNumber([[maybe_unused]] UINT lNumber)
 {
-    auto caption = std::format(TEXT("{:X}"),iNumber);
+    auto caption = std::format(TEXT("{:X}"),lNumber);
     SetDlgItemText(*this, VK_ESCAPE, caption.c_str());
+	iNumber = lNumber;
 }
 
-DWORD HexCalc::CalcIt(UINT iFirstNum, int iOperation, UINT iNum)
+DWORD HexCalc::CalcIt([[maybe_unused]]UINT lFirstNum, [[maybe_unused]]int lOperation, [[maybe_unused]]UINT iNum)
 {
+	iFirstNum = lFirstNum;
+	iOperation = lOperation;
     switch(iOperation)
     {
         case TEXT('='): return iNum;
