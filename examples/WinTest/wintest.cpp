@@ -12,6 +12,7 @@
 
 BOOL MyAboutDialog::OnInitDialog(Window wndFocus, LPARAM lInitParam)
 {
+	m_edit.
 	return CenterWindow();
 }
 

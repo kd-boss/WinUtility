@@ -18948,17 +18948,17 @@ typedef DateTimePickerControlT<Window> DateTimePickerControl;
     }                                    \
     break;
 
-// HBRUSH OnCtlColorEdit(DCT<true> dc, CEdit edit)
+// HBRUSH OnCtlColorEdit(DCT<true> dc, EditControl edit)
 #define MSG_WM_CTLCOLOREDIT(func)                           \
     case WM_CTLCOLOREDIT:                                   \
     {                                                       \
         SetHandled();                                       \
-        lResult = (LRESULT)func((HDC)wParam, (HWND)lParam); \
+        lResult = (LRESULT)func((HDC)wParam, reinterpret_cast<HWND>(lParam)); \
         return bHandled;                                    \
     }                                                       \
     break;
 
-// HBRUSH OnCtlColorListBox(DCT<true> dc, CListBox listBox)
+// HBRUSH OnCtlColorListBox(DCT<true> dc, ListBoxControl listBox)
 #define MSG_WM_CTLCOLORLISTBOX(func)                        \
     case WM_CTLCOLORLISTBOX:                                \
     {                                                       \

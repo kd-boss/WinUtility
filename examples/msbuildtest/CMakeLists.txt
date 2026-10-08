@@ -3,7 +3,7 @@ project(msbuildtest LANGUAGES CXX RC)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_definitions(-DUNICODE -D_UNICODE -DNOMINMAX)
-add_compile_options("/utf-8")
+add_compile_options("/utf-8 /M5")
 add_compile_options("/std:c++latest")
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_WIN32_EXECUTABLE ON)
@@ -20,6 +20,7 @@ add_executable(msbuildtest WIN32
         wintestres.rc
     )
 
+target_compile_options(msbuildtest PRIVATE /std:c++latest /W4 /WX /permissive- /utf-8 /DUNICODE /D_UNICODE /DNOMINMAX /MP)
 target_include_directories(msbuildtest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
 target_link_libraries(msbuildtest PRIVATE user32 gdi32 comctl32 d2d1 ole32 setupapi Winmm)
 

@@ -6,11 +6,26 @@
 #include <utility/BaseWindow.h>
 #include "Resource.h"
 
+class MyEdit : public ContainedWindowT<PushButtonContol,ControlTraits>
+{
+
+	public:
+	BEGIN_MSG_MAP()
+	MSG_WM_CHAR(OnChar)
+	END_MSG_MAP()
+
+	void OnChar(int nFags, TCHAR Code)
+	{
+		OutPutDebugString(Code);
+	}
+
+}
+
 class MyAboutDialog : public BaseDialog<MyAboutDialog>
 {
 public:
 	UINT IDD = IDD_ABOUTBOX; //to use the base dialog class, specify the IDD. 
-	
+	MyEdit m_edit;
 	void OnOk(UINT uNotifyCode, int nID, Window wndCtl);
 	void OnClose();
 	int OnCreate(LPCREATESTRUCT lpCreateStruct);
