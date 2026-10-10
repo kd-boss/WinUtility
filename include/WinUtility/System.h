@@ -507,7 +507,7 @@ std::enable_if<std::is_same<T,std::string>::value,std::wstring>::type to_wstring
 template <typename T>
 std::enable_if<std::is_same<T, std::wstring>::value, std::string>::type to_string(T a)
 {
-    std::string ret;
+    [[maybe_unused]] std::string ret;
     if (a.empty())
     {
         return ret;
