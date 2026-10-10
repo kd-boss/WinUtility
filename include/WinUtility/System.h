@@ -512,8 +512,8 @@ std::enable_if<std::is_same<T, std::wstring>::value, std::string>::type to_strin
     {
         return ret;
     }
-    const DWORD kFlags = WC_ERR_INVALID_CHARS;
-	(kFlags);
+    [[maybe_unused]] const DWORD kFlags = WC_ERR_INVALID_CHARS;
+	
     if (a.length() > std::numeric_limits<size_t>::max())
     {
         throw std::overflow_error("Input string too long: length greater than size_t can hold.");
