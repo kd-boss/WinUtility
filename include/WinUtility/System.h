@@ -487,8 +487,8 @@ std::enable_if<std::is_same<T,std::string>::value,std::wstring>::type to_wstring
     int outLen = ::MultiByteToWideChar(CP_UTF8, kFlags, a.data(), static_cast<int>(a.length()), nullptr, 0);
     if (outLen == 0)
     {
-        const DWORD error = ::GetLastError();
-		(error);
+        [[maybe_unused]]const DWORD error = ::GetLastError();
+		
         //throw SystemException{error, __FILE__, __LINE__};
     }
     ret.resize(outLen);
@@ -496,8 +496,8 @@ std::enable_if<std::is_same<T,std::string>::value,std::wstring>::type to_wstring
     if (outLen == 0)
     {
      
-        const DWORD error = ::GetLastError();
-		(error);
+        [[maybe_unused]]const DWORD error = ::GetLastError();
+		
         //throw SystemException{error, __FILE__, __LINE__};
     }
     return ret;
@@ -530,16 +530,16 @@ std::enable_if<std::is_same<T, std::wstring>::value, std::string>::type to_strin
     int outLen = ::WideCharToMultiByte(CP_UTF8, 0, a.c_str(), static_cast<int>(a.length()), nullptr, 0, nullptr, nullptr);
     if (outLen == 0)
     {
-        const DWORD error = ::GetLastError();
-		(error);
+        [[maybe_unused]]const DWORD error = ::GetLastError();
+		
         //throw SystemException{error, __FILE__, __LINE__};
     }
     ret.resize(outLen);
     outLen = ::WideCharToMultiByte(CP_UTF8, 0, a.c_str(),static_cast<int>(a.length()) , &ret[0], static_cast<int>(ret.length()), nullptr, nullptr);
     if (outLen == 0)
     {
-        const DWORD error = ::GetLastError();
-		(error);
+        [[maybe_unused]]const DWORD error = ::GetLastError();
+		
         //throw SystemException(error, __FILE__, __LINE__);
     }
     return ret;
