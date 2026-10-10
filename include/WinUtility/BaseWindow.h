@@ -16911,40 +16911,6 @@ typedef ComboBoxExT<Window> ComboBoxControlEx;
 
 // Part
 
-#if defined(__MINGW_MAJOR_VERSION) && __MINGW_MAJOR_VERSION < 4
-#define MCGIP_CALENDARCONTROL 0
-#define MCGIP_NEXT 1
-#define MCGIP_PREV 2
-#define MCGIP_FOOTER 3
-#define MCGIP_CALENDAR 4
-#define MCGIP_CALENDARHEADER 5
-#define MCGIP_CALENDARBODY 6
-#define MCGIP_CALENDARROW 7
-#define MCGIP_CALENDARCELL 8
-
-#define MCGIF_DATE 0x00000001
-#define MCGIF_RECT 0x00000002
-#define MCGIF_NAME 0x00000004
-
-// Note: iRow of -1 refers to the row header and iCol of -1 refers to the col header.
-
-typedef struct tagMCGRIDINFO
-{
-    UINT cbSize;
-    DWORD dwPart;
-    DWORD dwFlags;
-    int iCalendar;
-    int iRow;
-    int iCol;
-    BOOL bSelected;
-    SYSTEMTIME stStart;
-    SYSTEMTIME stEnd;
-    RECT rc;
-    PWSTR pszName;
-    size_t cchName;
-} MCGRIDINFO, *PMCGRIDINFO;
-#endif
-
 #define MCM_GETCALENDARGRIDINFO (MCM_FIRST + 24)
 #ifndef MonthCal_GetCalendarGridInfo
 #define MonthCal_GetCalendarGridInfo(hmc, pmcGridInfo) \
