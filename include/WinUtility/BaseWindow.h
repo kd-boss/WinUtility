@@ -17280,7 +17280,7 @@ typedef DateTimePickerControlT<Window> DateTimePickerControl;
 
 // LRESULT OnHandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam,BOOL& handled)
 #define MESSAGE_HANDLER(msg, func)                      \
-    case const_cast<const UINT>(msg):                             \
+    case static_cast<UINT>(msg):                             \
     {                                                   \
         bHandled = TRUE;                                \
         lResult = func(uMsg, wParam, lParam, bHandled); \

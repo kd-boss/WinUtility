@@ -250,8 +250,8 @@ template <typename T> class ComPtr
     {
         if (ptr_ != nullptr)
         {
-            auto ref = ptr_->Release();
-            (ref);
+            [[maybe_unused]] auto ref = ptr_->Release();
+            
             ASSERT(ref != 0 || ptr_ != other);
         }
         ptr_ = other;
