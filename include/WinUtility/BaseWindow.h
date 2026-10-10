@@ -16891,14 +16891,6 @@ private:
 
 typedef ComboBoxExT<Window> ComboBoxControlEx;
 
-#if (NTDDI_VERSION >= NTDDI_VISTA)
-// View
-#define MCMV_MONTH 0
-#define MCMV_YEAR 1
-#define MCMV_DECADE 2
-#define MCMV_CENTURY 3
-#define MCMV_MAX MCMV_CENTURY
-
 template <class TBase>
 class MonthCalendarCtrlT : public TBase
 {
