@@ -17132,32 +17132,6 @@ public:
 
 typedef MonthCalendarCtrlT<Window> MonthCalendarControl;
 
-// defintions missing from comctrl.h in mingw v3.0
-#if (NTDDI_VERSION >= NTDDI_VISTA)
-#if defined(__MINGW_MAJOR_VERSION) && __MINGW_MAJOR_VERSION < 4
-typedef struct tagDATETIMEPICKERINFO
-{
-    DWORD cbSize;
-
-    RECT rcCheck;
-    DWORD stateCheck;
-
-    RECT rcButton;
-    DWORD stateButton;
-
-    HWND hwndEdit;
-    HWND hwndUD;
-    HWND hwndDropDown;
-} DATETIMEPICKERINFO, *LPDATETIMEPICKERINFO;
-
-#define DTM_GETMONTHCAL (DTM_FIRST + 8)
-#define DTM_SETMCSTYLE (DTM_FIRST + 11)
-#define DTM_GETMCSTYLE (DTM_FIRST + 12)
-#define DTM_GETDATETIMEPICKERINFO (DTM_FIRST + 14)
-#define DTM_GETIDEALSIZE (DTM_FIRST + 15)
-#define DTM_CLOSEMONTHCAL (DTM_FIRST + 13)
-#endif
-#endif
 
 template <class TBase>
 class DateTimePickerControlT : public TBase
