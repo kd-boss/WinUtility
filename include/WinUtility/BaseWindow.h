@@ -447,6 +447,7 @@ inline void Size::operator-=(SIZE other)
     cx -= other.cx;
     cy -= other.cy;
 }
+
 inline Size Size::operator+(SIZE other) const
 {
     return {cx + other.cx, cy + other.cy};
@@ -475,10 +476,10 @@ inline Rect Size::operator-(const RECT *other) const
 {
     return Rect(other) - *this;
 }
-inline void Size::SetSize(int CX, int CY)
+inline void Size::SetSize(int pCX, int pCY)
 {
-    cx = CX;
-    cy = CY;
+    cx = pCX;
+    cy = pCY;
 }
 inline Point::Point()
 {
@@ -4492,7 +4493,7 @@ public:
 enum class GWLFlag : int
 {
     ExStyle = -20,
-    HINSTANCE = -6,
+    HInstance = -6,
     HwndParent = -8,
     ID = -12,
     Style = -16,
@@ -7684,7 +7685,7 @@ enum class ButtonStyles : DWORD
     PushButton = BS_PUSHBUTTON,
     RadioButton = BS_RADIOBUTTON,
     UserButton = BS_USERBUTTON,
-    Bitmap = BS_BITMAP,
+    BitmapStyle = BS_BITMAP,
     Bottom = BS_BOTTOM,
     Center = BS_CENTER,
     Icon = BS_ICON,
@@ -21673,9 +21674,9 @@ public:
         return m_bHandledCD;
     }
 
-    void SetMsgHandled(BOOL bHandled)
+    void SetMsgHandled(BOOL pbHandled)
     {
-        m_bHandledCD = bHandled;
+        m_bHandledCD = pbHandled;
     }
 
     BEGIN_MSG_MAP()
