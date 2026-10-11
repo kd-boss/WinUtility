@@ -21690,7 +21690,7 @@ public:
     END_REFLECTED_MAP()
     END_MSG_MAP()
 
-    LRESULT OnCustomDraw(int idCtrl, LPNMHDR pnmh, BOOL &bHandled)
+    LRESULT OnCustomDraw(int idCtrl, LPNMHDR pnmh, BOOL &pbHandled)
     {
         T *pT = static_cast<T *>(this);
         pT->SetMsgHandled(TRUE);
@@ -21731,7 +21731,7 @@ public:
             pT->SetMsgHandled(FALSE);
             break;
         }
-        bHandled = pT->IsMsgHandled();
+        pbHandled = pT->IsMsgHandled();
         return dwRet;
     }
 
